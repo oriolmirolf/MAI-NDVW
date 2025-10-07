@@ -1,0 +1,173 @@
+\documentclass[11pt]{article}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{geometry}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning}
+\usepackage{enumitem}
+\usepackage{tabularx}
+
+\geometry{a4paper, margin=1.5cm}
+\setlength{\parindent}{0em}
+\setlength{\parskip}{0.5em}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+
+    % University Logo
+    \includegraphics[width=0.3\textwidth]{figures/ub_logo.png}
+
+    \vspace{1.5cm}
+    {\Huge\bfseries Sprint 1: Project Proposal\par}
+    \vspace{1cm}
+    {\large Procedurally Generated 2D RPG with AI-Driven Narrative\par}
+    \vspace{2cm}
+    {\large Oriol MIR\'O, Jean DI\'E, Bruno SANCHEZ, D\'aniel M\'ACSAI\par}
+    \vspace{3cm}
+    {\large \textbf{Master in Artificial Intelligence}\par}
+    \vspace{0.5cm}
+    {\large \textbf{Normative and Dynamic Virtual Worlds}\\ Sprint 1: Project Proposal\par}
+    \vspace{1cm}
+    {\large\bfseries October 7th, 2025\par}
+\end{titlepage}
+
+\pagestyle{empty}
+
+\newpage
+\tableofcontents
+\newpage
+
+% Set page numbering
+\setcounter{page}{1}
+\pagestyle{plain}
+
+\section{Introduction}
+\label{sec:introduction}
+
+Roguelike games have captivated players for decades with their promise of endless variety through procedural generation. Games like \textit{Enter the Gungeon} demonstrate how algorithmically generated dungeons combined with intelligent enemy behaviors create highly replayable experiences.
+
+Our project focuses on creating a 2D roguelike RPG where procedural content generation drives the core gameplay. The main challenge lies in algorithmically generating unique, playable dungeons for each playthrough while maintaining appropriate difficulty and player engagement. We'll create a complete game where dungeon layouts are entirely procedurally generated, offering infinite replayability without requiring manual level design.
+
+This project demonstrates practical application of procedural content generation (PCG) techniques for dynamic level design. The roguelike structure provides an ideal framework: each playthrough tests whether our algorithms can consistently generate engaging, fair, and varied content without any hand-crafted level design.
+
+\section{Game Vision and Core Loop}
+\label{sec:concept}
+
+\subsection{The Player's Journey}
+
+Imagine descending into a dungeon that has never existed before and will never exist again. Each chamber you enter, each enemy you face, and each story beat you encounter is generated specifically for your playthrough. This is the experience we aim to create.
+
+The player's journey follows a clear structure: three distinct dungeon sections, each guarded by a unique boss (see Figure \ref{fig:game_flow}). What makes this structure compelling is how it balances permanence with variety. Defeating a boss creates a checkpoint—a moment of permanence in an otherwise fluid world. From this checkpoint, players can venture forward into new, procedurally generated territory. Should they fall in battle, they return to their last checkpoint, but the dungeon ahead regenerates entirely, offering new challenges and a fresh narrative continuation.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/game_flow.png}
+    \caption{The player's journey through three procedurally generated dungeon sections, each culminating in a boss fight that serves as a checkpoint. Death sends the player back to their last checkpoint, where both the dungeon and narrative regenerate.}
+    \label{fig:game_flow}
+\end{figure}
+
+This checkpoint system creates a natural difficulty curve. Early in the game, dying means restarting from the beginning—a harsh but motivating consequence. However, once players overcome the first boss, they've earned tangible progress. This design respects the player's time investment while maintaining the tension that makes roguelikes compelling.
+
+The combat system builds on traditional RPG mechanics: a health bar that depletes with each hit, encouraging players to master movement and timing. We're deliberately keeping these core mechanics straightforward to focus our development effort on the AI systems that make each encounter interesting rather than on complex combat mechanics.
+
+Visual variety proves crucial for player engagement. Each of the three boss dungeons will employ distinct thematic elements—volcanic chambers, overgrown ruins, and crystalline caves. These visual themes help players intuitively understand their progression through the game while the underlying PCG algorithms ensure structural variety.
+
+\subsection{Progression and Potential LLM Integration}
+
+The core progression follows a checkpoint-based system where defeating each boss creates a permanent save point. Beyond this structure, we're considering two optional features if development time permits.
+
+A simple upgrade system could include coin collection and shops between sections, offering statistical improvements (health, damage, speed). The focus remains on getting core procedural generation working reliably.
+
+As an experimental feature, we may explore LLM integration for dynamic narrative generation. This would involve feeding game state (current progress, bosses defeated) to an LLM to generate contextual story snippets. While technically interesting, this remains secondary to our primary goal of robust procedural dungeon generation. If implemented, we'd use a simple approach: generate multiple options, select the most coherent, and tie narrative state to checkpoints.
+
+\section{Procedural Content Generation for 2D Games}
+\label{sec:ai_techniques}
+
+Procedural Content Generation (PCG) represents a family of algorithms that create game content algorithmically rather than manually. For 2D games, particularly roguelikes, PCG offers infinite replayability by generating unique levels, items, and encounters for each playthrough. This section surveys prominent PCG algorithms applicable to 2D game development, evaluating their strengths and use cases.
+
+\subsection{Space Partitioning Algorithms}
+
+\textbf{Binary Space Partitioning (BSP)} forms the foundation for structured level generation. The algorithm recursively subdivides rectangular space into smaller regions, places rooms within leaf nodes, and connects them with corridors. BSP excels at creating architectural layouts—dungeons, buildings, space stations—where rooms feel deliberately placed. Games like \textit{Spelunky} use BSP variants to ensure consistent level structure while varying room contents. The algorithm guarantees connectivity and offers fine control over room density, corridor width, and structural balance.
+
+\textbf{Quadtree Partitioning} extends BSP by allowing non-uniform subdivisions. Rather than always splitting spaces in half, quadtrees can create four unequal child regions based on content requirements. This produces more organic variation in room sizes while maintaining the structured feel of partitioning algorithms. Quadtrees particularly suit games requiring hierarchical detail levels—larger combat arenas connected to smaller treasure rooms.
+
+\subsection{Cellular Automata and Rule-Based Generation}
+
+\textbf{Cellular Automata (CA)} generates organic, cave-like environments through iterative local rules. Each cell examines its neighbors and transitions between states (wall/floor) based on simple thresholds. Conway's Game of Life demonstrates this principle; for dungeon generation, typical rules convert cells to walls if surrounded by many walls, creating natural-looking caverns. CA requires minimal parameters yet produces complex, irregular spaces that feel hand-sculpted. Post-processing removes disconnected regions and smooths jagged edges.
+
+CA variants include:
+\begin{itemize}
+    \item \textbf{Drunkard's Walk}: A moving agent carves paths through solid space, creating winding corridors and interconnected caves. Controlling walk length and branching probability yields varied topologies.
+    \item \textbf{Diffusion-Limited Aggregation}: Particles randomly walk until encountering existing structure, then stick. This creates branching, tree-like level layouts resembling river deltas or root systems.
+\end{itemize}
+
+\subsection{Graph-Based Generation}
+
+\textbf{Mission Graph Generation} treats levels as graphs where nodes represent rooms/encounters and edges represent connections. Designers specify high-level structure (e.g., "linear sequence with optional side branches") and the algorithm places rooms to match this topology. Graph-based PCG separates spatial layout from gameplay structure, enabling precise control over progression pacing, challenge curves, and optional content placement. \textit{Unexplored} uses cyclic graph generation to create lock-and-key puzzles with guaranteed solutions.
+
+\textbf{Wave Function Collapse (WFC)} generates levels by satisfying local constraints. Given tile patterns and adjacency rules, WFC iteratively collapses superpositions (possible tile choices) to valid configurations. The algorithm ensures visual coherence—brick walls only connect to compatible tiles—while producing organic variety. WFC excels at generating levels that match hand-crafted aesthetic quality, though it's computationally expensive and can fail to converge without careful constraint design.
+
+\subsection{Grammar-Based and L-Systems}
+
+\textbf{L-Systems} use rewriting rules to generate complex structures from simple axioms. Originally designed for modeling plant growth, L-Systems apply to dungeon generation by treating level elements as symbols. For example, "C $\rightarrow$ C+R-C" might mean "a corridor branches into a room then continues." Successive rule applications create intricate, self-similar level topologies. L-Systems provide compact representation of complex structures and naturally create themed variations by modifying rule sets.
+
+\textbf{Grammar-Based PCG} generalizes L-Systems using formal grammars. Non-terminal symbols represent abstract concepts (e.g., "combat area," "puzzle section") that expand into concrete implementations. This enables hierarchical generation: high-level narrative structure generates mid-level room sequences that finally instantiate as specific layouts. Grammar-based approaches excel at maintaining design coherence across scales.
+
+\subsection{Noise Functions and Heightmap-Based Generation}
+
+\textbf{Perlin/Simplex Noise} generates smooth, continuous random fields useful for terrain generation. Thresholding noise values creates landmasses, water bodies, and elevation changes. Multiple octaves (frequencies) of noise layered together produce naturalistic terrain with both large features and fine detail. While primarily used for outdoor/terrain generation, noise functions can define dungeon density maps—high noise values become dense wall clusters, low values open chambers.
+
+\textbf{Voronoi Diagrams} partition space based on distance to seed points, creating irregular polygonal regions. Each region becomes a room or zone, with shared boundaries suggesting natural connection points. Voronoi generation produces more organic room shapes than BSP while maintaining clear spatial organization. Adjusting seed distribution (uniform, clustered, Poisson-disc) controls room size variation.
+
+\subsection{Hybrid Approaches}
+
+Modern PCG systems combine multiple algorithms to leverage complementary strengths:
+
+\begin{itemize}
+    \item \textbf{BSP + CA}: BSP creates overall structure; CA decorates rooms with organic details (rubble, vegetation, water pools).
+    \item \textbf{Graph + WFC}: Mission graphs define gameplay flow; WFC fills graph nodes with visually coherent room layouts.
+    \item \textbf{Grammar + Noise}: Grammars generate high-level structure; noise functions add environmental variation and decorative elements.
+\end{itemize}
+
+\subsection{Validation and Quality Assurance}
+
+Regardless of generation algorithm, PCG systems require validation to ensure playability:
+
+\begin{itemize}
+    \item \textbf{Connectivity Analysis}: Graph algorithms (BFS/DFS) verify all areas are reachable. Unreachable regions are removed or connected.
+    \item \textbf{Difficulty Profiling}: Simulations or heuristics estimate challenge level. Rooms with excessive enemy density or insufficient resources are rejected.
+    \item \textbf{Solution Verification}: For puzzle-focused games, validators confirm intended solutions exist and unintended shortcuts don't trivialize challenges.
+    \item \textbf{Aesthetic Constraints}: Pattern detection removes visually unappealing artifacts (e.g., single-tile gaps, excessively thin walls).
+\end{itemize}
+
+\subsection{Selected Algorithms for Our Project}
+
+For our roguelike implementation, we will focus on two complementary approaches:
+
+\textbf{Cellular Automata} for organic cave systems emphasizing exploration and environmental storytelling. CA's simplicity enables rapid iteration while producing naturalistic environments.
+
+\textbf{Binary Space Partitioning} for structured dungeon sections emphasizing combat and tactical positioning. BSP's predictability ensures fair encounters while room variation maintains interest.
+
+This combination provides aesthetic variety (caves vs. fortresses), supports different gameplay modes (exploration vs. combat), and demonstrates both rule-based and space-partitioning paradigms. Validation systems will ensure connectivity, appropriate difficulty progression, and fair player challenges across both generation methods.
+
+\section{Implementation Plan}
+\label{sec:technical}
+
+\subsection{Development Platform}
+
+We'll use \textbf{Unity 2D} for its mature 2D development tools, extensive asset store for graphics, and strong component-based architecture that suits modular AI implementation. This lets us focus on AI systems rather than building basic game infrastructure.
+
+\subsection{Team Roles}
+\begin{itemize}
+    \item \textbf{Manager:} Oriol Miró - Coordination, integration, deliverables
+    \item \textbf{AI Designer:} Dániel Mácsai - Level design, game balance, enemy placement
+    \item \textbf{AI Tech:} Jean Dié \& Bruno Sanchez - Procedural generation algorithms, validation systems
+\end{itemize}
+
+\end{document}
