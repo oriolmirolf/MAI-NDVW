@@ -1,0 +1,468 @@
+\documentclass{beamer}
+\usetheme{Madrid}
+\usecolortheme{whale}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usepackage{tabularx}
+\usepackage[table,xcdraw]{xcolor}
+
+
+\definecolor{ubburgundy}{RGB}{160, 0, 0}
+\setbeamercolor{structure}{fg=ubburgundy}
+
+\makeatletter
+\setbeamertemplate{footline}{
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm]{title in head/foot}%
+      \usebeamerfont{title in head/foot}\insertshorttitle
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.5ex,dp=1.125ex,rightskip=.3cm plus1fil]{date in head/foot}%
+      \usebeamerfont{date in head/foot}\hfill\insertframenumber{} / \inserttotalframenumber
+    \end{beamercolorbox}%
+  }%
+}
+\makeatother
+
+\setbeamertemplate{navigation symbols}{}
+\logo{}
+
+\title{YOLOE: Real-Time Seeing Anything}
+\subtitle{Object Detection and Segmentation with Diverse Open Prompt Mechanisms}
+\author{Jean DIÉ}
+\institute{
+    \includegraphics[width=0.4\textwidth]{assets/ub.png}\\[1ex]
+    University of Barcelona
+}
+\date{29th April 2025}
+
+\begin{document}
+
+\begin{frame}
+    \titlepage
+\end{frame}
+
+% \begin{frame}{Outline}
+%     \tableofcontents
+% \end{frame}
+
+
+
+
+
+
+\section{Introduction}
+
+\begin{frame}{Context and Problem}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{Traditional Object Detection}:
+            \begin{itemize}
+                \item YOLO series: efficient \& accurate
+                \item \textcolor{ubburgundy}{Key limitation}: fixed predefined categories
+                \item Requires retraining for new objects
+            \end{itemize}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \textbf{Recent Open-Set Approaches}:
+            \begin{itemize}
+                \item Text prompts (e.g., "find all cats")
+                \item Visual cues (e.g., reference regions)
+                \item Prompt-free paradigm (finding everything)
+            \end{itemize}
+        \end{column}
+    \end{columns}
+    
+    \vspace{0.5cm}
+    
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{Zero-Shot Learning Solution}:
+            \begin{itemize}
+                \item Recognize unseen objects using semantic information
+                \item Leverage auxiliary information (texts, embeddings, attributes)
+            \end{itemize}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \textbf{Core Challenge}:
+            \begin{itemize}
+                \item Existing methods trade off: \\
+                    Performance vs. efficiency
+                \item Need for a unified approach with:
+                    \begin{itemize}
+                        \item Multiple prompt types
+                        \item Real-time performance
+                    \end{itemize}
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+
+
+
+
+\begin{frame}{YOLOE Overview: Real-Time Seeing Anything}
+    \begin{center}
+        \includegraphics[width=0.8\textwidth]{figures/YOLOE_prompts.png}
+        \vspace{0.1cm}
+    \end{center}
+    
+    \vspace{0.2cm}
+    
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{Technical Advantages:}
+            \begin{itemize}\small
+                \item \textcolor{ubburgundy}{Unified architecture} for all prompt types
+                \item \textcolor{ubburgundy}{Real-time speed}: 100+ FPS (GPU), 40+ FPS (mobile)
+                \item \textcolor{ubburgundy}{3× less training time} than competitors
+            \end{itemize}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \textbf{Practical Benefits:}
+            \begin{itemize}\small
+                \item Both detection \& segmentation in one model
+                \item Zero-shot recognition of novel objects
+                \item Can be deployed on resource-constrained devices
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+
+
+
+
+
+
+
+
+
+\begin{frame}{YOLOE Architecture}
+    \begin{center}
+        \includegraphics[width=0.7\textwidth]{figures/yoloe_architecture.png}
+    \end{center}
+    
+    % Two columns for the component explanations
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{Standard YOLO Components:}
+            \begin{itemize}\small
+                \item \textcolor{ubburgundy}{Backbone}: Feature extraction from images
+                \item \textcolor{ubburgundy}{PAN}: Path Aggregation Network for multi-scale features
+                \item \textcolor{ubburgundy}{Output Heads}:
+                \begin{itemize}\footnotesize
+                    \item Segmentation%: mask prediction
+                    \item Regression%: bounding box prediction
+                    \item Embedding%: object feature extraction
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \textbf{Novel YOLOE Components:}
+            \begin{itemize}\small
+                \item \textcolor{ubburgundy}{SAVPE}: Semantic-Activated Visual Prompt Encoder
+                \item \textcolor{ubburgundy}{RepRTA}: Re-parameterizable Region-Text Alignment 
+                \item \textcolor{ubburgundy}{LRPC}: Lazy Region-Prompt Contrast
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+
+
+
+
+
+
+
+
+\begin{frame}{Key Innovations}
+    \begin{columns}[T]
+        \begin{column}{0.32\textwidth}
+            \centering
+            \textbf{\textcolor{ubburgundy}{RepRTA}}\\
+            \small{Text Prompts}
+            \vspace{0.2cm}
+            
+            \begin{itemize}\footnotesize
+                \item Lightweight auxiliary network
+                \item Re-parameterized at inference
+                \item Zero overhead deployment
+            \end{itemize}
+            
+            \vspace{0.1cm}
+            \footnotesize{\textit{Enables text-prompted detection with\\no inference slowdown}}
+            \vspace{0.1cm}
+            \footnotesize{\textit{vs. Complex fusion in YOLO-World}}
+        \end{column}
+        
+        \begin{column}{0.32\textwidth}
+            \centering
+            \textbf{\textcolor{ubburgundy}{SAVPE}}\\
+            \small{Visual Prompts}
+            \vspace{0.2cm}
+            
+            \begin{itemize}\footnotesize
+                \item Dual-branch design
+                \item Semantic feature extraction
+                \item Low-dimensional processing
+            \end{itemize}
+            
+            \vspace{0.1cm}
+            \footnotesize{\textit{Processes visual examples efficiently\\with minimal computation}}
+            \vspace{0.1cm}
+            \footnotesize{\textit{vs. Heavy transformers in T-Rex2}}
+        \end{column}
+        
+        \begin{column}{0.32\textwidth}
+            \centering
+            \textbf{\textcolor{ubburgundy}{LRPC}}\\
+            \small{Prompt-free}
+            \vspace{0.2cm}
+            
+            \begin{itemize}\footnotesize
+                \item Specialized embedding
+                \item Built-in vocabulary
+                \item Selective object matching
+            \end{itemize}
+            
+            \vspace{0.1cm}
+            \footnotesize{\textit{Finds all objects without language\\models, dramatically faster}}
+            \vspace{0.1cm}
+            \footnotesize{\textit{vs. Heavy LLMs in GenerateU}}
+        \end{column}
+    \end{columns}
+    
+    \vspace{0.2cm}
+    \begin{center}
+    \footnotesize
+    \begin{tabular}{c}
+    \textbf{All three innovations enable a single unified model} that handles \\
+    diverse prompting mechanisms with real-time performance. \\
+    These methods were carefully selected for their efficiency.
+    \end{tabular}
+    \end{center}
+\end{frame}
+% \begin{frame}{Key Innovations}
+%     \begin{columns}[T]
+%         \begin{column}{0.32\textwidth}
+%             \centering
+%             \textbf{\textcolor{ubburgundy}{RepRTA}}\\
+%             \small{Text Prompts}
+%             \vspace{0.3cm}
+            
+%             \begin{itemize}\footnotesize
+%                 \item Lightweight auxiliary network
+%                 \item Re-parameterized at inference
+%                 \item Zero overhead deployment
+%             \end{itemize}
+            
+%             \vspace{0.2cm}
+%             % \footnotesize{Better text-visual alignment\\without computational cost}
+%         \end{column}
+        
+%         \begin{column}{0.32\textwidth}
+%             \centering
+%             \textbf{\textcolor{ubburgundy}{SAVPE}}\\
+%             \small{Visual Prompts}
+%             \vspace{0.3cm}
+            
+%             \begin{itemize}\footnotesize
+%                 \item Dual-branch design
+%                 \item Semantic feature extraction
+%                 \item Low-dimensional processing
+%             \end{itemize}
+            
+%             \vspace{0.2cm}
+%             % \footnotesize{Efficient visual prompting\\for mobile devices}
+%         \end{column}
+        
+%         \begin{column}{0.32\textwidth}
+%             \centering
+%             \textbf{\textcolor{ubburgundy}{LRPC}}\\
+%             \small{Prompt-free}
+%             \vspace{0.3cm}
+            
+%             \begin{itemize}\footnotesize
+%                 \item Specialized embedding
+%                 \item Built-in vocabulary
+%                 \item Selective object matching
+%             \end{itemize}
+            
+%             \vspace{0.2cm}
+%             % \footnotesize{53× faster inference,\\6.3× fewer parameters}
+%         \end{column}
+%     \end{columns}
+    
+%     \vspace{0.4cm}
+%     % \begin{center}
+%     %     \footnotesize{All three innovations enable a \textbf{single unified model} that handles\\diverse prompting mechanisms with real-time performance.\\
+%     %     All these methods were specifically chosen for their efficiency.}
+%     % \end{center}
+%     \begin{center}
+%     \footnotesize
+%     \begin{tabular}{c}
+%     \textbf{All three innovations enable a single unified model} that handles \\
+%     diverse prompting mechanisms with real-time performance. \\
+%     These methods were carefully selected for their efficiency.
+%     \end{tabular}
+%     \end{center}
+
+% \end{frame}
+
+
+
+
+\begin{frame}{Experiments \& Results}
+    \begin{columns}[T]
+        \begin{column}{0.45\textwidth}
+            \textbf{Experimental Setup:}
+            \begin{itemize}\small
+                \item \textbf{Data}: Objects365, GoldG → LVIS (zero-shot)
+                \item \textbf{Efficient Training}:
+                \begin{itemize}\footnotesize
+                    \item Base: 30 epochs for text prompts
+                    \item +2/+1 epochs for visual/prompt-free
+                \end{itemize}
+                \item \textbf{Models}: YOLOv8/YOLO11 backbones
+            \end{itemize}
+            
+            \vspace{-0.1cm}
+            \begin{center}
+            \scriptsize
+            \begin{tabular}{|l|c|c|c|}
+            \hline
+            \textbf{Model} & \textbf{AP} & \textbf{Train} & \textbf{FPS} \\
+            \hline
+            YWorldv2-S & 24.4 & 41.7h & 216.4 \\
+            \rowcolor{gray!15} YOLOE-v8-S & \textbf{27.9} & \textbf{12.0h} & \textbf{305.8} \\
+            \hline
+            \end{tabular}
+            \end{center}
+        \end{column}
+        
+        \begin{column}{0.52\textwidth}
+            \textbf{Key Performance Trends:}
+            \vspace{0.1cm}
+            
+            \begin{beamercolorbox}[rounded=true,shadow=true,wd=\textwidth]{block body}
+                \centering\textbf{Higher Accuracy + Lower Cost}\vspace{-0.1cm}
+                \begin{itemize}\small\setlength{\itemsep}{0pt}
+                    \item \textcolor{ubburgundy}{+3.5 AP} over YOLO-World with \textcolor{ubburgundy}{3×} less training
+                    \item Exceptional on rare objects: \textcolor{ubburgundy}{+7.6 APr}
+                    \item Better transfer to COCO with \textcolor{ubburgundy}{4×} less fine-tuning
+                \end{itemize}
+            \end{beamercolorbox}
+            
+            \vspace{0.1cm}
+            
+            \begin{beamercolorbox}[rounded=true,shadow=true,wd=\textwidth]{block body}
+                \centering\textbf{Real-Time Performance}\vspace{-0.1cm}
+                \begin{itemize}\small\setlength{\itemsep}{0pt}
+                    \item \textcolor{ubburgundy}{1.4×} faster on GPU, \textcolor{ubburgundy}{1.3×} on mobile
+                    \item Prompt-free: \textcolor{ubburgundy}{53×} faster than GenerateU
+                    \item \textcolor{ubburgundy}{6.3×} smaller model (47M vs 297M params)
+                \end{itemize}
+            \end{beamercolorbox}
+            
+            \vspace{0.1cm}
+            
+            % \begin{beamercolorbox}[rounded=true,shadow=true,wd=\textwidth]{block body}
+            %     \centering\textbf{Unified Architecture Benefits}\vspace{-0.1cm}
+            %     \begin{itemize}\small\setlength{\itemsep}{0pt}
+            %         \item Single model handles all prompt types
+            %         \item Detection \textbf{and} segmentation capabilities
+            %         \item Strong performance across all prompt modes
+            %     \end{itemize}
+            % \end{beamercolorbox}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+
+
+
+
+
+
+
+
+\begin{frame}{Critical Analysis \& Future Directions}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{Strengths:}
+            \begin{itemize}\small\setlength{\itemsep}{-1pt}
+                \item \textcolor{ubburgundy}{Unified architecture} without compromise
+                \item \textcolor{ubburgundy}{Remarkable efficiency} vs. YOLO-Worldv2
+                \item Effective zero-shot generalization
+                \item Viable deployment for edge devices
+            \end{itemize}
+            
+            \vspace{0.1cm}
+            \textbf{Key Contributions:}
+            \begin{itemize}\small\setlength{\itemsep}{-1pt}
+                \item \textit{Efficient} multi-modal learning
+                \item Overhead elimination via re-parameterization
+                \item Specialized vs. complex general solutions
+            \end{itemize}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \textbf{Limitations \& Questions:}
+            \begin{itemize}\small\setlength{\itemsep}{-1pt}
+                \item \textcolor{ubburgundy}{Multi-task tradeoffs}: APf performance drop
+                \item \textcolor{ubburgundy}{Training sufficiency}: Only 2 epochs for visual?
+                \item \textcolor{ubburgundy}{Fixed vocabulary}: Limits on prompt-free mode
+                % \item \textcolor{ubburgundy}{Dataset biases}: Western-centric content?
+            \end{itemize}
+            
+            \vspace{0.1cm}
+            \textbf{Future Research Directions:}
+            \begin{itemize}\small\setlength{\itemsep}{-1pt}
+                \item Balanced multi-task learning objectives
+                \item Domain-specific foundation model integration
+                \item Extension to video understanding
+                \item Dynamic vocabulary expansion mechanisms
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+
+
+
+
+
+
+
+\begin{frame}{Conclusion}
+    \begin{itemize}
+        \item YOLOE represents a significant step toward \textbf{practical, unified vision models}
+        \item Demonstrates that \textbf{specialized components} can outperform complex, general architectures
+        \item The core insight: \textbf{carefully designed simplifications} (RepRTA, SAVPE, LRPC) can maintain performance while dramatically improving efficiency
+        \item Opens pathway to real-time applications across domains (robotics, mobile, augmented reality)
+    \end{itemize}
+    
+    \vspace{0.3cm}
+    
+    \hfill
+    \begin{beamercolorbox}[rounded=true,shadow=true,wd=0.9\textwidth,center]{block body}
+        \textbf{The value proposition of YOLOE isn't just technical performance,\\but practical usability across diverse real-world scenarios}
+    \end{beamercolorbox}
+    \hfill\null
+
+    \vspace{0.3cm}
+    \centering
+    \Large{Thank you! Questions?}
+\end{frame}
+
+
+\end{document}

@@ -1,0 +1,298 @@
+\documentclass{beamer}
+\usetheme{Madrid}
+\usecolortheme{whale}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usepackage{tabularx}
+\usepackage[table,xcdraw]{xcolor}
+
+
+\definecolor{ubburgundy}{RGB}{160, 0, 0}
+\setbeamercolor{structure}{fg=ubburgundy}
+
+\makeatletter
+\setbeamertemplate{footline}{
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm]{title in head/foot}%
+      \usebeamerfont{title in head/foot}\insertshorttitle
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.5ex,dp=1.125ex,rightskip=.3cm plus1fil]{date in head/foot}%
+      \usebeamerfont{date in head/foot}\hfill\insertframenumber{} / \inserttotalframenumber
+    \end{beamercolorbox}%
+  }%
+}
+\makeatother
+
+\setbeamertemplate{navigation symbols}{}
+\logo{}
+
+\title{Sprint 1: Project Proposal}
+\subtitle{Procedurally Generated 2D Roguelike RPG}
+\author{Oriol Miró, Jean Dié, Bruno Sanchez, Dániel Mácsai}
+\institute{
+    \includegraphics[width=0.4\textwidth]{figures/ub_logo.png}\\[1ex]
+    University of Barcelona\\
+    \textit{Normative and Dynamic Virtual Worlds}
+}
+\date{October 7th, 2025}
+
+\begin{document}
+
+\begin{frame}
+    \titlepage
+\end{frame}
+
+% 8-minute presentation structure:
+% Title: 30s
+% Game Concept: 1.5 min
+% Core AI: Procedural Generation: 2.5 min
+% Implementation Plan: 1.5 min
+% Demo/Visuals: 1.5 min
+% Q&A buffer: 30s
+
+\section{Game Concept}
+
+\begin{frame}{What We're Building}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{The Vision}:
+            \begin{itemize}
+                \item 2D roguelike RPG with \textcolor{ubburgundy}{infinite replayability}
+                \item Every playthrough = unique dungeon
+                \item Checkpoint-based progression
+                \item Three boss encounters
+            \end{itemize}
+
+            \vspace{0.3cm}
+            \textbf{Core Challenge}:
+            \begin{itemize}
+                \item Algorithmically generate dungeons that are:
+                \begin{itemize}
+                    \item Always playable
+                    \item Fair and balanced
+                    \item Meaningfully different
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.48\textwidth}
+            \textbf{Inspiration}:
+            \begin{itemize}
+                \item \textit{Enter the Gungeon}
+                \item \textit{Binding of Isaac}
+                \item \textit{Hades}
+            \end{itemize}
+
+            \vspace{0.3cm}
+            \textbf{Why Roguelikes?}
+            \begin{itemize}
+                \item Perfect testbed for PCG
+                \item Each run validates algorithms
+                \item High replay value
+                \item No manual level design needed
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Game Flow \& Structure}
+    \begin{center}
+        \textbf{Three-Stage Journey with Checkpoints}
+    \end{center}
+
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{Progression System}:
+            \begin{itemize}
+                \item Start → Dungeon 1 → Boss 1 → Checkpoint
+                \item Checkpoint → Dungeon 2 → Boss 2 → Checkpoint
+                \item Checkpoint → Dungeon 3 → Boss 3 → Victory
+            \end{itemize}
+
+            \vspace{0.3cm}
+            \textbf{Death Mechanic}:
+            \begin{itemize}
+                \item Return to last checkpoint
+                \item \textcolor{ubburgundy}{Dungeon regenerates completely}
+                \item New layout, new challenges
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.48\textwidth}
+            \textbf{Visual Variety}:
+            \begin{itemize}
+                \item Each section has distinct theme
+                \item Section 1: Volcanic/fire
+                \item Section 2: Overgrown/nature
+                \item Section 3: Ice/crystal
+            \end{itemize}
+
+            \vspace{0.3cm}
+            \textbf{Design Philosophy}:
+            \begin{itemize}
+                \item Respect player's time
+                \item Permanent progress via checkpoints
+                \item Endless variety via regeneration
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\section{Core AI: Procedural Generation}
+
+\begin{frame}{Procedural Content Generation (PCG)}
+    \begin{center}
+        \textbf{The Heart of Our Project}
+    \end{center}
+
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{Algorithm 1: Cellular Automata}
+            \begin{itemize}
+                \item Creates organic, cave-like dungeons
+                \item Rule-based iteration
+                \item Natural-looking environments
+            \end{itemize}
+
+            \vspace{0.2cm}
+            \textbf{How it works}:
+            \begin{enumerate}\small
+                \item Start with random noise
+                \item Each cell checks neighbors
+                \item Apply rules: wall or floor
+                \item Repeat until stable
+            \end{enumerate}
+        \end{column}
+
+        \begin{column}{0.48\textwidth}
+            \textbf{Algorithm 2: Binary Space Partitioning}
+            \begin{itemize}
+                \item Structured room-and-corridor layouts
+                \item Recursive space division
+                \item Architectural feel
+            \end{itemize}
+
+            \vspace{0.2cm}
+            \textbf{How it works}:
+            \begin{enumerate}\small
+                \item Recursively split space
+                \item Place rooms in leaf nodes
+                \item Connect with corridors
+                \item Ensures connectivity
+            \end{enumerate}
+        \end{column}
+    \end{columns}
+
+    \vspace{0.3cm}
+    \begin{center}
+        \textcolor{ubburgundy}{\textbf{Two algorithms = Variety in dungeon styles}}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Validation \& Quality Control}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{The Challenge}:
+            \begin{itemize}
+                \item Random $\neq$ Playable
+                \item Need intelligent validation
+                \item Ensure fair gameplay
+            \end{itemize}
+
+            \vspace{0.3cm}
+            \textbf{Connectivity Check}:
+            \begin{itemize}
+                \item All rooms reachable?
+                \item Pathfinding validation
+                \item No isolated areas
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.48\textwidth}
+            \textbf{Pacing Validation}:
+            \begin{itemize}
+                \item Appropriate enemy spacing
+                \item Difficulty curve
+                \item Not too easy/hard
+            \end{itemize}
+
+            \vspace{0.3cm}
+            \textbf{Fairness Check}:
+            \begin{itemize}
+                \item Room for player movement
+                \item Avoidable enemy encounters
+                \item No impossible situations
+            \end{itemize}
+        \end{column}
+    \end{columns}
+
+    \vspace{0.4cm}
+    \begin{beamercolorbox}[rounded=true,shadow=true,wd=\textwidth,center]{block body}
+        \textbf{Validation transforms random generation into reliable, fun gameplay}
+    \end{beamercolorbox}
+\end{frame}
+
+\section{Implementation Plan}
+
+\begin{frame}{Development Strategy}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{Technology Stack}:
+            \begin{itemize}
+                \item \textcolor{ubburgundy}{Unity 2D}
+                \item C\# for implementation
+                \item Focus on PCG algorithms
+            \end{itemize}
+
+            \vspace{0.3cm}
+            \textbf{Team Structure}:
+            \begin{itemize}
+                \item \textbf{Manager}: Oriol Miró
+                \item \textbf{AI Designer}: Dániel Mácsai
+                \item \textbf{AI Tech}: Jean Dié, Bruno Sanchez
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.48\textwidth}
+            \textbf{Development Plan}:
+            \begin{itemize}
+                \item Phase 1: [TBD]
+                \item Phase 2: [TBD]
+                \item Phase 3: [TBD]
+                \item Phase 4: [TBD]
+            \end{itemize}
+        \end{column}
+    \end{columns}
+
+    \vspace{0.4cm}
+    \begin{beamercolorbox}[rounded=true,shadow=true,wd=\textwidth,center]{block body}
+        \textbf{Primary Goal}: Robust procedural generation that creates\\
+        engaging, fair, and varied dungeons every time
+    \end{beamercolorbox}
+\end{frame}
+
+
+\begin{frame}{Conclusion}
+    \begin{itemize}
+        \item Building a \textbf{2D roguelike RPG} powered by procedural generation
+        \item \textbf{Core challenge}: Algorithmically generating playable, varied dungeons
+        \item \textbf{Two algorithms}: Cellular Automata + Binary Space Partitioning
+        \item \textbf{Validation systems} ensure quality and fairness
+    \end{itemize}
+
+    \vspace{0.3cm}
+
+    \begin{beamercolorbox}[rounded=true,shadow=true,wd=\textwidth,center]{block body}
+        \textbf{Demonstrating how AI-driven procedural content generation\\
+        creates infinite replayability while maintaining quality}
+    \end{beamercolorbox}
+
+    \vspace{0.4cm}
+    \centering
+    \Large{Thank you! Questions?}
+\end{frame}
+
+\end{document}
