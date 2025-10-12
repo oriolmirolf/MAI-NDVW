@@ -31,7 +31,7 @@
 
 \title{Sprint 1: Project Proposal}
 \subtitle{Procedurally Generated 2D Roguelike RPG}
-\author{Oriol Miró, Jean Dié, Bruno Sanchez, Dániel Mácsai}
+\author{Oriol Miró, Jean Dié, Bruno Sánchez, Dániel Mácsai}
 \institute{
     \includegraphics[width=0.4\textwidth]{figures/ub_logo.png}\\[1ex]
     University of Barcelona\\
@@ -60,13 +60,12 @@
         \begin{column}{0.48\textwidth}
             \textbf{The Vision}:
             \begin{itemize}
-                \item 2D roguelike RPG with \textcolor{ubburgundy}{infinite replayability}
+                \item Top-down 2D roguelike RPG with \textcolor{ubburgundy}{infinite replayability}
                 \item Every playthrough = unique dungeon
                 \item Checkpoint-based progression
-                \item Three boss encounters
             \end{itemize}
 
-            \vspace{0.3cm}
+            \vspace{0.5cm}
             \textbf{Core Challenge}:
             \begin{itemize}
                 \item Algorithmically generate dungeons that are:
@@ -82,7 +81,9 @@
             \textbf{Inspiration}:
             \begin{itemize}
                 \item \textit{Enter the Gungeon}
+                \item \textit{Spelunky 1 \& 2}
                 \item \textit{Binding of Isaac}
+                \item \textit{Dead Cells}
                 \item \textit{Hades}
             \end{itemize}
 
@@ -107,16 +108,16 @@
         \begin{column}{0.48\textwidth}
             \textbf{Progression System}:
             \begin{itemize}
-                \item Start → Dungeon 1 → Boss 1 → Checkpoint
-                \item Checkpoint → Dungeon 2 → Boss 2 → Checkpoint
-                \item Checkpoint → Dungeon 3 → Boss 3 → Victory
+                \item Three dungeon sections
+                \item Each dungeon culminates in a boss fight
+                \item Checkpoints after defeating each boss
             \end{itemize}
 
-            \vspace{0.3cm}
+            \vspace{0.35cm}
             \textbf{Death Mechanic}:
             \begin{itemize}
                 \item Return to last checkpoint
-                \item \textcolor{ubburgundy}{Dungeon regenerates completely}
+                \item \textcolor{ubburgundy}{Current dungeon regenerates completely}
                 \item New layout, new challenges
             \end{itemize}
         \end{column}
@@ -124,13 +125,16 @@
         \begin{column}{0.48\textwidth}
             \textbf{Visual Variety}:
             \begin{itemize}
-                \item Each section has distinct theme
-                \item Section 1: Volcanic/fire
-                \item Section 2: Overgrown/nature
-                \item Section 3: Ice/crystal
+                \item Each section has a distinct theme
+                \begin{enumerate}
+                    \item Volcanic chambers
+                    \item Overgrown ruins
+                    \item Crystalline caverns
+                \end{enumerate}
+                \item Different layout styles
             \end{itemize}
 
-            \vspace{0.3cm}
+            \vspace{0.2cm}
             \textbf{Design Philosophy}:
             \begin{itemize}
                 \item Respect player's time
@@ -157,7 +161,7 @@
                 \item Natural-looking environments
             \end{itemize}
 
-            \vspace{0.2cm}
+            \vspace{0.6cm}
             \textbf{How it works}:
             \begin{enumerate}\small
                 \item Start with random noise
@@ -235,6 +239,48 @@
     \end{beamercolorbox}
 \end{frame}
 
+\begin{frame}{Experimental Feature: Dynamic Narrative Generation}
+    \begin{center}
+        \textbf{LLM-Driven Lore and Storytelling}
+    \end{center}
+
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{The Idea}:
+            \begin{itemize}
+                \item LLM-generated contextual story snippets
+                \item Integrated through NPC dialogues or collectible items
+            \end{itemize}
+
+            \vspace{0.3cm}
+            \textbf{Inputs}:
+            \begin{itemize}
+                \item Current game state:
+                \begin{itemize}
+                    \item Progress
+                    \item Bosses defeated
+                    \item Area theme
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.48\textwidth}
+            \textbf{Simple Approach}:
+            \begin{itemize}
+                \item Generate multiple options
+                \item Select the most coherent
+                \item Bind narrative state to checkpoints
+            \end{itemize}
+
+            \vspace{0.3cm}
+            \textbf{Scope}:
+            \begin{itemize}
+                \item Remains \textbf{secondary} to the primary goal $\rightarrow$ \textcolor{ubburgundy}{Robust procedural dungeon generation}
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
 \section{Implementation Plan}
 
 \begin{frame}{Development Strategy}
@@ -246,23 +292,14 @@
                 \item C\# for implementation
                 \item Focus on PCG algorithms
             \end{itemize}
+        \end{column}
 
-            \vspace{0.3cm}
+        \begin{column}{0.48\textwidth}
             \textbf{Team Structure}:
             \begin{itemize}
                 \item \textbf{Manager}: Oriol Miró
                 \item \textbf{AI Designer}: Dániel Mácsai
-                \item \textbf{AI Tech}: Jean Dié, Bruno Sanchez
-            \end{itemize}
-        \end{column}
-
-        \begin{column}{0.48\textwidth}
-            \textbf{Development Plan}:
-            \begin{itemize}
-                \item Phase 1: [TBD]
-                \item Phase 2: [TBD]
-                \item Phase 3: [TBD]
-                \item Phase 4: [TBD]
+                \item \textbf{AI Tech}: Jean Dié, Bruno Sánchez
             \end{itemize}
         \end{column}
     \end{columns}
@@ -271,6 +308,11 @@
     \begin{beamercolorbox}[rounded=true,shadow=true,wd=\textwidth,center]{block body}
         \textbf{Primary Goal}: Robust procedural generation that creates\\
         engaging, fair, and varied dungeons every time
+    \end{beamercolorbox}
+    
+    \vspace{0.25cm}
+    \begin{beamercolorbox}[rounded=true,shadow=true,wd=\textwidth,center]{block body}
+        \textbf{Secondary (Optional) Goal}: LLM-driven dynamic narrative\\ elements to enhance immersion
     \end{beamercolorbox}
 \end{frame}
 
@@ -289,10 +331,14 @@
         \textbf{Demonstrating how AI-driven procedural content generation\\
         creates infinite replayability while maintaining quality}
     \end{beamercolorbox}
+\end{frame}
 
-    \vspace{0.4cm}
+\begin{frame}{Q \& A}
     \centering
-    \Large{Thank you! Questions?}
+    \Large{\textbf{Thank you for your attention!}}
+
+    \vspace{0.5cm}
+    \Large{Any questions?}
 \end{frame}
 
 \end{document}
