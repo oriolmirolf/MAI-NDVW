@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27da5960625d4cd46b4c68e793e32172, type: 3}
+  m_Name: ForestBiome
+  m_EditorClassIdentifier: 
+  biomeName: Forest
+  groundTile: {fileID: 11400000, guid: 6504b8083513d8446bbe57a1712ca666, type: 2}
+  decorationTiles:
+  - {fileID: 11400000, guid: 62925813f3c7b074b9b007bc033bfbf8, type: 2}
+  - {fileID: 11400000, guid: 8b29f3354d98b084081ea2d47ed4088d, type: 2}
+  canopyTile: {fileID: 0}
+  canopyDensity: 0.3
+  enemySpawns:
+  - prefab: {fileID: 4675430477267506724, guid: a0635851dee6b1143afbc6ad7bf6edd2, type: 3}
+    spawnWeight: 1
+    minCount: 0
+    maxCount: 0
+    spawnInGroups: 0
+    groupSize: 3
+    groupSpread: 1.5
+  - prefab: {fileID: 9034311603430229389, guid: facd13da21d5930458d401b5faaa572c, type: 3}
+    spawnWeight: 0.4
+    minCount: 0
+    maxCount: 0
+    spawnInGroups: 0
+    groupSize: 3
+    groupSpread: 1.5
+  objectSpawns:
+  - prefab: {fileID: 3713797055011001674, guid: ad4a8b21fa4b17f419459e034c2ba9a9, type: 3}
+    spawnWeight: 1
+    minCount: 16
+    maxCount: 64
+    spawnInGroups: 1
+    groupSize: 8
+    groupSpread: 1.5
+  - prefab: {fileID: 7156724546605552429, guid: 0274c6dd796217b45aa43bb4136d9ed9, type: 3}
+    spawnWeight: 0.6
+    minCount: 12
+    maxCount: 36
+    spawnInGroups: 1
+    groupSize: 6
+    groupSpread: 2.5
+  enemyDensity: 0.65
+  objectDensity: 0.7
