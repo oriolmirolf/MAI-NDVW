@@ -24,11 +24,9 @@ public class CursorManager : MonoBehaviour
 
     void Update()
     {
+        if (image == null) return;
+
         Vector2 cursorPos = Input.mousePosition;
         image.rectTransform.position = cursorPos;
-
-        // if (!Application.isPlaying) { return; }
-
-        // Cursor.visible = false;
     }
 }

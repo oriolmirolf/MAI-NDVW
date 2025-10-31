@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f62b7e35b09472092ff81a568fd1f69, type: 3}
+  m_Name: StartRoomConfig
+  m_EditorClassIdentifier: 
+  roomName: 
+  roomType: 5
+  floorTile: {fileID: 11400000, guid: 0a25a1a514f95e145b170795a26d9fb6, type: 2}
+  floorTileVariations:
+  - {fileID: 11400000, guid: 6504b8083513d8446bbe57a1712ca666, type: 2}
+  - {fileID: 11400000, guid: 62925813f3c7b074b9b007bc033bfbf8, type: 2}
+  - {fileID: 11400000, guid: 8b29f3354d98b084081ea2d47ed4088d, type: 2}
+  - {fileID: 11400000, guid: 26b4806f86649a4409d57e92e9f8831f, type: 2}
+  floorVariationChance: 0.3
+  wallTile: {fileID: 0}
+  cornerTile: {fileID: 0}
+  wallRuleTile: {fileID: 0}
+  useWallLayer: 0
+  decorationTiles: []
+  decorationDensity: 0.1
+  canopyTile: {fileID: 0}
+  canopyRuleTile: {fileID: 0}
+  canopyDensity: 0.3
+  doorTile: {fileID: 0}
+  doorPrefab: {fileID: 0}
+  doorWidth: 3
+  enemySpawns: []
+  enemyDensity: 0.3
+  minEnemies: 1
+  maxEnemies: 5
+  objectSpawns:
+  - prefab: {fileID: 7156724546605552429, guid: 0274c6dd796217b45aa43bb4136d9ed9, type: 3}
+    spawnWeight: 1
+    minCount: 8
+    maxCount: 16
+    spawnInGroups: 1
+    groupSpread: 1.5
+  objectDensity: 0.2
+  minObjects: 0
+  maxObjects: 10
+  lockDoorsUntilClear: 0
+  clearFogOnEnter: 1
+  roomTransitionTime: 0.5
