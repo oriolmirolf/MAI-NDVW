@@ -56,6 +56,11 @@ ExportedObj/
 *.VC.db
 Project/.claude
 
+# User-specific ProjectSettings
+/[Pp]roject/ProjectSettings/ProjectVersion.txt
+/[Pp]roject/ProjectSettings/EditorBuildSettings.asset
+/[Pp]roject/ProjectSettings/GraphicsSettings.asset
+
 # Unity3D generated meta files
 *.pidb.meta
 *.pdb.meta
