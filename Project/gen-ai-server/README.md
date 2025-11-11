@@ -8,15 +8,24 @@ FastAPI server for generative AI features (narrative + music generation).
 gen-ai-server/
 ├── src/
 │   ├── generators/
-│   │   ├── narrative.py    # LLM narrative generation
+│   │   ├── narrative.py    # LLM narrative generation with retry logic
+│   │   ├── vision.py       # Vision analysis (moondream2)
 │   │   └── music.py        # MusicGen audio generation
 │   ├── models/
-│   │   ├── requests.py     # Request schemas
-│   │   └── responses.py    # Response schemas
+│   │   ├── requests.py     # Request schemas (Pydantic)
+│   │   └── responses.py    # Response schemas (Pydantic)
 │   └── utils/
-│       └── config.py       # Configuration management
+│       ├── config.py       # Configuration management
+│       ├── cache.py        # Caching system
+│       └── health.py       # Ollama health checks
+├── tests/
+│   ├── test_narrative.py   # Narrative generation tests
+│   ├── test_music.py       # Music generation tests
+│   ├── test_vision_rooms.py # Vision analysis tests
+│   └── test_server.py      # Full pipeline integration test
+├── scripts/
+│   └── clean.sh            # Cleanup cache and test outputs
 ├── main.py                 # Production server
-├── dev.py                  # Development server (hot-reload)
 └── .env.example            # Environment config template
 ```
 
@@ -49,16 +58,24 @@ OUTPUT_DIR=output
 ## API Endpoints
 
 ### `POST /generate/narrative`
-Generate story narrative for a room.
+Generate story narrative for a room with retry logic and story continuity.
 
 ```json
 {
   "roomIndex": 0,
   "totalRooms": 9,
   "theme": "dark fantasy dungeon",
-  "seed": 12345
+  "seed": 12345,
+  "use_cache": true,
+  "previous_context": "Room 0: Met Elder Sage..."
 }
 ```
+
+**Features:**
+- Retry logic: 3 attempts with seed variation on failure
+- Pydantic validation ensures proper JSON structure
+- Story continuity via `previous_context`
+- Server-side caching for faster regeneration
 
 ### `POST /generate/music`
 Generate ambient music from description.
@@ -67,9 +84,33 @@ Generate ambient music from description.
 {
   "description": "dark crypt with echoing water drops",
   "seed": 42,
-  "duration": 30.0
+  "duration": 30.0,
+  "use_cache": true
 }
 ```
+
+### `POST /analyze/vision`
+Analyze game screenshot and generate room description.
+
+**Form data:**
+- `file`: Image file (PNG/JPEG)
+- `use_cache`: "true" or "false"
+
+**Returns:**
+```json
+{
+  "environment_type": "cave",
+  "atmosphere": "Dark underground cavern with glowing crystals...",
+  "features": ["stalagmites", "underground river", "crystal formations"],
+  "mood": "mysterious and slightly eerie ambience"
+}
+```
+
+### `GET /cache/stats`
+Get cache statistics (narrative, music, vision counts).
+
+### `POST /cache/clear`
+Clear all cached data.
 
 ### `GET /audio/{filename}`
 Retrieve generated audio file.
