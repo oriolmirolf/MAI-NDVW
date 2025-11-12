@@ -34,6 +34,9 @@
 # Visual Studio cache directory
 .vs/
 
+# VS Code
+.vscode/
+
 # Gradle cache directory
 .gradle/
 
@@ -60,6 +63,9 @@ Project/.claude
 /[Pp]roject/ProjectSettings/ProjectVersion.txt
 /[Pp]roject/ProjectSettings/EditorBuildSettings.asset
 /[Pp]roject/ProjectSettings/GraphicsSettings.asset
+
+# Unity Editor Layouts (user-specific window positions)
+/[Pp]roject/UserSettings/Layouts/*.dwlt
 
 # Unity3D generated meta files
 *.pidb.meta
@@ -103,3 +109,35 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+*.egg-info/
+dist/
+build/
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Gen AI Server
+Project/gen-ai-server/.venv/
+Project/gen-ai-server/__pycache__/
+Project/gen-ai-server/output/
+Project/gen-ai-server/cache/
+Project/gen-ai-server/temp_uploads/
+Project/gen-ai-server/tests/output/
+Project/gen-ai-server/.env
+Project/gen-ai-server/uv.lock
+
+# Context files
+CONTEXT.md
+PROJECT_MEMORY.md
