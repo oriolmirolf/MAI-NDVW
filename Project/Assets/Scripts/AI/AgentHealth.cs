@@ -1,59 +1,65 @@
+using System.Collections;
 using UnityEngine;
 
 public class AgentHealth : MonoBehaviour
 {
-    [SerializeField] private int maxHealth = 3;
-    private int currentHealth;
-    private PlayerAgent agent;
-
-    public int CurrentHealth => currentHealth;
-    public int MaxHealth => maxHealth;
     public bool IsDead { get; private set; }
 
-    private void Awake()
-    {
-        agent = GetComponent<PlayerAgent>();
+    [SerializeField] private int maxHealth = 3;
+    [SerializeField] private float knockBackThrustAmount = 10f;
+    [SerializeField] private float damageRecoveryTime = 1f;
+
+    private int currentHealth;
+    private bool canTakeDamage = true;
+    private Knockback knockback;
+    private Flash flash;
+
+    readonly int DEATH_HASH = Animator.StringToHash("Death");
+
+    private void Awake() {
+        flash = GetComponent<Flash>();
+        knockback = GetComponent<Knockback>();
     }
 
-    private void Start()
-    {
-        currentHealth = maxHealth;
-    }
-
-    public void TakeDamage(int damageAmount, PlayerAgent attacker)
-    {
-        if (IsDead) return;
-
-        currentHealth -= damageAmount;
-        
-        // Add rewards
-        if (attacker != null)
-        {
-            attacker.AddReward(1.0f); // Positive reward for landing an attack
-        }
-        agent.AddReward(-1.0f); // Negative reward for receiving an attack
-
-        if (currentHealth <= 0)
-        {
-            currentHealth = 0;
-            IsDead = true;
-            
-            if (attacker != null)
-            {
-                attacker.AddReward(5.0f); // Bonus reward for winning
-            }
-            agent.AddReward(-5.0f); // Extra penalty for losing
-
-            // Instead of ending episodes directly here, request a synchronized episode end.
-            // TrainingManager listens to OnEpisodeRequested and will EndEpisode() for BOTH agents
-            // exactly once, then reset the scene.
-            agent.RequestEpisodeEnd();
-        }
-    }
-
-    public void ResetHealth()
-    {
-        currentHealth = maxHealth;
+    private void Start() {
         IsDead = false;
+        currentHealth = maxHealth;
+    }
+
+    private void OnCollisionStay2D(Collision2D other) {
+        EnemyAI enemy = other.gameObject.GetComponent<EnemyAI>();
+
+        if (enemy) {
+            TakeDamage(1, other.transform);
+        }
+    }
+
+    public void TakeDamage(int damageAmount, Transform hitTransform) {
+        if (!canTakeDamage) { return; }
+
+        ScreenShakeManager.Instance.ShakeScreen();
+        knockback.GetKnockedBack(hitTransform, knockBackThrustAmount);
+        StartCoroutine(flash.FlashRoutine());
+        canTakeDamage = false;
+        currentHealth -= damageAmount;
+        StartCoroutine(DamageRecoveryRoutine());
+        CheckIfPlayerDeath();
+    }
+
+    private void CheckIfPlayerDeath() {
+        if (currentHealth <= 0 && !IsDead) {
+            IsDead = true;
+            currentHealth = 0;
+            GetComponent<Animator>().SetTrigger(DEATH_HASH);
+        }
+    }
+
+    private IEnumerator DamageRecoveryRoutine() {
+        yield return new WaitForSeconds(damageRecoveryTime);
+        canTakeDamage = true;
+    }
+
+    public int GetCurrentHealth() {
+        return currentHealth;
     }
 }

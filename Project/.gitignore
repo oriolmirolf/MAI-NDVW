@@ -68,3 +68,5 @@ crashlytics-build.properties
 Windows Build/
 .vscode/
 
+# Custom
+MLAgents/results/
