@@ -258,15 +258,17 @@ what we started off, ... implementation, ... add figures!
 Game design increasingly takes advantage of procedural content and AI-driven systems. 
 Several roguelike-inspired action games -- notably \emph{The Binding of Isaac}, \emph{Spelunky}, \emph{Dead Cells} and \emph{Hades} -- use procedural algorithms such as binary space partitioning or cellular automata to assemble dungeons and item layouts at runtime, to have high replayability. Large open-world games like \emph{Minecraft} and \emph{No Man’s Sky} show how flexible PCG is~\cite{shaker2016procedural}.
 
-\paragraph{Narrative generation.}  \emph{Middle-earth: Shadow of Mordor/Shadow of War} introduced the ``Nemesis'' system, in which orc captains are procedurally generated and remember past encounters; they can return with scars or new ranks, creating unique personal stories.
+\paragraph{Narrative generation}
+\emph{Middle-earth: Shadow of Mordor/Shadow of War} introduced the ``Nemesis'' system, in which orc captains are procedurally generated and remember past encounters; they can return with scars or new ranks, creating unique personal stories.
 Earlier AI-driven titles such as \emph{Façade} and \emph{Versu} started dynamic dialogue and multiple endings, while Ubisoft’s \emph{Watch Dogs: Legion} showed how to write a dynamic script: the narrative team wrote twenty variations of every line and tied each version to a procedurally generated persona (e.g., a policeman says ``much obliged'', a young activist says ``appreciate it, fam''). 
 Simulation-heavy games like \emph{Dwarf Fortress} and \emph{RimWorld} are described as story generators because their complex systems of characters, needs and events produce emergent stories rather than fixed plots~\cite{liapis2013sentient,buongiorno2024pangea}.
 
-\paragraph{Generative music.}  Dynamic soundtracks have been explored in both indie and AAA games.
+\paragraph{Generative music}
+Dynamic soundtracks have been explored in both indie and AAA games.
 In \emph{No Man’s Sky}, audio director Paul Weir and the band 65daysofstatic created hundreds of musical fragments tagged by key, tempo and mood; the game’s ``Pulse'' tool combines these elements in real time to generate soundscapes that react to what the player is doing.
 A decade earlier, Brian Eno composed a fully procedural score for \emph{Spore}, making the game’s music as generative as its evolving life forms~\cite{castellon2023generative}.
 
-\paragraph{Adaptive AI.}
+\paragraph{Adaptive AI}
 Valve’s \emph{Left 4 Dead} series uses an “AI Director'' that monitors player stress and performance and dynamically adjusts enemy spawns and resources; Gabe Newell described this as a form of ``procedural narrative'' rather than simple dynamic difficulty.  
 More recently, the game \emph{Hello Neighbor 2} features a self-learning antagonist: its navigation patterns are fully dynamic, and the AI observes the player’s movements and actions and uses that knowledge to prevent the player from discovering secrets.  
 Such systems -- alongside reinforcement-learning prototypes in research -- show how adaptive agents can shape both gameplay pacing and emergent storytelling~\cite{baker2020emergent}.
@@ -305,7 +307,7 @@ The dungeon layout is generated procedurally using a Binary Space Partitioning (
 Conceptually, the generator operates on a rectangular grid of size \texttt{mapWidth}~$\times$~\texttt{mapHeight} and recursively splits this region into smaller ``leaves''. 
 Each leaf may then host a single rectangular room, and (for now) rooms are connected via corridors to form a single, fully connected dungeon graph.
 
-\paragraph{Leaf splitting.}
+\paragraph{Leaf splitting}
 We start from a single root rectangle (optionally centred at the origin) and repeatedly split leaves until either the desired number of rooms is reached or no further valid splits are possible. 
 Each leaf stores integer bounds (\texttt{RectInt}) and may be split horizontally or vertically:
 
@@ -317,7 +319,7 @@ Each leaf stores integer bounds (\texttt{RectInt}) and may be split horizontally
 
 This step yields a BSP tree of rectangular leaves that partition the dungeon space without overlaps or gaps. 
 
-\paragraph{Room carving.}
+\paragraph{Room carving}
 For each terminal leaf, we optionally instantiate a room whose size and position are sampled inside the leaf:
 
 \begin{itemize}
@@ -335,7 +337,7 @@ For each terminal leaf, we optionally instantiate a room whose size and position
 Each accepted room is stored as a \texttt{Room} with an axis-aligned rectangle and an integer-valued centre (\texttt{Center}). The generator then iterates over all room rectangles and fills them with floor tiles via \texttt{PaintRect}, sampling from \texttt{groundTile} and optional variations to avoid visual repetition. All carved floor cells are also recorded in a \texttt{HashSet<Vector3Int>} (\texttt{floorCells}), which is later reused for wall placement and camera bounds.
 
 
-\paragraph{Corridor graph and connectivity.}
+\paragraph{Corridor graph and connectivity}
 Once we have a list of rooms, we connect them into a graph:
 
 \begin{enumerate}
@@ -344,7 +346,7 @@ Once we have a list of rooms, we connect them into a graph:
   \item To avoid overly linear layouts, we optionally add up to \texttt{extraConnections} edges from the remaining non-MST edges (chosen in order of increasing weight), creating a few loops and alternative paths.
 \end{enumerate}
 
-\paragraph{Walls, outside tiles, and camera bounds.}
+\paragraph{Walls, outside tiles, and camera bounds}
 After rooms and corridors are carved:
 
 \begin{itemize}
@@ -352,7 +354,7 @@ After rooms and corridors are carved:
   \item We fill a slightly larger rectangle around the dungeon with ``outside'' tiles (e.g., grass or void) to avoid having a ``blank'' outside of the camera
 \end{itemize}
 
-\paragraph{Room population.}
+\paragraph{Room population}
 Once the dungeon's geometry is fixed, we populate each room:
 
 \begin{itemize}
