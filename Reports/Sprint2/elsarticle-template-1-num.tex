@@ -215,7 +215,7 @@ What the tutorial does \textbf{not} cover (and which our project will therefore 
   \item Procedural content generation of dungeon layouts (we will implement a BSP‐based generator)  
   \item Narrative generation tied to player runs and persistent checkpointing of story chapters  
   \item Procedural ambient music generation and dynamic layering based on gameplay state  
-  \item Reinforcement-learning based boss behaviour adapting across runs  
+  \item Reinforcement-learning based boss behaviour trained through self-play  
   \item The novel ``checkpoint/hall of fixed chapters'' mechanic, where defeating bosses 1 and 2 freezes that portion of the dungeon and story  
 \end{itemize}
 
@@ -223,7 +223,7 @@ All scenes in the tutorial are manually designed, and all the enemies' movement 
 
 \begin{figure}
     \centering
-    \includegraphics[width=\linewidth]{template-final-report NDVW//figures/example_from_tutorial.png}
+    \includegraphics[width=\linewidth]{figures/example_from_tutorial.png}
     \caption{Example screenshot from the tutorial}
     \label{fig:ex_fig_tutorial}
 \end{figure}
@@ -256,8 +256,7 @@ what we started off, ... implementation, ... add figures!
 
 \paragraph{PCG}
 Game design increasingly takes advantage of procedural content and AI-driven systems. 
-Several roguelike-inspired action games -- notably \emph{The Binding of Isaac}, \emph{Spelunky}, \emph{Dead Cells} and \emph{Hades} -- use procedural algorithms such as binary space partitioning or cellular automata to assemble dungeons and item layouts at runtime, to have high replayability. ç
-Large open-world games like \emph{Minecraft} and \emph{No Man’s Sky} show how flexible PCG is~\cite{shaker2016procedural}.
+Several roguelike-inspired action games -- notably \emph{The Binding of Isaac}, \emph{Spelunky}, \emph{Dead Cells} and \emph{Hades} -- use procedural algorithms such as binary space partitioning or cellular automata to assemble dungeons and item layouts at runtime, to have high replayability. Large open-world games like \emph{Minecraft} and \emph{No Man’s Sky} show how flexible PCG is~\cite{shaker2016procedural}.
 
 \paragraph{Narrative generation.}  \emph{Middle-earth: Shadow of Mordor/Shadow of War} introduced the ``Nemesis'' system, in which orc captains are procedurally generated and remember past encounters; they can return with scars or new ranks, creating unique personal stories.
 Earlier AI-driven titles such as \emph{Façade} and \emph{Versu} started dynamic dialogue and multiple endings, while Ubisoft’s \emph{Watch Dogs: Legion} showed how to write a dynamic script: the narrative team wrote twenty variations of every line and tied each version to a procedurally generated persona (e.g., a policeman says ``much obliged'', a young activist says ``appreciate it, fam''). 
@@ -289,20 +288,20 @@ In this section we will explain how the current PCG has been implemented.
   \centering
   \begin{minipage}[t]{0.48\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{template-final-report NDVW//figures/ex_BSP_geometry.png}
+    \includegraphics[width=\linewidth]{figures/ex_BSP_geometry.png}
     \caption{Example BSP geometry}
     \label{fig:ex_bsp_geometry}
   \end{minipage}
   \hfill
   \begin{minipage}[t]{0.48\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{template-final-report NDVW//figures/ex_player_POV.png}
+    \includegraphics[width=\linewidth]{figures/ex_player_POV.png}
     \caption{Example player's POV for a PCG dungeon}
     \label{fig:ex_pov_PCG}
   \end{minipage}
 \end{figure}
 
-The dungeon layout is generated procedurally using a Binary Space Partitioning (BSP algorithm implemented in the \texttt{BSPMSTDungeonGenerator} component (a Unity \texttt{MonoBehaviour}).  
+The dungeon layout is generated procedurally using a Binary Space Partitioning (BSP) algorithm implemented in the \texttt{BSPMSTDungeonGenerator} component (a Unity \texttt{MonoBehaviour}).  
 Conceptually, the generator operates on a rectangular grid of size \texttt{mapWidth}~$\times$~\texttt{mapHeight} and recursively splits this region into smaller ``leaves''. 
 Each leaf may then host a single rectangular room, and (for now) rooms are connected via corridors to form a single, fully connected dungeon graph.
 
@@ -393,7 +392,7 @@ Boss behaviours, particularly those of the Sentinel, Herald, and Chronicler, are
 How the game is implemented Unity, what is python, what components talk to each other (see example:
 \begin{figure}
     \centering
-    \includegraphics[width=0.5\linewidth]{template-final-report NDVW//figures/image.png}
+    \includegraphics[width=0.5\linewidth]{figures/image.png}
     \caption{Enter Caption}
     \label{fig:placeholder}
 \end{figure}
