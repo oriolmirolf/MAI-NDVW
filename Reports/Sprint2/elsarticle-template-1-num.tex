@@ -236,7 +236,7 @@ Currently, there are two types of enemies implemented, as shown in Figure~\ref{f
     \label{fig:enemy_sprites}
 \end{figure}
 
-\subsubsection{Boss Agents}
+\subsubsection{Boss Agents}\label{sec:boss_agents}
 
 The three main bosses in the game are designed to be significant challenges that test the player's skill. Their behavior is controlled by agents trained using Reinforcement Learning (RL), allowing them to react to the player's actions and create dynamic, unscripted encounters.
 
@@ -413,14 +413,49 @@ The LLM receives ...
 
 \subsection{Reinforcement Learning for Boss Behavior}\label{sec:rl_bosses}
 
-Boss behaviours, particularly those of the Sentinel, Herald, and Chronicler, are trained through reinforcement learning (RL) to produce adaptive and challenging encounters.
-- reward functions etc. etc. 
-- agent information
-- how we train it (arena)
-- training tricks (e.g., how to avoid exploding gradients)
-- training loop
-- ...
+Boss behaviours (Sentinel, Herald, and Chronicler) are trained through reinforcement learning (RL) to produce adaptive and challenging encounters. As mentioned in Section~\ref{sec:boss_agents}, these bosses are currently modelled as replicas of the player character, possessing similar movement and attack capabilities. If time permits, we may diversify the first two bosses to be RL-powered variants of the Slime and Ghost enemies, but for now we focus on the RL training of the player-like boss.
 
+The agents in control of these bosses are designed to mimic the player's capabilities while exhibiting complex human-like strategies. The setup for their training takes place in a custom Arena environment that will allow the agents to learn through self-play. That is, the agent will play against a copy of itself, allowing it to explore a wide range of strategies and counter-strategies. Figure~\ref{fig:rl_training_arena} illustrates the Arena training setup.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\linewidth]{figures/rl_training_arena.png}
+    \caption{Screenshot of the Arena Unity Scene used for RL training, where the boss agent learns through self-play against a copy of itself.}
+    \label{fig:rl_training_arena}
+\end{figure}
+
+We consider the possibility of creating a scene with multiple copies of the Arena environment running in parallel, to speed up data collection during training, although this has not yet been implemented.
+
+The RL agents are implemented using the Unity ML-Agents Toolkit, which provides a framework for training intelligent agents in Unity environments. Therefore, the \texttt{AgentController} is defined as a subclass of the \texttt{Agent} class provided by ML-Agents.
+
+In this class, we define the observation space and action spaces for the boss agents:
+\begin{itemize}
+  \item The observation space includes 6 continuous values:
+  \begin{itemize}
+    \item The agent's own position (x, y) coordinates.
+    \item The agent's own health.
+    \item The opponent's position (x, y) coordinates.
+    \item The opponent's health.
+  \end{itemize}
+  \item The action space consists of 3 discrete action branches:
+  \begin{itemize}
+    \item 5 movement actions: stand still, move forward, backward, left, or right.
+    \item 4 attack actions: do nothing, use sword, bow, or magic staff.
+    \item 2 dashing actions: no dash, or dash.
+  \end{itemize}
+\end{itemize}
+
+In order for these systems to work under the use of ML-Agents in a self-play scenario (with two agents in the same scene), we had to implement custom \texttt{AgentHealth}, \texttt{AgentWeapons}, \texttt{AgentStamina}, \texttt{AgentDamageSource} components, which are similar to the player character's components but adapted to work with the \texttt{AgentController} and without singletons.
+
+In addition to this, we implemented a \texttt{TrainingManager} component to handle the initialization and resetting of the Arena scene after each episode, as well as the reward system for the agents.
+
+The reward function is designed to encourage aggressive yet strategic behavior, rewarding successful hits on the opponent while penalizing damage taken. The agent also receives a significant reward for winning the match and a penalty for losing. Additionally, small time penalties are applied every timestep to encourage the agent to conclude matches efficiently.
+
+For the training process, we use the Proximal Policy Optimization (PPO) algorithm, for its versatility and effectiveness in control tasks, with the default hyperparameters provided by ML-Agents. If necessary, we will tune these hyperparameters based on initial training results to improve learning stability and performance.
+
+Once all of the components are defined and set-up, the training loop is executed using the \texttt{mlagents-learn} command-line tool, which interfaces with the Unity environment to collect experience data and update the agent's policy. For efficiency, we run the training with graphics disabled, allowing for faster simulation speeds. Note that this does not truly disable rendering, but instead allows the training to run unsynchronized from the rendering, speeding up the process.
+
+As a planned extension, the Sentinel and Herald bosses can be implemented as enhanced versions of the Slime and Ghost enemies. This would require designing new agent controllers with action spaces adapted to their specific abilities. Unlike the self-play approach used for the final boss, these agents would be trained by competing against the pre-trained, player-like agent in the Arena environment. This methodology ensures that they learn to counter the player's strategies effectively, providing a varied and escalating challenge.
 
 \subsection{Software architecture}
 
