@@ -173,7 +173,7 @@ What the tutorial does \textbf{not} cover (and which our project will therefore 
   \item Procedural content generation of dungeon layouts (we will implement a BSP‐based generator)  
   \item Narrative generation tied to player runs and persistent checkpointing of story chapters  
   \item Procedural ambient music generation and dynamic layering based on gameplay state  
-  \item Reinforcement-learning based boss behaviour trained through self-play  
+  \item Reinforcement learning-based boss behaviour trained through self-play  
   \item The novel ``checkpoint/hall of fixed chapters'' mechanic, where defeating bosses 1 and 2 freezes that portion of the dungeon and story  
 \end{itemize}
 
@@ -267,10 +267,8 @@ Dynamic soundtracks have been explored in both indie and AAA games.
 In \emph{No Man’s Sky}, audio director Paul Weir and the band 65daysofstatic created hundreds of musical fragments tagged by key, tempo and mood; the game’s ``Pulse'' tool combines these elements in real time to generate soundscapes that react to what the player is doing.
 A decade earlier, Brian Eno composed a fully procedural score for \emph{Spore}, making the game’s music as generative as its evolving life forms~\cite{castellon2023generative}.
 
-\paragraph{Adaptive AI}
-Valve’s \emph{Left 4 Dead} series uses an “AI Director'' that monitors player stress and performance and dynamically adjusts enemy spawns and resources; Gabe Newell described this as a form of ``procedural narrative'' rather than simple dynamic difficulty.  
-More recently, the game \emph{Hello Neighbor 2} features a self-learning antagonist: its navigation patterns are fully dynamic, and the AI observes the player’s movements and actions and uses that knowledge to prevent the player from discovering secrets.  
-Such systems -- alongside reinforcement-learning prototypes in research -- show how adaptive agents can shape both gameplay pacing and emergent storytelling~\cite{baker2020emergent}.
+\paragraph{Reinforcement learning agents}
+While many shipped games focus on hand-authored AI behaviours or simple difficulty scaling, there is a growing body of work exploring reinforcement learning (RL) agents trained for complex control tasks. AlphaStar, for example, used large-scale self-play to learn high-level strategies and unit micro-management in \emph{StarCraft II}, producing agents that could compete with professional players~\cite{vinyals2019alphastar}. 
 
 
 \section{Proposal}
