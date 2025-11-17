@@ -45,8 +45,51 @@
 %% for the whole article with \linenumbers after \end{frontmatter}.
 \usepackage{lineno}
 \usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue,
+}
+\usepackage{multimedia}
+\usepackage{attachfile2}
 \usepackage{tikz}
 \usetikzlibrary{shapes,arrows,positioning}
+\usepackage{listings}
+\usepackage{xcolor}
+\lstset{
+  basicstyle=\ttfamily\small,
+  frame=single,
+  breaklines=false,
+  columns=fullflexible,
+  keepspaces=true
+}
+
+% Define JSON language for listings
+\lstdefinelanguage{json}{
+  basicstyle=\ttfamily\small,
+  numbers=none,
+  numberstyle=\scriptsize,
+  stepnumber=1,
+  numbersep=8pt,
+  showstringspaces=false,
+  breaklines=true,
+  frame=lines,
+  string=[s]{"}{"},
+  comment=[l]{:\ "},
+  morecomment=[l]{:"},
+  literate=
+    *{0}{{{\color{blue}0}}}{1}
+     {1}{{{\color{blue}1}}}{1}
+     {2}{{{\color{blue}2}}}{1}
+     {3}{{{\color{blue}3}}}{1}
+     {4}{{{\color{blue}4}}}{1}
+     {5}{{{\color{blue}5}}}{1}
+     {6}{{{\color{blue}6}}}{1}
+     {7}{{{\color{blue}7}}}{1}
+     {8}{{{\color{blue}8}}}{1}
+     {9}{{{\color{blue}9}}}{1}
+}
 
 %% natbib.sty is loaded by default. However, natbib options can be
 %% provided with \biboptions{...} command. Following options are
@@ -313,8 +356,11 @@ The following subsections describe the main AI components that create the dungeo
 
 Time-permitting, we will also explore FSMs or other techniques for common enemies.
 
-\subsection{Procedural Content Generation (BSP Rooms)}
-\label{subsec:bsp_pcg}
+\subsection{Procedural Dungeon Generation}
+\label{subsec:procedural_dungeon}
+
+\subsubsection{BSP Map Layout Generation}
+\label{subsubsec:bsp_layout}
 
 In this section we will explain how the current PCG has been implemented.
 
@@ -398,17 +444,266 @@ Once the dungeon's geometry is fixed, we populate each room:
 Please note that we must still work on room population and make it story-driven by perhaps designing a set of high-level story points, assigning them to rooms, and conditioning the generation accordingly.
 We also aim to test substituting corridors for "portals" between connected rooms (like a loading screen between rooms), which, combined with bigger room sizes, should ameliorate the issue we have of camera confines, and would make the game look better.
 
+% \subsubsection{Cellular Automata Room Generation}
+% \label{subsubsec:ca_rooms}
 
-\subsection{Narrative Generation}
+% [Placeholder for Dani's work]
 
-To maintain consistency between procedural world changes and the overarching storyline, we employ a lightweight narrative generation pipeline powered by large language models (LLMs). 
-The LLM receives ...
 
-... preserving thematic cohesion while reinforcing the idea that the world is being ``rewritten'' by the Chronicle.
+\subsection{Generative AI Pipeline}
+\label{subsec:genai_pipeline}
 
-\subsection{Music Generation}
+To create dynamic, context-aware content for each procedurally generated room, we employ a multi-stage generative AI pipeline consisting of three complementary systems: vision-based room analysis, narrative generation, and adaptive music synthesis. These systems work in concert to transform the procedurally generated dungeon geometry into a coherent, immersive experience where visual, narrative, and auditory elements reinforce one another.
 
-...
+The pipeline operates sequentially: a vision model first analyzes a screenshot of the generated room to produce a semantic description of the environment (Section~\ref{subsubsec:vision_analysis}). This description is then fed to a large language model (LLM) that generates contextual narrative content including non-player characters (NPCs), quests, and lore entries (Section~\ref{subsubsec:narrative_gen}). Finally, the emotional tone extracted from the vision analysis drives procedural music generation to match the room's atmosphere (Section~\ref{subsubsec:music_gen}). This vision-driven approach ensures that narrative and audio content semantically align with the visual characteristics of each room, rather than being generated independently.
+
+\subsubsection{System Architecture}
+\label{subsubsec:genai_architecture}
+
+We implement all three generative AI components as a unified Python backend service, architecturally decoupled from the Unity game engine. This design decision addresses several fundamental constraints inherent to deploying deep learning models within game engines.
+
+Modern generative AI models -- particularly transformer-based architectures for vision, language, and audio -- rely on the Python ecosystem for inference. Critical dependencies include PyTorch for tensor operations, HuggingFace Transformers for model loading and execution, and specialized inference engines such as Ollama for optimized LLM serving. These libraries are not available in Unity's C\# runtime environment, and reimplementing GPU-accelerated inference from scratch would be prohibitively complex. By extracting AI inference into a separate Python process, we gain immediate access to state-of-the-art models with well-tested implementations.
+
+The backend is structured as a FastAPI~\cite{fastapi} web service exposing RESTful HTTP endpoints. Each generative component corresponds to a dedicated endpoint:
+
+\begin{lstlisting}[language=bash, frame=single, basicstyle=\ttfamily\footnotesize, floatplacement=H]
+POST   /analyze/vision       Vision analysis of room screenshots
+POST   /generate/narrative   Narrative generation (NPCs, quests, lore)
+POST   /generate/music       Ambient music synthesis
+GET    /cache/stats          Cache statistics and monitoring
+\end{lstlisting}
+
+The Unity client communicates with the backend via asynchronous HTTP requests, serializing parameters as JSON and deserializing responses into C\# data structures.
+
+Table~\ref{tab:ai_models} summarizes the three AI models employed in our pipeline and their computational requirements. All models were selected based on their open-source availability and lightweight footprint, ensuring they could run efficiently on consumer-grade hardware (RTX 5070 Ti, 16GB VRAM). The vision and music models were chosen after evaluating multiple alternatives to find the best balance between output quality and inference speed for real-time game integration.
+
+\begin{table}[htbp]
+\centering
+\caption{AI models used in the generative pipeline}
+\label{tab:ai_models}
+\begin{tabular}{lcc}
+\hline
+\textbf{Component} & \textbf{Model} & \textbf{Parameters} \\
+\hline
+Vision Analysis & moondream2~\cite{moondream2024} & 1.86B \\
+Narrative & llama2~\cite{touvron2023llama} (via Ollama) & 7B \\
+Music & MusicGen Medium~\cite{copet2023musicgen} & 1.5B \\
+\hline
+\end{tabular}
+\end{table}
+
+Figure~\ref{fig:genai_architecture} illustrates the complete system architecture showing the sequential pipeline from room generation through vision analysis, narrative generation, and music synthesis.
+
+\begin{figure}[H]
+  \centering
+  \begin{lstlisting}[basicstyle=\ttfamily\scriptsize, frame=single]
++---------------------+     +----------------------+     +-----------------+
+|   UNITY CLIENT      |     |  FASTAPI BACKEND     |     |   AI MODELS     |
+|                     |     |                      |     |                 |
+|  +--------------+   |     |  +---------------+   |     |  +-----------+  |
+|  |BSP Generator |   |     |  | POST          |-------->|  |moondream2 |  |
+|  +------+-------+   |     |  | /analyze/     |   |     |  +-----+-----+  |
+|         |           |     |  | vision        |   |     |        |        |
+|         v           |     |  +-------+-------+   |     |        |        |
+|  +--------------+   |     |          |           |     |        v        |
+|  | Screenshot   |   |     |          v           |     |  +-----------+  |
+|  | Capture      |   |     |  +---------------+   |     |  |  Ollama   |  |
+|  +------+-------+   |     |  | POST          |-------->|  |  llama2   |  |
+|         |           |     |  | /generate/    |   |     |  +-----+-----+  |
+|         v           |     |  | narrative     |   |     |        |        |
+|  +--------------+   |     |  +-------+-------+   |     |        v        |
+|  |GenAIClient.cs|-------->|          |           |     |  +-----------+  |
+|  +------+-------+   |HTTP |          v           |     |  | MusicGen  |  |
+|         |           |     |  +---------------+   |     |  |  Medium   |  |
+|         |           |     |  | POST          |-------->|  +-----+-----+  |
+|         |           |     |  | /generate/    |   |     |        |        |
+|         |           |     |  | music         |   |     |        |        |
+|         v           |     |  +-------+-------+   |     |  +-----------+  |
+|  +--------------+   |     |          |           |     |  |  Cache    |  |
+|  | Spawn NPCs,  |<--|----------------|           |<-------| Manager   |  |
+|  | Display Lore,|   |     |                      |     |  +-----------+  |
+|  | Play Music   |   |     |                      |     |                 |
+|  +--------------+   |     |                      |     |                 |
++---------------------+     +----------------------+     +-----------------+
+  \end{lstlisting}
+  \caption{Generative AI pipeline architecture showing the sequential flow from Unity client through FastAPI backend to AI models, with caching layer.}
+  \label{fig:genai_architecture}
+\end{figure}
+
+
+To mitigate inference latency during iterative development and repeated playthroughs, we implement a two-layer caching architecture. The server-side cache indexes generated content by deterministic keys derived from input parameters, ensuring that identical requests retrieve previously generated content rather than invoking the models. The client-side cache stores content in Unity's persistent data path, allowing the game to reload content across application restarts without network communication.
+
+All models run via local inference without external API dependencies. This local-first architecture eliminates runtime API costs, minimizes network latency, and ensures complete data privacy since no game content is transmitted to external servers.
+
+For development and testing, the generative AI pipeline was validated using the three tutorial rooms from the base game (Section~\ref{sec:tutorial}) rather than procedurally generated dungeons. These manually designed rooms provided stable, reproducible test cases to evaluate the vision analysis quality, narrative coherence, and music generation effectiveness before integrating with the BSP dungeon generator. Future work will connect the pipeline to procedurally generated room layouts.
+
+\subsubsection{Vision-Based Room Analysis}
+\label{subsubsec:vision_analysis}
+
+The vision analysis component transforms raw gameplay screenshots into structured semantic descriptions that inform both narrative and music generation. We employ moondream2, a lightweight vision-language model specifically designed for efficient image understanding tasks.
+
+The model receives a screenshot of the generated room and is prompted to analyze four key aspects: environment type (1-2 word classification), atmosphere (visual mood description), observable features (5-7 specific elements), and emotional mood (tone for music generation). Figure~\ref{fig:tutorial_rooms} shows an example of the three tutorial rooms used for testing the vision pipeline.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.9\linewidth]{figures/tutorial_initial_map.png}
+  \caption{Three tutorial rooms from the base game used for testing the vision analysis pipeline.}
+  \label{fig:tutorial_rooms}
+\end{figure}
+
+The prompt structure enforces a consistent JSON output format to ensure reliable parsing and downstream integration:
+
+\begin{samepage}
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize, frame=single]
+Analyze this 2D roguelike RPG game screenshot (top-down pixel art).
+
+Provide a detailed description including:
+- environment_type: what kind of area this is (1-2 words)
+- atmosphere: describe the overall feeling and visual mood (2-3 sentences)
+- features: list 5-7 specific things you see (terrain, structures, objects, enemies)
+- mood: describe the emotional tone for ambient music generation (1-2 sentences)
+
+Respond ONLY in this JSON format:
+{"environment_type": "...", "atmosphere": "...", "features": [...], "mood": "..."}
+\end{lstlisting}
+\end{samepage}
+
+The model's output is validated against a Pydantic schema to ensure type safety and correct field structure. An actual generation example for one of the tutorial rooms:
+
+\begin{samepage}
+\begin{lstlisting}[language=json, basicstyle=\ttfamily\scriptsize, frame=single]
+{
+  "environment_type": "Rural/Forest",
+  "atmosphere": "Fantastic, peaceful, serene",
+  "features": [
+    "Pond",
+    "Trees",
+    "Flowers",
+    "Small structures",
+    "Path"
+  ],
+  "mood": "Calm, peaceful, mysterious"
+}
+\end{lstlisting}
+\end{samepage}
+
+This structured output format is temporary and was designed for testing purposes. The schema will likely evolve before final project delivery to better align with the narrative generation requirements and provide more granular control over music generation parameters.
+
+\subsubsection{Narrative Generation}
+\label{subsubsec:narrative_gen}
+
+The narrative generation component uses the llama2 language model via Ollama to create contextual story content for each room. The system generates three interconnected elements: environmental descriptions, non-player characters (NPCs) with dialogue, quests with objectives, and lore entries that enrich the game world.
+
+The LLM receives a structured prompt that specifies the room's position in the overall dungeon (e.g., "room 3 of 9"), the narrative phase (beginning/middle/end), and optionally, context from previously generated rooms to maintain story continuity. The prompt enforces strict JSON output formatting to ensure reliable parsing:
+
+\begin{samepage}
+\begin{lstlisting}[basicstyle=\ttfamily\tiny, frame=single]
+Generate a story segment for room 3 of 9.
+This is the middle of the adventure.
+CRITICAL INSTRUCTIONS:
+1. Output ONLY valid JSON - no explanations, no markdown, no extra text
+2. Use proper JSON syntax with double quotes for all strings
+3. Ensure all commas are correctly placed
+4. The dialogue field MUST be an array with EXACTLY 3 strings
+Required JSON structure:
+{
+  "environment": "atmospheric description here",
+  "npc": {
+    "name": "character name",
+    "dialogue": ["first line", "second line", "third line"]
+  },
+  "quest": {
+    "objective": "quest objective description",
+    "type": "DefeatEnemies",
+    "count": 3
+  },
+  "lore": {
+    "title": "lore title",
+    "content": "lore content and backstory"
+  }
+}
+\end{lstlisting}
+\end{samepage}
+
+To improve generation reliability, the system implements a retry mechanism with seed perturbation. If the LLM produces malformed JSON (a common issue with unconstrained generation), the request is retried up to three times with slightly varied random seeds. As shown in the test output above, the first attempt may fail with JSON parsing errors, but subsequent retries with perturbed seeds typically succeed, achieving reasonable reliability without requiring grammar-constrained decoding or model fine-tuning.
+
+An example generated narrative from actual model output:
+
+\begin{samepage}
+\begin{lstlisting}[language=json, basicstyle=\ttfamily\scriptsize, frame=single]
+{
+  "environment": "A grassy clearing with scattered ponds and small stone
+                  structures. The area has a peaceful yet mysterious
+                  atmosphere.",
+  "npc": {
+    "name": "Wandering Spirit",
+    "dialogue": [
+      "You have entered the dungeon depths brave one.",
+      "Beware of the Ghosts and Slimes that lurk in these rooms.",
+      "They guard secrets that have been lost for ages."
+    ]
+  },
+  "quest": {
+    "objective": "Clear the room of hostile Ghosts and Slimes",
+    "type": "DefeatEnemies",
+    "count": 3
+  },
+  "lore": {
+    "title": "The Haunted Depths",
+    "content": "These dungeons were once peaceful halls. Now Ghosts drift
+                through the corridors while Slimes ooze from the shadows."
+  }
+}
+\end{lstlisting}
+\end{samepage}
+
+This structured format is experimental and designed for testing the narrative pipeline. The final implementation may evolve to include different content types beyond NPCs, quests, and lore, depending on gameplay requirements and integration with the procedurally generated dungeon layouts.
+
+\subsubsection{Music Generation}
+\label{subsubsec:music_gen}
+
+The music generation component uses MusicGen Medium~\cite{copet2023musicgen}, selected for its simplicity and ability to generate loopable background music from text prompts. Initial experiments explored various generative music approaches, but many produced outputs that either did not sound like coherent background music or lacked musical structure. MusicGen proved to be the most practical solution for procedural ambient music generation.
+
+However, testing revealed that MusicGen's instruction-following capability is quite limited as well as other models. The model responds best to short keyword-based prompts rather than detailed descriptions. Complex or lengthy prompts do not significantly improve output quality and, from our experiments, even degrade coherence. The system constructs prompts from minimal keywords describing the desired mood or setting:
+
+\begin{samepage}
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize, frame=single]
+def _make_prompt(self, description: str) -> str:
+    return f"Atmospheric ambient music for {description},
+             slow tempo, immersive, loopable background music"
+\end{lstlisting}
+\end{samepage}
+
+Key generation parameters used in testing:
+
+\begin{samepage}
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize, frame=single]
+duration = 30.0                # seconds of audio
+guidance_scale = 3.5           # prompt adherence strength
+sample_rate = 32000            # Hz
+do_sample = True               # enable sampling for variety
+\end{lstlisting}
+\end{samepage}
+
+Example generated music tracks for different game contexts:
+
+\begin{itemize}
+  \item \textbf{tavern.mp3}: Prompt ``tavern'' - peaceful, ambient music for safe areas \\
+  \textattachfile[color=0 0 1, icon=Speaker, description={Tavern ambient music}]{figures/tavern.mp3}{\textcolor{blue}{Play/Download Audio}}
+
+  \item \textbf{mysterious.mp3}: Prompt ``mysterious'' - atmospheric exploration music \\
+  \textattachfile[color=0 0 1, icon=Speaker, description={Mysterious exploration music}]{figures/mysterious.mp3}{\textcolor{blue}{Play/Download Audio}}
+
+  \item \textbf{boss\_tense.mp3}: Prompt ``boss tense'' - intense music for boss encounters \\
+  \textattachfile[color=0 0 1, icon=Speaker, description={Boss battle music}]{figures/boss_tense.mp3}{\textcolor{blue}{Play/Download Audio}}
+\end{itemize}
+
+These examples demonstrate MusicGen's ability to produce thematically appropriate ambient music from minimal keyword prompts. The generated tracks are loopable and suitable for background music during gameplay, though the limited instruction-following means fine-grained musical control remains challenging even for larger models and a very active research domain.
+
+\paragraph{Future Integration and Potential Extensions}
+The generative AI pipeline components (vision-based room analysis, narrative generation, and music generation) have been tested individually and show promising potential for procedural content generation. However, substantial work remains to integrate these systems with the procedural dungeon generation once the BSP room layouts are finalized. Integration tasks include refining prompts based on actual dungeon characteristics, implementing in-game logic for content delivery, and optimizing the generation flow for runtime performance.
+
+Additionally, we are exploring the possibility of incorporating voice generation models to create a narrative experience. For instance, generated story segments could be converted to speech using text-to-speech models, creating a narrator that reads the lore and dialogue to players. This remains an experimental direction that has not yet been tested, and feasibility will depend on available time and technical constraints.
 
 \subsection{Reinforcement Learning for Boss Behavior}\label{sec:rl_bosses}
 

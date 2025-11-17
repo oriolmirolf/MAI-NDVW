@@ -83,19 +83,19 @@ Required JSON structure (copy this EXACTLY):
 
 Example valid output:
 {{
-  "environment": "The forest is dense with ancient trees. Sunlight filters through the canopy creating dancing shadows. A sense of mystery fills the air.",
+  "environment": "A grassy clearing with scattered ponds and small stone structures. The area has a peaceful yet mysterious atmosphere with gentle light filtering through the space.",
   "npc": {{
-    "name": "Elder Sage",
-    "dialogue": ["Welcome traveler, I have been expecting you.", "Dark forces threaten our realm and we need your help.", "Please, you must act quickly before it is too late."]
+    "name": "Wandering Spirit",
+    "dialogue": ["You have entered the dungeon depths brave one.", "Beware of the Ghosts and Slimes that lurk in these rooms.", "They guard secrets that have been lost for ages."]
   }},
   "quest": {{
-    "objective": "Defeat the corrupted forest guardians",
+    "objective": "Clear the room of hostile Ghosts and Slimes",
     "type": "DefeatEnemies",
     "count": 3
   }},
   "lore": {{
-    "title": "The Fallen Guardians",
-    "content": "Long ago, these guardians protected the forest. A dark curse has twisted them into hostile beings. Only a brave hero can break the curse."
+    "title": "The Haunted Depths",
+    "content": "These dungeons were once peaceful halls. Now Ghosts drift through the corridors while Slimes ooze from the shadows. Only a skilled adventurer can navigate these perilous rooms."
   }}
 }}
 

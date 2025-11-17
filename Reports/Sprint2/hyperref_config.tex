@@ -1,0 +1,20 @@
+% Enhanced hyperref configuration for clickable references
+% Add this RIGHT AFTER the \usepackage{hyperref} line (around line 47)
+
+\hypersetup{
+    colorlinks=true,        % Enable colored links instead of boxes
+    linkcolor=blue,         % Internal links (sections, figures, tables)
+    citecolor=blue,         % Citation links
+    filecolor=magenta,      % File links
+    urlcolor=blue,          % URLs (like video demo, source code)
+    linktoc=all,            % Make both section numbers and text clickable in TOC
+    pdfborderstyle={/S/U/W 1}, % Underline style if boxes are used
+}
+
+% Alternative configuration (more subtle colors for print):
+% \hypersetup{
+%     colorlinks=true,
+%     linkcolor=black,      % Internal links in black (subtle)
+%     citecolor=blue,       % Citations in blue
+%     urlcolor=blue,        % URLs in blue
+% }
