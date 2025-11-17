@@ -112,60 +112,32 @@
 
 % \biboptions{}
 
-\journal{Journal Name}
+\journal{NDVW Sprint 2}
 
 \begin{document}
 
-\begin{frontmatter}
 
-%% Title, authors and addresses
-\title{Template of Final Report NDVW \footnote{1) See appendix. 2) Report's license CC, Software's license: GPL, 3) \href{https://youtu.be/OtuCTDoijI0}{Video Demo}, 4) \href{https://github.com/oriolmirolf/MAI-NDVW}{Source Code Repository} } }
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
 
+    % University Logo
+    \includegraphics[width=0.3\textwidth]{figures/ub_logo.png}
 
-%% use the tnoteref command within \title for footnotes;
-%% use the tnotetext command for the associated footnote;
-%% use the fnref command within \author or \address for footnotes;
-%% use the fntext command for the associated footnote;
-%% use the corref command within \author for corresponding author footnotes;
-%% use the cortext command for the associated footnote;
-%% use the ead command for the email address,
-%% and the form \ead[url] for the home page:
-%%
-%% \title{Title\tnoteref{label1}}
-%% \tnotetext[label1]{}
-%% \author{Name\corref{cor1}\fnref{label2}}
-%% \ead{email address}
-%% \ead[url]{home page}
-%% \fntext[label2]{}
-%% \cortext[cor1]{}
-%% \address{Address\fnref{label3}}
-%% \fntext[label3]{}
+    \vspace{1.5cm}
+    {\Huge\bfseries Sprint 2: Project Progress\par}
+    \vspace{1cm}
+    {\large Procedurally Generated 2D RPG with AI-Driven Narrative\par}
+    \vspace{2cm}
+    {\large Oriol MIR\'O, Jean DI\'E, Bruno S\'ANCHEZ, D\'aniel M\'ACSAI\par}
+    \vspace{3cm}
+    {\large \textbf{Master in Artificial Intelligence}\par}
+    \vspace{0.5cm}
+    {\large \textbf{Normative and Dynamic Virtual Worlds}\\ Sprint 2: Project Progress\par}
+    \vspace{1cm}
+    {\large\bfseries November 17th, 2025\par}
+\end{titlepage}
 
-
-%% use optional labels to link authors explicitly to addresses:
-%% \author[label1,label2]{<author name>}
-%% \address[label1]{<address>}
-%% \address[label2]{<address>}
-
-\author{John Smith}
-
-\address{Spain}
-
-%\begin{abstract}
-%% Text of abstract
-
-%\end{abstract}
-
-%\begin{keyword}
-%Science \sep Publication \sep Complicated
-%% keywords here, in the form: keyword \sep keyword
-
-%% MSC codes here, in the form: \MSC code \sep code
-%% or \MSC[2008] code \sep code (2000 is the default)
-
-%\end{keyword}
-
-\end{frontmatter}
 
 %%
 %% Start line numbering here if you want
@@ -289,6 +261,7 @@ The three bosses will represent a progression in difficulty. If time allows it, 
 The technical specifics of the self-play training process, reward functions, and agent architecture for these bosses are detailed further in Section~\ref{sec:rl_bosses}.
 
 \subsection{Scenario}
+\label{sec:scenario}
 
 We now present the story of our game.
 We tried to create a story that is coherent and consistent with the game mechanics.
@@ -453,16 +426,22 @@ We also aim to test substituting corridors for "portals" between connected rooms
 \subsection{Generative AI Pipeline}
 \label{subsec:genai_pipeline}
 
-To create dynamic, context-aware content for each procedurally generated room, we employ a multi-stage generative AI pipeline consisting of three complementary systems: vision-based room analysis, narrative generation, and adaptive music synthesis. These systems work together to transform the procedurally generated dungeon geometry into a coherent, immersive experience where visual, narrative, and auditory elements reinforce one another.
+To create dynamic, context-aware content for each procedurally generated room, we employ a multi-stage generative AI pipeline consisting of three complementary systems: vision-based room analysis, narrative generation, and adaptive music synthesis. These systems work together to transform the procedurally generated dungeon geometry into a coherent, immersive game where all elements -- visual, narrative, and auditory -- reinforce one another.
 
-The pipeline operates sequentially: a vision model first analyzes a screenshot of the generated room to produce a semantic description of the environment (Section~\ref{subsubsec:vision_analysis}). This description is then fed to a large language model (LLM) that generates contextual narrative content including non-player characters (NPCs), quests, and lore entries (Section~\ref{subsubsec:narrative_gen}). Finally, the emotional tone extracted from the vision analysis drives procedural music generation to match the room's atmosphere (Section~\ref{subsubsec:music_gen}). This vision-driven approach ensures that narrative and audio content semantically align with the visual characteristics of each room, rather than being generated independently.
+The pipeline operates sequentially: a vision model first analyzes a screenshot of the generated room to produce a semantic description of the environment (Section~\ref{subsubsec:vision_analysis}). This description is then fed to a large language model (LLM) that generates contextual narrative content including non-player characters (NPCs), quests, and lore entries (Section~\ref{subsubsec:narrative_gen}). 
+Finally, the emotional tone extracted from the vision analysis drives procedural music generation to match the room's atmosphere (Section~\ref{subsubsec:music_gen}).
+This vision-driven approach should make it so that narrative and audio content semantically align with the visual characteristics of each room, rather than being generated independently.
 
 \subsubsection{System Architecture}
 \label{subsubsec:genai_architecture}
 
-We implement all three generative AI components as a unified Python backend service, architecturally decoupled from the Unity game engine. This design decision addresses several fundamental constraints inherent to deploying deep learning models within game engines.
+We implement all three generative AI components as a unified Python backend service, architecturally decoupled from the Unity game engine. 
+This design decision addresses several fundamental constraints inherent to deploying deep learning models within game engines.
 
-Modern generative AI models -- particularly transformer-based architectures for vision, language, and audio -- rely on the Python ecosystem for inference. Critical dependencies include PyTorch for tensor operations, HuggingFace Transformers for model loading and execution, and specialized inference engines such as Ollama for optimized LLM serving. These libraries are not available in Unity's C\# runtime environment, and reimplementing GPU-accelerated inference from scratch would be prohibitively complex. By extracting AI inference into a separate Python process, we gain immediate access to state-of-the-art models with well-tested implementations.
+Modern generative AI models -- particularly transformer-based architectures for vision, language, and audio -- rely on the Python ecosystem for inference. 
+Critical dependencies include PyTorch for tensor operations, HuggingFace Transformers for model loading and execution, and specialized inference engines such as Ollama for optimized LLM serving. 
+These libraries are not available in Unity's C\# runtime environment, and reimplementing GPU-accelerated inference from scratch would be prohibitively complex. 
+By extracting AI inference into a separate Python process, we gain  access to state-of-the-art models with well-tested implementations.
 
 The backend is structured as a FastAPI~\cite{fastapi} web service exposing RESTful HTTP endpoints. Each generative component corresponds to a dedicated endpoint:
 
@@ -475,7 +454,7 @@ GET    /cache/stats          Cache statistics and monitoring
 
 The Unity client communicates with the backend via asynchronous HTTP requests, serializing parameters as JSON and deserializing responses into C\# data structures.
 
-Table~\ref{tab:ai_models} summarizes the three AI models employed in our pipeline and their computational requirements. All models were selected based on their open-source availability and lightweight footprint, ensuring they could run efficiently on consumer-grade hardware (RTX 5070 Ti, 16GB VRAM). The vision and music models were chosen after evaluating multiple alternatives to find the best balance between output quality and inference speed for real-time game integration.
+Table~\ref{tab:ai_models} summarizes the three AI models employed in our pipeline and their computational requirements. All models were selected based on their open-source availability and lightweightness, ensuring they could run efficiently on consumer-grade hardware (RTX 5070 Ti, 16GB VRAM). The vision and music models were chosen after evaluating multiple alternatives to find the best balance between output quality and inference speed for real-time game integration.
 
 \begin{table}[htbp]
 \centering
@@ -533,14 +512,15 @@ Figure~\ref{fig:genai_architecture} illustrates the complete system architecture
 
 To mitigate inference latency during iterative development and repeated playthroughs, we implement a two-layer caching architecture. The server-side cache indexes generated content by deterministic keys derived from input parameters, ensuring that identical requests retrieve previously generated content rather than invoking the models. The client-side cache stores content in Unity's persistent data path, allowing the game to reload content across application restarts without network communication.
 
-All models run via local inference without external API dependencies. This local-first architecture eliminates runtime API costs, minimizes network latency, and ensures complete data privacy since no game content is transmitted to external servers.
+All models run via local inference without external API dependencies. This eliminates runtime API costs, minimizes network latency, and ensures complete data privacy since no game content is transmitted to external servers.
 
-For development and testing, the generative AI pipeline was validated using the three tutorial rooms from the base game (Section~\ref{sec:tutorial}) rather than procedurally generated dungeons. These manually designed rooms provided stable, reproducible test cases to evaluate the vision analysis quality, narrative coherence, and music generation effectiveness before integrating with the BSP dungeon generator. Future work will connect the pipeline to procedurally generated room layouts.
+For development and testing, the generative AI pipeline was validated using the three tutorial rooms from the base game (Section~\ref{sec:tutorial}) rather than procedurally generated dungeons -- that is left for Sprint 3. 
+These manually designed rooms provided stable, reproducible test cases to evaluate the vision analysis quality, narrative coherence, and music generation effectiveness before integrating with the BSP dungeon generator. Future work will connect the pipeline to procedurally generated room layouts.
 
 \subsubsection{Vision-Based Room Analysis}
 \label{subsubsec:vision_analysis}
 
-The vision analysis component transforms raw gameplay screenshots into structured semantic descriptions that inform both narrative and music generation. We employ moondream2, a lightweight vision-language model specifically designed for efficient image understanding tasks.
+The vision analysis component transforms gameplay screenshots into text that inform both narrative and music generation. We employ moondream2, a lightweight vision-language model specifically designed for efficient image understanding tasks.
 
 The model receives a screenshot of the generated room and is prompted to analyze four key aspects: environment type (1-2 word classification), atmosphere (visual mood description), observable features (5-7 specific elements), and emotional mood (tone for music generation). Figure~\ref{fig:tutorial_rooms} shows an example of the three tutorial rooms used for testing the vision pipeline.
 
@@ -625,7 +605,8 @@ Required JSON structure:
 \end{lstlisting}
 \end{samepage}
 
-To improve generation reliability, the system implements a retry mechanism with seed perturbation. If the LLM produces malformed JSON (a common issue with unconstrained generation), the request is retried up to three times with slightly varied random seeds. As shown in the test output above, the first attempt may fail with JSON parsing errors, but subsequent retries with perturbed seeds typically succeed, achieving reasonable reliability without requiring grammar-constrained decoding or model fine-tuning.
+To improve generation reliability, the system implements a retry mechanism with seed perturbation.
+If the LLM produces malformed JSON (a common issue with unconstrained generation), the request is retried up to three times with different random seeds. As shown in the test output above, the first attempt may fail with JSON parsing errors, but subsequent retries with perturbed seeds typically succeed, achieving reasonable reliability without requiring grammar-constrained decoding or model fine-tuning.
 
 An example generated narrative from actual model output:
 
@@ -657,7 +638,7 @@ An example generated narrative from actual model output:
 \end{lstlisting}
 \end{samepage}
 
-This structured format is experimental and designed for testing the narrative pipeline. The final implementation may evolve to include different content types beyond NPCs, quests, and lore, depending on gameplay requirements and integration with the procedurally generated dungeon layouts.
+This structured format is experimental and designed for testing the narrative pipeline. The final implementation may evolve to include different content types beyond NPCs, quests, and lore, depending on gameplay requirements and integration with the procedurally generated dungeon layouts. It is also not yet aligned with the story described in Section~\ref{sec:scenario}, but will be so for Sprint 3.
 
 \subsubsection{Music Generation}
 \label{subsubsec:music_gen}
@@ -685,7 +666,7 @@ do_sample = True               # enable sampling for variety
 \end{lstlisting}
 \end{samepage}
 
-Example generated music tracks for different game contexts:
+Example generated music tracks for different game contexts~\footnote{To listen to these, please open with Adobe Acroabt; in case it is not possible, we also attached the songs in the delivery.}:
 
 \begin{itemize}
   \item \textbf{tavern.mp3}: Prompt ``tavern'' - peaceful, ambient music for safe areas \\
@@ -698,12 +679,14 @@ Example generated music tracks for different game contexts:
   \textattachfile[color=0 0 1, icon=Speaker, description={Boss battle music}]{figures/boss_tense.mp3}{\textcolor{blue}{Play/Download Audio}}
 \end{itemize}
 
-These examples demonstrate MusicGen's ability to produce thematically appropriate ambient music from minimal keyword prompts. The generated tracks are loopable and suitable for background music during gameplay, though the limited instruction-following means fine-grained musical control remains challenging even for larger models and a very active research domain.
+These examples show MusicGen's ability to produce thematically appropriate ambient music from minimal keyword prompts. The generated tracks are loopable and suitable for background music during gameplay, though the limited instruction-following means fine-grained musical control remains challenging even for larger models and a very active research domain.
 
 \paragraph{Future Integration and Potential Extensions}
-The generative AI pipeline components (vision-based room analysis, narrative generation, and music generation) have been tested individually and show promising potential for procedural content generation. However, substantial work remains to integrate these systems with the procedural dungeon generation once the BSP room layouts are finalized. Integration tasks include refining prompts based on actual dungeon characteristics, implementing in-game logic for content delivery, and optimizing the generation flow for runtime performance.
+The generative AI pipeline components (vision-based room analysis, narrative generation, and music generation) have been tested individually and show promising potential for procedural content generation. 
+However, for Sprint 3 substantial work remains to integrate these systems with the procedural dungeon generation once the BSP room layouts are finalized. Integration tasks include refining prompts based on actual dungeon characteristics, implementing in-game logic for content delivery, and optimizing the generation flow for runtime performance.
 
-Additionally, we are exploring the possibility of incorporating voice generation models to create a narrative experience. For instance, generated story segments could be converted to speech using text-to-speech models, creating a narrator that reads the lore and dialogue to players. This remains an experimental direction that has not yet been tested, and feasibility will depend on available time and technical constraints.
+Additionally, we are exploring the possibility of incorporating voice generation models to create a narrative experience. 
+For instance, generated story segments could be converted to speech using text-to-speech models, creating a narrator that reads the lore and dialogue to players. This remains an experimental direction that has not yet been tested, and feasibility will depend on available time and technical constraints.
 
 \subsection{Reinforcement Learning for Boss Behavior}\label{sec:rl_bosses}
 
@@ -751,52 +734,10 @@ Once all of the components are defined and set-up, the training loop is executed
 
 As a planned extension, the Sentinel and Herald bosses can be implemented as enhanced versions of the Slime and Ghost enemies. This would require designing new agent controllers with action spaces adapted to their specific abilities. Unlike the self-play approach used for the final boss, these agents would be trained by competing against the pre-trained, player-like agent in the Arena environment. This methodology ensures that they learn to counter the player's strategies effectively, providing a varied and escalating challenge.
 
-\subsection{Software architecture}
-
-How the game is implemented Unity, what is python, what components talk to each other (see example:
-\begin{figure}
-    \centering
-    \includegraphics[width=0.5\linewidth]{figures/image.png}
-    \caption{Enter Caption}
-    \label{fig:placeholder}
-\end{figure}
-)
-
-description of each component, ...
-
-\section{Future Work}
-
-
-\appendix
-
-\section{Sprint 1, oct. 23rd, 2023}
-\label{sprint1}
-\subsection{Planned tasks}
-
-...
-
-\subsection{Work Done}
-
-...
-
-
-\section{Sprint 2, nov. 20th, 2023}
-\label{sprint2}
-
-\subsection{Planned tasks}
-
-...
-
-\subsection{Work Done}
-
-...
-
-\subsection{Work in progress}
-
-Explain tasks in progress 
 
 \bibliographystyle{model1-num-names}
-\bibliography{sample.bib}
+\bibliography{references}
+
 
 %% Authors are advised to submit their bibtex database files. They are
 %% requested to list a bibtex style file in the manuscript if they do
