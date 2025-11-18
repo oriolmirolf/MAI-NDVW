@@ -1,0 +1,261 @@
+\documentclass{beamer}
+
+% Theme selection
+\usetheme{Madrid}
+\usecolortheme{beaver}
+
+% Package inclusion
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning}
+
+% Title page information
+\title[Sprint 2]{Sprint 2: Project Progress}
+\subtitle{Procedurally Generated 2D RPG with AI-Driven Narrative}
+\author[Oriol, Jean, Bruno, Dániel]{Oriol Miró \and Jean Dié \and Bruno Sánchez \and Dániel Mácsai}
+\institute[NDVW]{Master in Artificial Intelligence \\ Normative and Dynamic Virtual Worlds}
+\date{November 17, 2025}
+
+\begin{document}
+
+% --- TITLE SLIDE ---
+\begin{frame}
+    \titlepage
+\end{frame}
+
+% --- OUTLINE SLIDE ---
+\begin{frame}{Outline}
+    \tableofcontents
+\end{frame}
+
+% --- INTRODUCTION SECTION ---
+\section{Introduction \& Overview}
+
+\begin{frame}{Project Overview}
+    \begin{itemize}
+        \item A 2D top-down RPG where the dungeon
+        \item Story, and music are procedurally generated.
+        \item Three chapters, each ending with a boss fight.
+        \item Defeating a boss "freezes" that chapter's generated content
+    \end{itemize}
+    \begin{figure}
+        \includegraphics[width=\linewidth]{figures/game_flow.png}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Foundation \& Our Contribution}
+    \begin{block}{Starting Point: Unity Tutorial}
+        We are building upon a tutorial from Udemy, which provides a solid base for:
+        \begin{itemize}
+            \item Player movement and animation.
+            \item Tilemap-based environments.
+            \item A functional weapon and combat system.
+        \end{itemize}
+    \end{block}
+    
+    \begin{block}{Our Project's Innovations}
+        We extend the tutorial by adding:
+        \begin{itemize}
+            \item Procedural dungeon generation (BSP Algorithm).
+            \item An AI-driven generative pipeline for narrative and music.
+            \item Boss behaviors trained with Reinforcement Learning.
+            \item The novel "freezing checkpoint" mechanic tied to the narrative.
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+% --- GAME AGENTS SECTION ---
+\section{Game Agents}
+
+\begin{frame}{Player Agent}
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+            \textbf{Movement \& Abilities}
+            \begin{itemize}
+                \item WASD for movement, mouse for 360° aiming.
+                \item A dash ability for invulnerability, consuming a regenerating stamina bar.
+            \end{itemize}
+            
+            \vspace{1cm}
+            
+            \textbf{Health \& Resources}
+            \begin{itemize}
+                \item Health replenished by collecting hearts.
+                \item Enemies drop coins (for a potential future shop system).
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \textbf{Weapons}
+            \begin{itemize}
+                \item \textbf{Sword:} Melee sweep attack.
+                \item \textbf{Bow:} Long-range single-target arrow.
+                \item \textbf{Magic Staff:} Medium-range piercing beam.
+            \end{itemize}
+            \begin{center}
+            \includegraphics[width=\linewidth]{figures/example_from_tutorial.png}
+            \end{center}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Basic Monster Agents}
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+            \textbf{Behavior: Finite State Machine (FSM)}
+            \begin{itemize}
+                \item \textbf{Roaming State:} Moves to random points.
+                \item \textbf{Attacking State:} Engages the player when they enter a defined range.
+            \end{itemize}
+            \begin{figure}
+                \includegraphics[width=\linewidth]{figures/EnemyAI FSM.png}
+            \end{figure}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \textbf{Enemy Types}
+            \begin{itemize}
+                \item \textbf{Slimes:} Simple melee enemies that deal damage on contact.
+                \item \textbf{Ghosts:} Ranged shooters that fire projectiles in various patterns.
+            \end{itemize}
+            \begin{figure}
+                \includegraphics[height=1.5cm]{figures/Slime_Sheet.png}
+                \includegraphics[height=1.5cm]{figures/Ghost.png}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Boss Agents}
+    \begin{itemize}
+        \item Behaviors are controlled by agents trained via RL $\rightarrow$  dynamic, non-scripted encounters.
+        \item Bosses use the same abilities as the player but are controlled by a trained RL agent.
+        \item  Different training checkpoints of the same agent to create the three bosses.
+    \end{itemize}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.6\linewidth]{figures/rl_training_arena.png}
+    \end{figure}
+\end{frame}
+
+% --- NARRATIVE SECTION ---
+\section{Narrative}
+
+\begin{frame}{The Scenario: The Chronicle of Light}
+    \begin{itemize}
+        \item \textbf{Protagonist:} Sir Cael, a knight trapped within a living book, the \textit{Chronicle of Light}.
+        \item \textbf{The Curse:} Every time Sir Cael dies, the world (dungeon, characters, etc.) is rewritten by the Chronicler.
+        \item \textbf{The Goal:} To find and defeat the three anchors of the story: the Sentinel, the Herald, and the Chronicler himself.
+        \item \textbf{Narrative-Mechanic Link:} When a boss is defeated, its chapter is "fixed in ink." The dungeon layout and story for that section no longer change upon death, creating a permanent checkpoint.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{The Twist (Spoilers!)}
+    \begin{alertblock}{The Secret}
+        Sir Cael \textbf{is} the Chronicler.
+    \end{alertblock}
+    \begin{itemize}
+        \item He was a scholar who, in an attempt to preserve a "perfect" version of his falling kingdom's history, trapped reality inside the book and split himself in two.
+        \item The bosses he fights are manifestations of his own guilt (Sentinel) and denial (Herald).
+        \item \textbf{The True Ending:} The final battle is a confrontation with himself. To truly win and end the cycle, the player must choose to "Lower your sword" instead of striking the final blow, thereby accepting an imperfect story and ending the rewrites.
+    \end{itemize}
+\end{frame}
+
+% --- TECHNICAL PROPOSAL SECTION ---
+\section{AI Systems \& Proposal}
+
+\begin{frame}{Procedural Dungeon Generation}
+    \begin{block}{Binary Space Partitioning (BSP) Algorithm}
+        The dungeon layout is generated in several steps:
+        \begin{enumerate}
+            \item \textbf{Leaf Splitting:} A large rectangle is recursively split into smaller sub-regions (leaves).
+            \item \textbf{Room Carving:} A randomly sized room is placed inside each leaf.
+            \item \textbf{Connectivity:} A Minimum Spanning Tree (MST) is used to connect all rooms with corridors + some extra connections to create loops.
+        \end{enumerate}
+    \end{block}
+    \begin{columns}
+    \begin{column}{0.5\textwidth}
+        \begin{figure}
+        \includegraphics[width=\linewidth]{figures/ex_BSP_geometry.png}
+        \end{figure}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+        \begin{figure}
+        \includegraphics[width=\linewidth]{figures/ex_player_POV.png}
+        \end{figure}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Generative AI Pipeline Architecture}
+    \begin{columns}
+    \begin{column}{0.6\textwidth}
+    \begin{figure}
+        \includegraphics[width=\linewidth]{figures/genai_pipeline.png}
+    \end{figure}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+    \begin{itemize}
+        \item A \textbf{Python FastAPI backend} handles all AI inference (vision, language, music).
+        \item The \textbf{Unity game client} communicates with the backend via HTTP requests.
+        \item A two-layer cache (server-side and client-side) is used to reduce latency.
+    \end{itemize}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Generative AI Pipeline: The 3 Steps}
+    \begin{block}{1. Vision-Based Room Analysis}
+        \textbf{Model:} \texttt{moondream2} \\
+        Takes a screenshot of the generated room and outputs a JSON describing its environment, atmosphere, and key features. This text seeds the next two steps.
+    \end{block}
+    
+    \begin{block}{2. Narrative Generation}
+        \textbf{Model:} \texttt{llama2} \\
+        Uses the vision analysis to generate context-aware story elements: NPC names, dialogue, quest objectives, and lore entries, all formatted in JSON.
+    \end{block}
+
+    \begin{block}{3. Music Generation}
+        \textbf{Model:} \texttt{MusicGen Medium} \\
+        Generates loopable, ambient background music based on simple keywords (e.g., "mysterious", "tense boss fight") derived from the vision analysis.
+    \end{block}
+\end{frame}
+
+
+\begin{frame}{Reinforcement Learning for Bosses}
+    \begin{block}{Training Setup (Unity ML-Agents)}
+        \begin{itemize}
+            \item \textbf{Algorithm:} Proximal Policy Optimization (PPO).
+            \item \textbf{Environment:} A custom "Arena" for self-play, where the agent learns by fighting a copy of itself.
+            \item \textbf{Observation Space:} Agent/opponent position and health.
+            \item \textbf{Action Space:} Movement, dashing, and choice of three weapon attacks.
+            \item \textbf{Reward Function:} Rewards hitting the opponent and winning; penalizes taking damage, losing, and taking too long.
+        \end{itemize}
+    \end{block}
+    \begin{alertblock}{Goal}
+        To create bosses that can react to the player's actions and develop complex, human-like strategies without being explicitly scripted.
+    \end{alertblock}
+\end{frame}
+
+% --- CONCLUSION SECTION ---
+\section{Conclusion \& Next Steps}
+
+\begin{frame}{Progress Summary \& Next Steps}
+    \begin{block}{Progress This Sprint}
+        \begin{itemize}
+            \item Core game mechanics established based on the tutorial.
+            \item FSM-based AI for basic enemies is functional.
+            \item Procedural dungeon generator (BSP) is implemented.
+            \item The three-stage GenAI pipeline (Vision, Narrative, Music) is designed and components have been tested individually.
+            \item The RL training environment for bosses is set up.
+        \end{itemize}
+    \end{block}
+    
+    \begin{block}{Goals for Sprint 3}
+        \begin{itemize}
+            \item Fully integrate the BSP generator with the Generative AI pipeline.
+            \item Train the boss agents and integrate them into the game.
+            \item Implement the chapter "freezing" and story-driven room population.
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\end{document}
