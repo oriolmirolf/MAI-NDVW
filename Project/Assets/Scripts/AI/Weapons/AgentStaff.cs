@@ -94,14 +94,16 @@ public class AgentStaff : MonoBehaviour, IWeapon
     {
         if (agentController == null) return;
 
-        // Face towards the enemy agent
+        float angle = agentController.CurrentAimAngle;
+        
+        // Apply rotation based on aim angle for laser direction
         if (agentController.FacingLeft)
         {
-            transform.rotation = Quaternion.Euler(0, -180, 0);
+            transform.rotation = Quaternion.Euler(0, -180, angle);
         }
         else
         {
-            transform.rotation = Quaternion.Euler(0, 0, 0);
+            transform.rotation = Quaternion.Euler(0, 0, angle);
         }
     }
 }

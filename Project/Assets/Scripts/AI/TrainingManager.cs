@@ -12,7 +12,7 @@ public class TrainingManager : MonoBehaviour
     [Tooltip("Reward for victory.")]
     public float victoryReward = 1f;
     [Tooltip("Penalty for defeat.")]
-    public float defeatReward = -1f;
+    public float defeatPenalty = -1f;
     [Tooltip("Reward for hitting opponent.")]
     public float hitReward = 0.5f;
     [Tooltip("Penalty for being hit.")]
@@ -22,9 +22,9 @@ public class TrainingManager : MonoBehaviour
     [Tooltip("Enable proximity reward to encourage agents to approach each other. Disable once agents learn to fight.")]
     public bool enableProximityReward = true;
     [Tooltip("Maximum reward per step when agents are very close.")]
-    public float proximityRewardScale = 0.01f;
+    public float proximityRewardScale = 0.001f;
     [Tooltip("Distance at which proximity reward starts (no reward beyond this).")]
-    public float maxProximityDistance = 10f;
+    public float maxProximityDistance = 22f;
 
     [Header("Episode Settings")]
     [Tooltip("Maximum steps per episode. Episode ends if this limit is reached.")]
@@ -70,16 +70,16 @@ public class TrainingManager : MonoBehaviour
                 float proximityReward = proximityRewardScale * (1f - distance / maxProximityDistance);
                 agent1.AddReward(proximityReward);
                 agent2.AddReward(proximityReward);
-                Debug.Log($"[Proximity Reward] Agent1: +{proximityReward:F4} (Total: {agent1.GetCumulativeReward():F4}) | Agent2: +{proximityReward:F4} (Total: {agent2.GetCumulativeReward():F4})");
+                // Debug.Log($"[Proximity Reward] Agent1: +{proximityReward:F4} (Total: {agent1.GetCumulativeReward():F4}) | Agent2: +{proximityReward:F4} (Total: {agent2.GetCumulativeReward():F4})");
             }
         }
 
         // Check for max episode steps (timeout - draw)
         if (currentEpisodeSteps >= maxEpisodeSteps)
         {
-            agent1.SetReward(defeatReward);
-            agent2.SetReward(defeatReward);
-            Debug.Log($"[Timeout Draw] Agent1: {defeatReward:F4} (Total: {agent1.GetCumulativeReward():F4}) | Agent2: {defeatReward:F4} (Total: {agent2.GetCumulativeReward():F4})");
+            agent1.SetReward(defeatPenalty);
+            agent2.SetReward(defeatPenalty);
+            Debug.Log($"[Timeout Draw] Agent1: {defeatPenalty:F4} (Total: {agent1.GetCumulativeReward():F4}) | Agent2: {defeatPenalty:F4} (Total: {agent2.GetCumulativeReward():F4})");
             agent1.EndEpisode();
             agent2.EndEpisode();
             ResetScene();
@@ -92,22 +92,22 @@ public class TrainingManager : MonoBehaviour
             {
                 // Agent 2 wins
                 agent2.SetReward(victoryReward);
-                agent1.SetReward(defeatReward);
-                Debug.Log($"[Victory] Agent2 wins! Agent1: {defeatReward:F4} (Total: {agent1.GetCumulativeReward():F4}) | Agent2: {victoryReward:F4} (Total: {agent2.GetCumulativeReward():F4})");
+                agent1.SetReward(defeatPenalty);
+                Debug.Log($"[Victory] Agent2 wins! Agent1: {defeatPenalty:F4} (Total: {agent1.GetCumulativeReward():F4}) | Agent2: {victoryReward:F4} (Total: {agent2.GetCumulativeReward():F4})");
             }
             else if (agent2Health.IsDead && !agent1Health.IsDead)
             {
                 // Agent 1 wins
                 agent1.SetReward(victoryReward);
-                agent2.SetReward(defeatReward);
-                Debug.Log($"[Victory] Agent1 wins! Agent1: {victoryReward:F4} (Total: {agent1.GetCumulativeReward():F4}) | Agent2: {defeatReward:F4} (Total: {agent2.GetCumulativeReward():F4})");
+                agent2.SetReward(defeatPenalty);
+                Debug.Log($"[Victory] Agent1 wins! Agent1: {victoryReward:F4} (Total: {agent1.GetCumulativeReward():F4}) | Agent2: {defeatPenalty:F4} (Total: {agent2.GetCumulativeReward():F4})");
             }
             else
             {
                 // Draw
-                agent1.SetReward(defeatReward);
-                agent2.SetReward(defeatReward);
-                Debug.Log($"[Draw] Both dead! Agent1: {defeatReward:F4} (Total: {agent1.GetCumulativeReward():F4}) | Agent2: {defeatReward:F4} (Total: {agent2.GetCumulativeReward():F4})");
+                agent1.SetReward(defeatPenalty);
+                agent2.SetReward(defeatPenalty);
+                Debug.Log($"[Draw] Both dead! Agent1: {defeatPenalty:F4} (Total: {agent1.GetCumulativeReward():F4}) | Agent2: {defeatPenalty:F4} (Total: {agent2.GetCumulativeReward():F4})");
             }
 
             agent1.EndEpisode();

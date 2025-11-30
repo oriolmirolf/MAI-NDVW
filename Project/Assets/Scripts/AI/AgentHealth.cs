@@ -63,6 +63,14 @@ public class AgentHealth : MonoBehaviour
         return currentHealth;
     }
 
+    public int GetMaxHealth() {
+        return maxHealth;
+    }
+
+    public float GetNormalizedHealth() {
+        return (float)currentHealth / maxHealth;
+    }
+
     public void ResetHealth() {
         IsDead = false;
         currentHealth = maxHealth;

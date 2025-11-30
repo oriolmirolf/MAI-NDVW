@@ -6386,7 +6386,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2687577504509315218, guid: 174c969b1cffbe04b8e0439ad74da698, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1.5
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 2687577504509315218, guid: 174c969b1cffbe04b8e0439ad74da698, type: 3}
       propertyPath: m_LocalPosition.y
@@ -6431,7 +6431,7 @@ PrefabInstance:
     - target: {fileID: 6154323605328318547, guid: 174c969b1cffbe04b8e0439ad74da698, type: 3}
       propertyPath: m_Model
       value: 
-      objectReference: {fileID: 5022602860645237092, guid: 550e6b25982e4bb4b841d9052720993b, type: 3}
+      objectReference: {fileID: 5022602860645237092, guid: de0e76afa078503449903a412d1e1585, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -13772,7 +13772,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2687577504509315218, guid: 174c969b1cffbe04b8e0439ad74da698, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.5
+      value: -3
       objectReference: {fileID: 0}
     - target: {fileID: 2687577504509315218, guid: 174c969b1cffbe04b8e0439ad74da698, type: 3}
       propertyPath: m_LocalPosition.y
@@ -13817,7 +13817,11 @@ PrefabInstance:
     - target: {fileID: 6154323605328318547, guid: 174c969b1cffbe04b8e0439ad74da698, type: 3}
       propertyPath: m_Model
       value: 
-      objectReference: {fileID: 5022602860645237092, guid: 550e6b25982e4bb4b841d9052720993b, type: 3}
+      objectReference: {fileID: 5022602860645237092, guid: de0e76afa078503449903a412d1e1585, type: 3}
+    - target: {fileID: 6154323605328318547, guid: 174c969b1cffbe04b8e0439ad74da698, type: 3}
+      propertyPath: m_BrainParameters.VectorObservationSize
+      value: 14
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -18061,10 +18065,10 @@ MonoBehaviour:
   agent2: {fileID: 1545943984}
   timePenalty: -0.001
   victoryReward: 1
-  defeatReward: -1
+  defeatPenalty: -1
   hitReward: 0.5
   hitPenalty: -0.5
   enableProximityReward: 1
-  proximityRewardScale: 0.01
-  maxProximityDistance: 50
+  proximityRewardScale: 0.001
+  maxProximityDistance: 22
   maxEpisodeSteps: 1000

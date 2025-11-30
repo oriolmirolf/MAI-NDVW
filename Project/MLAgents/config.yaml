@@ -11,7 +11,7 @@ behaviors:
       lambd: 0.95
       num_epoch: 3
       learning_rate_schedule: linear
-    checkpoint_interval: 100000
+    checkpoint_interval: 50000
     network_settings:
       normalize: false
       hidden_units: 128
@@ -36,10 +36,10 @@ behaviors:
     keep_checkpoints: 5
     max_steps: 1000000
     time_horizon: 64
-    summary_freq: 50000
+    summary_freq: 10000
     threaded: false
     self_play:
-      save_steps: 20000
+      save_steps: 10000
       team_change: 50000
       swap_steps: 10000
       window: 10
@@ -62,7 +62,7 @@ engine_settings:
   no_graphics: true
 environment_parameters: null
 checkpoint_settings:
-  run_id: default_run
+  run_id: run02
   initialize_from: null
   load_model: false
   resume: false

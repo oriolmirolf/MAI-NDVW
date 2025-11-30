@@ -43,6 +43,41 @@ public class AgentWeapons : MonoBehaviour
         }
     }
 
+    public void AttackWithWeapon(int weaponIndex, AgentController attacker)
+    {
+        // Check if the action is on cooldown
+        if (Time.time < lastAttackTime + globalAttackCooldown)
+        {
+            return; // Still on cooldown, can't attack or switch
+        }
+        
+        // Validate weapon index
+        if (weaponIndex < 0 || weaponIndex >= weaponPrefabs.Count)
+        {
+            return;
+        }
+        
+        // Switch weapon if needed
+        if (weaponIndex != currentWeaponIndex)
+        {
+            EquipWeapon(weaponIndex, attacker);
+        }
+        
+        // Perform the attack
+        if (CurrentActiveWeapon != null)
+        {
+            lastAttackTime = Time.time;
+            
+            // Ensure the attacker is set on the weapon collider's damage source
+            if (weaponDamageSource != null)
+            {
+                weaponDamageSource.Attacker = attacker;
+            }
+            
+            (CurrentActiveWeapon as IWeapon).Attack();
+        }
+    }
+
     public void Attack(AgentController attacker)
     {
         // Use time-based cooldown that persists across weapon switches
@@ -77,6 +112,19 @@ public class AgentWeapons : MonoBehaviour
     public int GetCurrentWeaponIndex()
     {
         return currentWeaponIndex;
+    }
+
+    public float GetNormalizedCooldownRemaining()
+    {
+        float timeSinceLastAttack = Time.time - lastAttackTime;
+        float cooldownRemaining = Mathf.Max(0f, globalAttackCooldown - timeSinceLastAttack);
+        return Mathf.Clamp01(cooldownRemaining / globalAttackCooldown);
+    }
+
+    public float GetNormalizedWeaponIndex()
+    {
+        if (weaponPrefabs.Count <= 1) return 0f;
+        return (float)currentWeaponIndex / (weaponPrefabs.Count - 1);
     }
 
     private void EquipWeapon(int weaponIndex, AgentController attacker)
