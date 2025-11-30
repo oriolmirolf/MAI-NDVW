@@ -48,6 +48,16 @@ public class AgentController : Agent
     public override void OnEpisodeBegin()
     {
         // Reset agent's state at the beginning of an episode
+        StopAllCoroutines(); // Stop any running coroutines (e.g., dash)
+        isDashing = false;
+        moveSpeed = startingMoveSpeed;
+        if (myTrailRenderer) myTrailRenderer.emitting = false;
+        
+        // Reset health
+        if (agentHealth) agentHealth.ResetHealth();
+        
+        // Reset stamina
+        if (agentStamina) agentStamina.ResetStamina();
     }
 
     public override void CollectObservations(VectorSensor sensor)
@@ -86,16 +96,23 @@ public class AgentController : Agent
         
         Move(moveDirection);
 
-        // Attacking
+        // Attacking (0 = no attack, 1 = attack)
         int attackAction = actions.DiscreteActions[1];
-        if (attackAction > 0)
+        if (attackAction == 1)
         {
-            agentWeapons.SwitchWeapon(attackAction - 1, this);
             agentWeapons.Attack(this);
         }
 
+        // Weapon switching (0 = no switch, 1+ = switch to weapon index-1)
+        int switchAction = actions.DiscreteActions[2];
+        if (switchAction > 0)
+        {
+            int targetWeaponIndex = switchAction - 1;
+            agentWeapons.SwitchWeapon(targetWeaponIndex, this);
+        }
+
         // Dashing
-        int dashAction = actions.DiscreteActions[2];
+        int dashAction = actions.DiscreteActions[3];
         if (dashAction == 1)
         {
             Dash();

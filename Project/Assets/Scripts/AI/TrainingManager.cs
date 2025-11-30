@@ -18,8 +18,23 @@ public class TrainingManager : MonoBehaviour
     [Tooltip("Penalty for being hit.")]
     public float hitPenalty = -0.5f;
 
-    private Transform agent1StartPos;
-    private Transform agent2StartPos;
+    [Header("Proximity Reward (Early Training)")]
+    [Tooltip("Enable proximity reward to encourage agents to approach each other. Disable once agents learn to fight.")]
+    public bool enableProximityReward = true;
+    [Tooltip("Maximum reward per step when agents are very close.")]
+    public float proximityRewardScale = 0.01f;
+    [Tooltip("Distance at which proximity reward starts (no reward beyond this).")]
+    public float maxProximityDistance = 10f;
+
+    [Header("Episode Settings")]
+    [Tooltip("Maximum steps per episode. Episode ends if this limit is reached.")]
+    public int maxEpisodeSteps = 10000;
+    private int currentEpisodeSteps = 0;
+
+    private Vector3 agent1StartPos;
+    private Quaternion agent1StartRot;
+    private Vector3 agent2StartPos;
+    private Quaternion agent2StartRot;
     private AgentHealth agent1Health;
     private AgentHealth agent2Health;
 
@@ -28,8 +43,10 @@ public class TrainingManager : MonoBehaviour
         agent1.SetEnemyAgent(agent2);
         agent2.SetEnemyAgent(agent1);
 
-        agent1StartPos = agent1.transform.parent;
-        agent2StartPos = agent2.transform.parent;
+        agent1StartPos = agent1.transform.position;
+        agent1StartRot = agent1.transform.rotation;
+        agent2StartPos = agent2.transform.position;
+        agent2StartRot = agent2.transform.rotation;
 
         agent1Health = agent1.GetComponent<AgentHealth>();
         agent2Health = agent2.GetComponent<AgentHealth>();
@@ -37,9 +54,35 @@ public class TrainingManager : MonoBehaviour
 
     private void FixedUpdate()
     {
-    // Time penalty
-    agent1.AddReward(timePenalty);
-    agent2.AddReward(timePenalty);
+        currentEpisodeSteps++;
+
+        // Time penalty
+        agent1.AddReward(timePenalty);
+        agent2.AddReward(timePenalty);
+
+        // Proximity reward to encourage agents to approach each other
+        if (enableProximityReward)
+        {
+            float distance = Vector2.Distance(agent1.transform.position, agent2.transform.position);
+            if (distance < maxProximityDistance)
+            {
+                // Reward scales inversely with distance (closer = higher reward)
+                float proximityReward = proximityRewardScale * (1f - distance / maxProximityDistance);
+                agent1.AddReward(proximityReward);
+                agent2.AddReward(proximityReward);
+            }
+        }
+
+        // Check for max episode steps (timeout - draw)
+        if (currentEpisodeSteps >= maxEpisodeSteps)
+        {
+            agent1.SetReward(defeatReward);
+            agent2.SetReward(defeatReward);
+            agent1.EndEpisode();
+            agent2.EndEpisode();
+            ResetScene();
+            return;
+        }
 
         if (agent1Health.IsDead || agent2Health.IsDead)
         {
@@ -76,10 +119,12 @@ public class TrainingManager : MonoBehaviour
 
     private void ResetScene()
     {
-        agent1.transform.position = agent1StartPos.position;
-        agent1.transform.rotation = agent1StartPos.rotation;
-        agent2.transform.position = agent2StartPos.position;
-        agent2.transform.rotation = agent2StartPos.rotation;
+        currentEpisodeSteps = 0;
+
+        agent1.transform.position = agent1StartPos;
+        agent1.transform.rotation = agent1StartRot;
+        agent2.transform.position = agent2StartPos;
+        agent2.transform.rotation = agent2StartRot;
 
         var agent1Rb = agent1.GetComponent<Rigidbody2D>();
         var agent2Rb = agent2.GetComponent<Rigidbody2D>();
@@ -88,12 +133,5 @@ public class TrainingManager : MonoBehaviour
         agent1Rb.angularVelocity = 0f;
         agent2Rb.velocity = Vector2.zero;
         agent2Rb.angularVelocity = 0f;
-
-        // A full reset of the agent's state is needed.
-        // A simple way is to deactivate and reactivate, but a dedicated Reset method in each component is better.
-        agent1.gameObject.SetActive(false);
-        agent1.gameObject.SetActive(true);
-        agent2.gameObject.SetActive(false);
-        agent2.gameObject.SetActive(true);
     }
 }

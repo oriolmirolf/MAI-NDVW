@@ -62,4 +62,10 @@ public class AgentHealth : MonoBehaviour
     public int GetCurrentHealth() {
         return currentHealth;
     }
+
+    public void ResetHealth() {
+        IsDead = false;
+        currentHealth = maxHealth;
+        canTakeDamage = true;
+    }
 }

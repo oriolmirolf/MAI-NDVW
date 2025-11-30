@@ -31,6 +31,11 @@ public class AgentStamina : MonoBehaviour
         CurrentStamina = startingStamina;
     }
 
+    public void ResetStamina() {
+        StopAllCoroutines();
+        CurrentStamina = startingStamina;
+    }
+
     private IEnumerator RefreshStaminaRoutine() {
         while (true)
         {
