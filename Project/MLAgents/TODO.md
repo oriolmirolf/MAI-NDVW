@@ -1,5 +1,4 @@
 [x] Fix attacking action (now only equips weapon)
-[ ] Implement 2 continuous actions for aiming: one for movement and another for attacking
-    - Merge movement and dashing discrete branches into one with 3 actions: nothing, walk or dash
-[ ] Add logging when rewards are given (new addition and total for each agent)
+[ ] Implement 1 continuous action for aiming the attacks
+[x] Add logging when rewards are given (new addition and total for each agent)
 [x] Maybe add reward for being closer to opponent in order for them to learn that they have to fight, and then remove it once they have a basic control of the game.
