@@ -22,7 +22,7 @@ public class AgentMagicLaser : MonoBehaviour
     private void Start()
     {
         trainingManager = FindObjectOfType<TrainingManager>();
-        LaserFaceEnemy();
+        // Rotation is now set by the staff when instantiating the laser
     }
 
     public void Initialize(AgentController attackerAgent, int damage)

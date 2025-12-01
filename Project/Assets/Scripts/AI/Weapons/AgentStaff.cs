@@ -57,7 +57,20 @@ public class AgentStaff : MonoBehaviour, IWeapon
     {
         if (magicLaser != null && magicLaserSpawnPoint != null && agentController != null)
         {
-            GameObject newLaser = Instantiate(magicLaser, magicLaserSpawnPoint.position, Quaternion.identity);
+            // Calculate the rotation for the laser based on aim angle
+            float angle = agentController.CurrentAimAngle;
+            Quaternion laserRotation;
+            if (agentController.FacingLeft)
+            {
+                // When facing left, we need to flip and adjust the angle
+                laserRotation = Quaternion.Euler(0, 0, 180 + angle);
+            }
+            else
+            {
+                laserRotation = Quaternion.Euler(0, 0, angle);
+            }
+            
+            GameObject newLaser = Instantiate(magicLaser, magicLaserSpawnPoint.position, laserRotation);
             
             // Try AgentMagicLaser first (for agent-specific prefabs)
             AgentMagicLaser agentLaser = newLaser.GetComponent<AgentMagicLaser>();

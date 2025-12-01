@@ -175,4 +175,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 24040a633504bdd409072cf197120684, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  laserGrowTime: 0.22
+  laserGrowTime: 0.5

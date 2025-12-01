@@ -35,14 +35,14 @@ behaviors:
     init_path: null
     keep_checkpoints: 5
     max_steps: 1000000
-    time_horizon: 64
+    time_horizon: 500
     summary_freq: 10000
-    threaded: false
+    threaded: true
     self_play:
       save_steps: 10000
       team_change: 50000
       swap_steps: 10000
-      window: 10
+      window: 5
       play_against_latest_model_ratio: 0.5
       initial_elo: 1200.0
     behavioral_cloning: null
@@ -53,20 +53,20 @@ env_settings:
   num_envs: 1
   seed: -1
 engine_settings:
-  width: 1280
-  height: 720
-  quality_level: 1
+  width: 640
+  height: 480
+  quality_level: 0
   time_scale: 100
   target_frame_rate: -1
   capture_frame_rate: 60
   no_graphics: true
 environment_parameters: null
 checkpoint_settings:
-  run_id: run02
+  run_id: run06
   initialize_from: null
   load_model: false
   resume: false
-  force: true
+  force: false
   train_model: false
   inference: false
   results_dir: results

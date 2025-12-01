@@ -14,8 +14,10 @@ public class AgentController : Agent
     [SerializeField] private Transform weaponCollider;
     
     [Header("Arena Bounds (for observation normalization)")]
-    [SerializeField] private Vector2 arenaMin = new Vector2(-11f, -6f);
-    [SerializeField] private Vector2 arenaMax = new Vector2(11f, 7f);
+    [Tooltip("If set, arena bounds will be fetched from TrainingManager. Otherwise, use local values.")]
+    [SerializeField] private TrainingManager trainingManager;
+    private Vector2 arenaMin;
+    private Vector2 arenaMax;
 
     private Rigidbody2D rb;
     private Animator myAnimator;
@@ -45,6 +47,14 @@ public class AgentController : Agent
         agentStamina = GetComponent<AgentStamina>();
         agentWeapons = GetComponent<AgentWeapons>();
         startingMoveSpeed = moveSpeed;
+
+        // Fetch arena bounds from TrainingManager if available
+        if (trainingManager != null)
+        {
+            var bounds = trainingManager.GetArenaBounds();
+            arenaMin = bounds.min;
+            arenaMax = bounds.max;
+        }
     }
 
     public void SetEnemyAgent(AgentController enemy)
@@ -69,13 +79,14 @@ public class AgentController : Agent
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        // Total observations: 16 floats
+        // Total observations: 17 floats
         // - Own position (normalized): 2
         // - Distance to enemy: 2  
         // - Own velocity: 2
         // - Enemy velocity: 2
         // - Own health (normalized): 1
         // - Enemy health (normalized): 1
+        // - Own stamina (normalized): 1
         // - Own weapon index (normalized): 1
         // - Enemy weapon index (normalized): 1
         // - Own attack cooldown (normalized): 1
@@ -86,8 +97,8 @@ public class AgentController : Agent
         if (!enemyAgent)
         {
             Debug.LogWarning("Enemy agent not set for observations.");
-            // Add zeros for all 16 observations
-            for (int i = 0; i < 16; i++)
+            // Add zeros for all 17 observations
+            for (int i = 0; i < 17; i++)
             {
                 sensor.AddObservation(0f);
             }
@@ -124,25 +135,28 @@ public class AgentController : Agent
         // 6. Enemy health normalized [0, 1] (1 float)
         sensor.AddObservation(enemyAgent.agentHealth.GetNormalizedHealth());
 
-        // 7. Own weapon index normalized [0, 1] (1 float)
+        // 7. Own stamina normalized [0, 1] (1 float)
+        sensor.AddObservation(agentStamina.GetNormalizedStamina());
+
+        // 8. Own weapon index normalized [0, 1] (1 float)
         sensor.AddObservation(agentWeapons.GetNormalizedWeaponIndex());
 
-        // 8. Enemy weapon index normalized [0, 1] (1 float)
+        // 9. Enemy weapon index normalized [0, 1] (1 float)
         sensor.AddObservation(enemyAgent.agentWeapons.GetNormalizedWeaponIndex());
 
-        // 9. Own attack cooldown normalized [0, 1] (1 float)
+        // 10. Own attack cooldown normalized [0, 1] (1 float)
         // 0 = ready to attack, 1 = just attacked
         sensor.AddObservation(agentWeapons.GetNormalizedCooldownRemaining());
 
-        // 10. Enemy attack cooldown normalized [0, 1] (1 float)
+        // 11. Enemy attack cooldown normalized [0, 1] (1 float)
         // Knowing enemy cooldown helps time attacks/dodges
         sensor.AddObservation(enemyAgent.agentWeapons.GetNormalizedCooldownRemaining());
 
-        // 11. Own aim angle normalized [-1, 1] (1 float)
+        // 12. Own aim angle normalized [-1, 1] (1 float)
         // Helps agent track where it's currently aiming
         sensor.AddObservation(currentAimAngle / 180f);
 
-        // 12. Enemy aim angle normalized [-1, 1] (1 float)
+        // 13. Enemy aim angle normalized [-1, 1] (1 float)
         // Helps predict/dodge enemy attacks
         sensor.AddObservation(enemyAgent.currentAimAngle / 180f);
     }
@@ -187,12 +201,18 @@ public class AgentController : Agent
 
         // === CONTINUOUS ACTIONS ===
         
-        // Aiming angle (continuous: -1 to 1, mapped to -180 to 180 degrees)
+        // Aiming angle (continuous: -1 to 1, mapped so that 0 = up)
+        // This ensures left/right are symmetric around 0:
+        //   0 = up (90°), -0.5 = left (180°), +0.5 = right (0°), ±1 = down (-90°)
         float aimInput = actions.ContinuousActions[0];
-        currentAimAngle = aimInput * 180f; // Convert [-1, 1] to [-180, 180] degrees
+        currentAimAngle = 90f - (aimInput * 180f); // Convert [-1, 1] to [270°, -90°] with 0 = up
+        
+        // Normalize angle to [-180, 180] range
+        if (currentAimAngle > 180f) currentAimAngle -= 360f;
+        if (currentAimAngle < -180f) currentAimAngle += 360f;
         
         // Update facing direction based on aim angle
-        // If aiming left hemisphere (-90 to -180 or 90 to 180), face left
+        // Face left when aiming into the left hemisphere (90° to 180° or -90° to -180°)
         facingLeft = Mathf.Abs(currentAimAngle) > 90f;
         mySpriteRender.flipX = facingLeft;
     }
@@ -236,6 +256,15 @@ public class AgentController : Agent
             myTrailRenderer.emitting = true;
             StartCoroutine(EndDashRoutine());
         }
+        else
+        {
+            trainingManager.PenalizeDashSpamming(this);
+        }
+    }
+
+    public void PenalizeAttackSpamming()
+    {
+        trainingManager.PenalizeAttackSpamming(this);
     }
 
     private IEnumerator EndDashRoutine()

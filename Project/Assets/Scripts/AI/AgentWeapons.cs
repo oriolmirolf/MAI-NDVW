@@ -48,6 +48,7 @@ public class AgentWeapons : MonoBehaviour
         // Check if the action is on cooldown
         if (Time.time < lastAttackTime + globalAttackCooldown)
         {
+            attacker.PenalizeAttackSpamming();
             return; // Still on cooldown, can't attack or switch
         }
         

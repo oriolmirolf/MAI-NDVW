@@ -17,6 +17,10 @@ public class TrainingManager : MonoBehaviour
     public float hitReward = 0.5f;
     [Tooltip("Penalty for being hit.")]
     public float hitPenalty = -0.5f;
+    [Tooltip("Penalty for attempting to attack while on cooldown.")]
+    public float attackSpammingPenalty = -0.001f;
+    [Tooltip("Penalty for attempting to dash while on cooldown.")]
+    public float dashSpammingPenalty = -0.001f;
 
     [Header("Proximity Reward (Early Training)")]
     [Tooltip("Enable proximity reward to encourage agents to approach each other. Disable once agents learn to fight.")]
@@ -30,6 +34,18 @@ public class TrainingManager : MonoBehaviour
     [Tooltip("Maximum steps per episode. Episode ends if this limit is reached.")]
     public int maxEpisodeSteps = 10000;
     private int currentEpisodeSteps = 0;
+
+    [Header("Spawning Settings")]
+    [Tooltip("If true, agents spawn at random positions each episode. If false, they spawn at their initial positions.")]
+    public bool randomSpawning = false;
+    [Tooltip("Minimum distance between agents when spawning randomly.")]
+    public float minSpawnDistance = 5f;
+
+    [Header("Arena Bounds")]
+    [Tooltip("Minimum corner of the arena (bottom-left).")]
+    public Vector2 arenaMin = new Vector2(-11f, -6f);
+    [Tooltip("Maximum corner of the arena (top-right).")]
+    public Vector2 arenaMax = new Vector2(11f, 7f);
 
     private Vector3 agent1StartPos;
     private Quaternion agent1StartRot;
@@ -125,14 +141,45 @@ public class TrainingManager : MonoBehaviour
         Debug.Log($"[Hit] {attackerName} hit {receiverName}! {attackerName}: +{hitReward:F4} (Total: {attacker.GetCumulativeReward():F4}) | {receiverName}: {hitPenalty:F4} (Total: {receiver.GetCumulativeReward():F4})");
     }
 
+    public void PenalizeAttackSpamming(AgentController attacker)
+    {
+        attacker.AddReward(attackSpammingPenalty);
+        // string attackerName = attacker == agent1 ? "Agent1" : "Agent2";
+        // Debug.Log($"[Attack Spamming] {attackerName} attempted attack on cooldown! Penalty: {attackSpammingPenalty:F4} (Total: {attacker.GetCumulativeReward():F4})");
+    }
+
+    public void PenalizeDashSpamming(AgentController attacker)
+    {
+        attacker.AddReward(dashSpammingPenalty);
+        // string attackerName = attacker == agent1 ? "Agent1" : "Agent2";
+        // Debug.Log($"[Dash Spamming] {attackerName} attempted dash on cooldown! Penalty: {dashSpammingPenalty:F4} (Total: {attacker.GetCumulativeReward():F4})");
+    }
+
     private void ResetScene()
     {
         currentEpisodeSteps = 0;
 
-        agent1.transform.position = agent1StartPos;
-        agent1.transform.rotation = agent1StartRot;
-        agent2.transform.position = agent2StartPos;
-        agent2.transform.rotation = agent2StartRot;
+        if (randomSpawning)
+        {
+            // Generate random positions for both agents
+            Vector3 pos1 = GetRandomSpawnPosition();
+            Vector3 pos2 = GetRandomSpawnPositionAwayFrom(pos1, minSpawnDistance);
+
+            agent1.transform.position = pos1;
+            agent2.transform.position = pos2;
+
+            // Random rotation (facing direction will be adjusted by the agent)
+            agent1.transform.rotation = agent1StartRot;
+            agent2.transform.rotation = agent2StartRot;
+        }
+        else
+        {
+            // Deterministic spawning at initial positions
+            agent1.transform.position = agent1StartPos;
+            agent1.transform.rotation = agent1StartRot;
+            agent2.transform.position = agent2StartPos;
+            agent2.transform.rotation = agent2StartRot;
+        }
 
         var agent1Rb = agent1.GetComponent<Rigidbody2D>();
         var agent2Rb = agent2.GetComponent<Rigidbody2D>();
@@ -141,5 +188,38 @@ public class TrainingManager : MonoBehaviour
         agent1Rb.angularVelocity = 0f;
         agent2Rb.velocity = Vector2.zero;
         agent2Rb.angularVelocity = 0f;
+    }
+
+    private Vector3 GetRandomSpawnPosition()
+    {
+        float x = Random.Range(arenaMin.x, arenaMax.x);
+        float y = Random.Range(arenaMin.y, arenaMax.y);
+        return new Vector3(x, y, 0f);
+    }
+
+    private Vector3 GetRandomSpawnPositionAwayFrom(Vector3 otherPosition, float minDistance)
+    {
+        Vector3 newPosition;
+        int maxAttempts = 100;
+        int attempts = 0;
+
+        do
+        {
+            newPosition = GetRandomSpawnPosition();
+            attempts++;
+        }
+        while (Vector3.Distance(newPosition, otherPosition) < minDistance && attempts < maxAttempts);
+
+        if (attempts >= maxAttempts)
+        {
+            Debug.LogWarning("Could not find spawn position with minimum distance. Using best available.");
+        }
+
+        return newPosition;
+    }
+
+    public (Vector2 min, Vector2 max) GetArenaBounds()
+    {
+        return (arenaMin, arenaMax);
     }
 }

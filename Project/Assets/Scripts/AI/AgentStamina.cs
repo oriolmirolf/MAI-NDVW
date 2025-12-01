@@ -36,6 +36,10 @@ public class AgentStamina : MonoBehaviour
         CurrentStamina = startingStamina;
     }
 
+    public float GetNormalizedStamina() {
+        return (float)CurrentStamina / maxStamina;
+    }
+
     private IEnumerator RefreshStaminaRoutine() {
         while (true)
         {
