@@ -124,9 +124,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6900948809995915522}
-  - component: {fileID: 6900948809995915525}
   - component: {fileID: 8482612233469448611}
   - component: {fileID: 7460896784279117659}
+  - component: {fileID: 2254078789250572550}
   m_Layer: 0
   m_Name: Agent Staff
   m_TagString: Untagged
@@ -151,21 +151,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6900948809995915525
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6900948809995915523}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7922b6115943e5744bf5b12a3b177cfd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  weaponInfo: {fileID: 11400000, guid: c06027f90c97b1e499e11275d081ca22, type: 2}
-  magicLaser: {fileID: 1446626321532389062, guid: d63e3061dc0ec974f8e402cc665845aa, type: 3}
-  magicLaserSpawnPoint: {fileID: 5913864713897980801}
 --- !u!212 &8482612233469448611
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -238,3 +223,18 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
+--- !u!114 &2254078789250572550
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6900948809995915523}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf40c3d997395d84891d0883f130b05b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  weaponInfo: {fileID: 11400000, guid: c06027f90c97b1e499e11275d081ca22, type: 2}
+  magicLaser: {fileID: 1446626321532389062, guid: d63e3061dc0ec974f8e402cc665845aa, type: 3}
+  magicLaserSpawnPoint: {fileID: 0}

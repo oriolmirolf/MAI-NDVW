@@ -12,9 +12,8 @@ GameObject:
   - component: {fileID: 1446626321532389057}
   - component: {fileID: 1446626321532389058}
   - component: {fileID: 1446626321532389059}
-  - component: {fileID: 1446626321532389117}
   - component: {fileID: 6265526306743314732}
-  - component: {fileID: -5256330685820150471}
+  - component: {fileID: -3174854225427297931}
   m_Layer: 0
   m_Name: Agent Magic Laser
   m_TagString: Untagged
@@ -151,19 +150,6 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 1
   m_Constraints: 0
---- !u!114 &1446626321532389117
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1446626321532389062}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2c3ce1a2d9b5026489e0667adc177e47, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  laserGrowTime: 0.22
 --- !u!114 &6265526306743314732
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -177,7 +163,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fadeTime: 0.4
---- !u!114 &-5256330685820150471
+--- !u!114 &-3174854225427297931
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -186,6 +172,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1446626321532389062}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 496338d8c186ded429449c96e38b5010, type: 3}
+  m_Script: {fileID: 11500000, guid: 24040a633504bdd409072cf197120684, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  laserGrowTime: 0.5

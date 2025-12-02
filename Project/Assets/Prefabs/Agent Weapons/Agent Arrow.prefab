@@ -12,10 +12,9 @@ GameObject:
   - component: {fileID: 4443122471089044053}
   - component: {fileID: 4443122471089044047}
   - component: {fileID: 4443122471089044046}
-  - component: {fileID: 4443122471089044049}
   - component: {fileID: 4443122471089044048}
   - component: {fileID: 4443122471089044051}
-  - component: {fileID: 8389319478439870179}
+  - component: {fileID: 995624837532227262}
   m_Layer: 0
   m_Name: Agent Arrow
   m_TagString: Untagged
@@ -152,22 +151,6 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 1
   m_Constraints: 0
---- !u!114 &4443122471089044049
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4443122471089044052}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c844f256d1b438847afa8ad59d57a4f1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveSpeed: 22
-  particleOnHitPrefabVFX: {fileID: 7882678833386788365, guid: 7c6f3434d256782499bbccc46bdb1b6d, type: 3}
-  isEnemyProjectile: 0
-  projectileRange: 10
 --- !u!96 &4443122471089044048
 TrailRenderer:
   serializedVersion: 3
@@ -293,7 +276,7 @@ SortingGroup:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_SortAtRoot: 0
---- !u!114 &8389319478439870179
+--- !u!114 &995624837532227262
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -302,6 +285,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 4443122471089044052}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 496338d8c186ded429449c96e38b5010, type: 3}
+  m_Script: {fileID: 11500000, guid: 0c2bfbae8b94ba64cb19fc80a683b883, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  moveSpeed: 22
+  particleOnHitPrefabVFX: {fileID: 7882678833386788365, guid: 7c6f3434d256782499bbccc46bdb1b6d, type: 3}
+  projectileRange: 10
