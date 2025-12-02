@@ -1,3 +1,4 @@
+# Bow Agent
 default_settings: null
 behaviors:
   My Behavior:
@@ -47,7 +48,7 @@ behaviors:
       initial_elo: 1200.0
     behavioral_cloning: null
 env_settings:
-  env_path: C:/Users/sanch/Unity/MAI-NDVW/Project/MLAgents/env_3weapons/2D Top Down Pixel Combat.exe
+  env_path: C:/Users/sanch/Unity/MAI-NDVW/Project/MLAgents/builds/bow_env/2D Top Down Pixel Combat.exe
   env_args: null
   base_port: 5005
   num_envs: 5
@@ -62,10 +63,10 @@ engine_settings:
   no_graphics: true
 environment_parameters: null
 checkpoint_settings:
-  run_id: run13
+  run_id: bow_01
   initialize_from: null
   load_model: false
-  resume: false
+  resume: true
   force: false
   train_model: false
   inference: false

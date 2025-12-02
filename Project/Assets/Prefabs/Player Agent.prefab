@@ -503,8 +503,7 @@ MonoBehaviour:
   dashSpeed: 4
   myTrailRenderer: {fileID: 2687577503540171484}
   weaponCollider: {fileID: 2687577504381944744}
-  arenaMin: {x: -11, y: -6}
-  arenaMax: {x: 11, y: 7}
+  trainingManager: {fileID: 0}
 --- !u!114 &6154323605328318547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -518,7 +517,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 16
+    VectorObservationSize: 17
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 1
