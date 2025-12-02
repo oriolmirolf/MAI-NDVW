@@ -85,13 +85,6 @@ public class AgentBow : MonoBehaviour, IWeapon
         float angle = agentController.CurrentAimAngle;
         
         // Apply rotation based on aim angle for projectile direction
-        if (agentController.FacingLeft)
-        {
-            transform.rotation = Quaternion.Euler(0, -180, angle);
-        }
-        else
-        {
-            transform.rotation = Quaternion.Euler(0, 0, angle);
-        }
+        transform.rotation = Quaternion.Euler(0, 0, angle);
     }
 }

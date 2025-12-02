@@ -34,7 +34,7 @@ behaviors:
           deterministic: false
     init_path: null
     keep_checkpoints: 5
-    max_steps: 1000000
+    max_steps: 100000000
     time_horizon: 64
     summary_freq: 10000
     threaded: true
@@ -47,7 +47,7 @@ behaviors:
       initial_elo: 1200.0
     behavioral_cloning: null
 env_settings:
-  env_path: C:/Users/sanch/Unity/MAI-NDVW/Project/MLAgents/env/2D Top Down Pixel Combat.exe
+  env_path: C:/Users/sanch/Unity/MAI-NDVW/Project/MLAgents/env_3weapons/2D Top Down Pixel Combat.exe
   env_args: null
   base_port: 5005
   num_envs: 5
@@ -62,7 +62,7 @@ engine_settings:
   no_graphics: true
 environment_parameters: null
 checkpoint_settings:
-  run_id: run10
+  run_id: run13
   initialize_from: null
   load_model: false
   resume: false

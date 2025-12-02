@@ -116,23 +116,22 @@ public class AgentSword : MonoBehaviour, IWeapon
         if (agentController == null) return;
 
         float angle = agentController.CurrentAimAngle;
-        
-        // Apply rotation based on aim angle, similar to player's MouseFollowWithOffset
+        float yRotation;
+
         if (agentController.FacingLeft)
         {
-            transform.rotation = Quaternion.Euler(0, -180, angle);
-            if (weaponCollider != null)
-            {
-                weaponCollider.rotation = Quaternion.Euler(0, -180, 0);
-            }
+            yRotation = -180;
         }
         else
         {
-            transform.rotation = Quaternion.Euler(0, 0, angle);
-            if (weaponCollider != null)
-            {
-                weaponCollider.rotation = Quaternion.Euler(0, 0, 0);
-            }
+            yRotation = 0;
+        }
+        
+        // Apply rotation based on aim angle, similar to player's MouseFollowWithOffset
+        transform.rotation = Quaternion.Euler(0, yRotation, angle);
+        if (weaponCollider != null)
+        {
+            weaponCollider.rotation = Quaternion.Euler(0, yRotation, angle);
         }
     }
 }

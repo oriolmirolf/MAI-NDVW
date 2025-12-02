@@ -59,16 +59,7 @@ public class AgentStaff : MonoBehaviour, IWeapon
         {
             // Calculate the rotation for the laser based on aim angle
             float angle = agentController.CurrentAimAngle;
-            Quaternion laserRotation;
-            if (agentController.FacingLeft)
-            {
-                // When facing left, we need to flip and adjust the angle
-                laserRotation = Quaternion.Euler(0, 0, 180 + angle);
-            }
-            else
-            {
-                laserRotation = Quaternion.Euler(0, 0, angle);
-            }
+            Quaternion laserRotation = Quaternion.Euler(0, 0, angle);
             
             GameObject newLaser = Instantiate(magicLaser, magicLaserSpawnPoint.position, laserRotation);
             
