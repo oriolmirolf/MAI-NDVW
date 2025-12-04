@@ -1,40 +1,55 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
 
-public class UIFade : Singleton<UIFade>
+public class UIFade : MonoBehaviour
 {
-    [SerializeField] private Image fadeScreen;
-    [SerializeField] private float fadeSpeed = 1f;
+    // Singleton pattern: allows us to call UIFade.Instance from anywhere
+    public static UIFade Instance;
 
-    private IEnumerator fadeRoutine;
+    private Image fadeImage;
+    [SerializeField] private float fadeSpeed = 2f;
 
-    public void FadeToBlack() {
-        if (fadeRoutine != null) {
-            StopCoroutine(fadeRoutine);
-        }
+    private void Awake()
+    {
+        // Ensure there is only one UIFade in the game
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
 
-        fadeRoutine = FadeRoutine(1);
-        StartCoroutine(fadeRoutine);
+        fadeImage = GetComponent<Image>();
     }
 
-    public void FadeToClear() {
-        if (fadeRoutine != null)
-            {
-                StopCoroutine(fadeRoutine);
-            }
-
-            fadeRoutine = FadeRoutine(0);
-            StartCoroutine(fadeRoutine);
+    public void FadeToBlack()
+    {
+        // Stop any running fades so they don't fight each other
+        StopAllCoroutines();
+        StartCoroutine(FadeRoutine(1f));
     }
 
-    private IEnumerator FadeRoutine(float targetAlpha) {
-        while (!Mathf.Approximately(fadeScreen.color.a, targetAlpha))
+    public void FadeToClear()
+    {
+        StopAllCoroutines();
+        StartCoroutine(FadeRoutine(0f));
+    }
+
+    private IEnumerator FadeRoutine(float targetAlpha)
+    {
+        if (!fadeImage) yield break;
+
+        float startAlpha = fadeImage.color.a;
+        float percent = 0;
+
+        while (percent < 1)
         {
-            float alpha = Mathf.MoveTowards(fadeScreen.color.a, targetAlpha, fadeSpeed * Time.deltaTime);
-            fadeScreen.color = new Color(fadeScreen.color.r, fadeScreen.color.g, fadeScreen.color.b, alpha);
-            yield return null;
+            percent += Time.deltaTime * fadeSpeed;
+            float newAlpha = Mathf.Lerp(startAlpha, targetAlpha, percent);
+            
+            // Apply color
+            Color c = fadeImage.color;
+            c.a = newAlpha;
+            fadeImage.color = c;
+
+            yield return null; // Wait for the next frame
         }
     }
 }
