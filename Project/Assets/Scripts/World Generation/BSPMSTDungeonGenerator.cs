@@ -16,8 +16,7 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
     [SerializeField] private Tilemap wallsTilemap;
 
     [Header("Background / Outside Fill")]
-    [Tooltip("If true, fills the void around rooms with outside tiles. If false, leaves it empty.")]
-    [SerializeField] private bool fillOutside = false; // CHANGED: Default is now false
+    [SerializeField] private bool fillOutside = false;
     [SerializeField] private Tilemap outsideTilemap;
     [SerializeField] private TileBase[] outsideTiles;
     [SerializeField, Min(0)] private int outsidePadding = 4;
@@ -25,12 +24,16 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
     [Header("Floor Tiles")]
     [SerializeField] private TileBase groundTile;
     [SerializeField] private TileBase[] groundTileVariations;
+    [Tooltip("Extra floor tiles around rooms that are NOT walkable (visual only)")]
+    [SerializeField, Min(0)] private int visualFloorPadding = 2;
 
     [Header("Connections")]
     public ConnectionType connectionType = ConnectionType.Corridors;
     [SerializeField] private GameObject portalPrefab;
     [Tooltip("Global offset if your sprite is rotated (e.g. 90 or -90)")]
     [SerializeField] private float portalBaseRotation = 0f; 
+    [Tooltip("How far the visual corridor opening extends out")]
+    [SerializeField, Min(1)] private int portalStubLength = 2; 
 
     [System.Serializable]
     public class WallTiles
@@ -46,14 +49,14 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
     [SerializeField] private bool surroundWithWalls = true;
 
     [Header("Generation")]
-    [Min(10)] public int mapWidth  = 120;
-    [Min(10)] public int mapHeight = 80;
-    [Min(1)]  public int roomCount = 12;
+    [Min(10)] public int mapWidth  = 140; 
+    [Min(10)] public int mapHeight = 140;
+    [Min(1)]  public int roomCount = 8;
     [Min(0)]  public int extraConnections = 2;
-    [Min(8)]  public int minLeafSize = 14;
-    [Min(4)]  public int minRoomSize = 6;
-    [Min(4)]  public int maxRoomSize = 18;
-    [Min(1)]  public int roomMargin = 2; 
+    [Min(8)]  public int minLeafSize = 36; 
+    [Min(4)]  public int minRoomSize = 25;
+    [Min(4)]  public int maxRoomSize = 30;
+    [Min(1)]  public int roomMargin = 4; 
     [Min(1)]  public int corridorWidth = 2;
     public bool manhattanCorridors = true;
     public bool centerMapAtZero = true;
@@ -175,15 +178,22 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
             foreach (var e in mst) CarveCorridor(rooms[e.a].Center, rooms[e.b].Center);
         }
 
-        // 5. Walls
+        // --- 5. PRE-CARVE STUBS ---
+        if (connectionType == ConnectionType.Portals) {
+            foreach (var e in mst) PreCarvePortalStubs(rooms[e.a], rooms[e.b]);
+        }
+
+        // 6. Walls
         if (surroundWithWalls && wallsTilemap) PlaceDecoratedWalls();
 
-        // 6. Portals
+        // 7. Visual Padding
+        if (visualFloorPadding > 0) PaintVisualPadding();
+
+        // 8. Portals
         if (connectionType == ConnectionType.Portals) {
             foreach (var e in mst) CreatePortalConnection(rooms[e.a], rooms[e.b]);
         }
 
-        // 7. Fill Outside (Optional now)
         if (fillOutside) FillOutside();
 
         if (populators != null) {
@@ -198,6 +208,83 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
 
         if (connectionType == ConnectionType.Corridors) UpdateGlobalConfiner();
     }
+
+    private void PaintVisualPadding()
+    {
+        foreach (var r in rooms)
+        {
+            int pad = visualFloorPadding;
+            for (int x = r.rect.xMin - pad; x < r.rect.xMax + pad; x++)
+            {
+                for (int y = r.rect.yMin - pad; y < r.rect.yMax + pad; y++)
+                {
+                    var pos = new Vector3Int(x, y, 0);
+                    if (!floorCells.Contains(pos)) floorTilemap.SetTile(pos, PickGroundTile());
+                }
+            }
+        }
+    }
+
+    private void PreCarvePortalStubs(Room roomA, Room roomB)
+    {
+        Vector3Int dir = roomB.Center - roomA.Center;
+        PreCarveSingleStub(roomA, dir);
+        PreCarveSingleStub(roomB, -dir);
+    }
+
+    private void PreCarveSingleStub(Room room, Vector3Int dir)
+    {
+        Vector3Int startPos = GetWallPos(room, dir);
+        Vector3Int fwd = GetDominantDir(dir);
+        Vector3Int right = (fwd.x != 0) ? new Vector3Int(0, 1, 0) : new Vector3Int(1, 0, 0);
+
+        for (int i = 0; i <= portalStubLength; i++)
+        {
+            Vector3Int center = startPos + fwd * i;
+            
+            // --- WIDTH LOGIC ---
+            AddFloor(center);             // center
+            AddFloor(center + right);     // +1 (top / right)
+            AddFloor(center - right);     // -1 (bottom / left)
+
+            // Extra width ONLY on the top/right side
+            AddFloor(center + right * 2); // +2
+            // NOTE: removed center - right * 2
+        }
+    }
+
+
+    private void AddFloor(Vector3Int pos)
+    {
+        if (!floorCells.Contains(pos))
+        {
+            floorCells.Add(pos);
+            floorTilemap.SetTile(pos, PickGroundTile());
+        }
+    }
+
+    private Vector3Int GetDominantDir(Vector3Int dir)
+    {
+        if (Mathf.Abs(dir.x) > Mathf.Abs(dir.y)) return (dir.x > 0) ? Vector3Int.right : Vector3Int.left;
+        return (dir.y > 0) ? Vector3Int.up : Vector3Int.down;
+    }
+
+    private Vector3Int GetWallPos(Room room, Vector3Int dir)
+    {
+        if (Mathf.Abs(dir.x) > Mathf.Abs(dir.y)) {
+            // --- HORIZONTAL WALLS (East/West) ---
+            // Tweak 'yCenter' to slide the portal Up/Down along the wall
+            int yCenter = (room.rect.y + room.rect.height / 2) - 1; // <--- CHANGE THIS (-1, 0, or +1)
+            
+            return (dir.x > 0) ? new Vector3Int(room.rect.xMax - 1, yCenter, 0) : new Vector3Int(room.rect.xMin, yCenter, 0);
+        } else {
+            // --- VERTICAL WALLS (North/South) ---
+            // Tweak 'xCenter' to slide the portal Left/Right along the wall
+            int xCenter = (room.rect.x + room.rect.width / 2) - 1; // <--- CHANGE THIS (-1, 0, or +1)
+            
+            return (dir.y > 0) ? new Vector3Int(xCenter, room.rect.yMax - 1, 0) : new Vector3Int(xCenter, room.rect.yMin, 0);
+        }
+}
 
     private void CreateRoomCollider(Room room)
     {
@@ -229,85 +316,119 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
         string id = $"Portal_{roomA.Center}_{roomB.Center}";
         Vector3Int dir = roomB.Center - roomA.Center;
         
-        PlacePortalOnWall(roomA, dir, id, "To_" + roomB.Center);
-        PlacePortalOnWall(roomB, -dir, id, "To_" + roomA.Center);
+        PlacePortalAtStubStart(roomA, dir, id, "To_" + roomB.Center);
+        PlacePortalAtStubStart(roomB, -dir, id, "To_" + roomA.Center);
     }
 
-    private void PlacePortalOnWall(Room room, Vector3Int dir, string id, string debugName)
+    private void PlacePortalAtStubStart(Room room, Vector3Int dir, string id, string debugName)
     {
-        Vector3Int pos;
-        float zRot = 0;
-        bool isVerticalDoorway = false; 
+        Vector3Int startPos = GetWallPos(room, dir);
+        Vector3Int domDir   = GetDominantDir(dir);
 
-        if (Mathf.Abs(dir.x) > Mathf.Abs(dir.y)) 
-        {
-            isVerticalDoorway = true;
-            int yCenter = room.rect.y + room.rect.height / 2;
-            if (dir.x > 0) 
-            {
-                pos = new Vector3Int(room.rect.xMax - 1, yCenter, 0); 
-                zRot = 0; 
-            } 
-            else           
-            {
-                pos = new Vector3Int(room.rect.xMin, yCenter, 0); 
-                zRot = 180; 
-            }
-        } 
-        else 
-        {
-            isVerticalDoorway = false;
-            int xCenter = room.rect.x + room.rect.width / 2;
-            if (dir.y > 0) 
-            {
-                pos = new Vector3Int(xCenter, room.rect.yMax - 1, 0); 
-                zRot = 90; 
-            } 
-            else           
-            {
-                pos = new Vector3Int(xCenter, room.rect.yMin, 0); 
-                zRot = -90; 
-            }
-        }
+        // Portal sits on the wall line
+        Vector3Int pos = startPos;
+
+        // Rotation Logic
+        float zRot = 0f;
+        if (Mathf.Abs(domDir.x) > Mathf.Abs(domDir.y))
+            zRot = (domDir.x > 0) ? 0f : 180f;
+        else
+            zRot = (domDir.y > 0) ? 90f : -90f;
 
         zRot += portalBaseRotation;
 
-        List<Vector3Int> holeTiles = new List<Vector3Int> { pos };
-        if (isVerticalDoorway) {
-            holeTiles.Add(pos + new Vector3Int(0, 1, 0)); 
-            holeTiles.Add(pos + new Vector3Int(0, -1, 0)); 
-        } else {
-            holeTiles.Add(pos + new Vector3Int(1, 0, 0)); 
-            holeTiles.Add(pos + new Vector3Int(-1, 0, 0)); 
-        }
+        // Axis perpendicular to the wall normal (across the opening)
+        Vector3Int widthDir = (domDir.x != 0) ? new Vector3Int(0, 1, 0) : new Vector3Int(1, 0, 0);
+        bool isVertical = (domDir.y != 0);
 
-        foreach (var tilePos in holeTiles)
+        // --- HOLE PUNCHING ---
+        // Portal is exactly 2 tiles tall/wide along widthDir:
+        //   opening tiles = pos and pos + widthDir
+        List<Vector3Int> holeTiles = new List<Vector3Int>
         {
-            if (wallsTilemap) wallsTilemap.SetTile(tilePos, null);
-            if (!floorCells.Contains(tilePos)) {
-                floorTilemap.SetTile(tilePos, PickGroundTile());
-                floorCells.Add(tilePos);
-            }
-        }
-        if (wallsTilemap) wallsTilemap.RefreshAllTiles();
+            pos,
+            pos + widthDir
+        };
 
+        if (wallsTilemap)
+        {
+            // Clear just the 2 portal tiles
+            foreach (var p in holeTiles)
+                wallsTilemap.SetTile(p, null);
+
+            // --- CORNER FIXING ---
+            // Corners sit immediately outside the 2-tile portal:
+            //   bottom/left edge  = pos - widthDir
+            //   top/right edge    = pos + widthDir * 2
+            Vector3Int nearEdge = pos - widthDir;        // bottom (vertical) or left (horizontal)
+            Vector3Int farEdge  = pos + widthDir * 2;    // top (vertical) or right (horizontal)
+
+            FixCornerTile(nearEdge, domDir, isLeftSide: true);
+            FixCornerTile(farEdge,  domDir, isLeftSide: false);
+
+            wallsTilemap.RefreshAllTiles();
+        }
+
+        // --- SPAWN OBJECT ---
         Vector3 worldPos = floorTilemap.CellToWorld(pos) + new Vector3(0.5f, 0.5f, 0);
-        GameObject pObj = Instantiate(portalPrefab, worldPos, Quaternion.Euler(0,0,zRot), objectsParent);
+        float centerShift = 0.5f;
+        if (isVertical) centerShift = 0f; // vertical portals are centered differently
+        worldPos += (Vector3)widthDir * centerShift;
+
+        GameObject pObj = Instantiate(portalPrefab, worldPos, Quaternion.Euler(0, 0, zRot), objectsParent);
         pObj.name = $"Portal_{debugName}";
 
         var exit = pObj.GetComponent<AreaExit>();
-        if (exit) {
+        if (exit)
+        {
             exit.sceneTransitionName = id;
-            var f = typeof(AreaExit).GetField("transitionName", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if(f != null) f.SetValue(exit, id);
+            var f = typeof(AreaExit).GetField("transitionName",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (f != null) f.SetValue(exit, id);
         }
+
         var ent = pObj.GetComponentInChildren<AreaEntrance>();
-        if (ent) {
-            var f = typeof(AreaEntrance).GetField("transitionName", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
+        if (ent)
+        {
+            var f = typeof(AreaEntrance).GetField("transitionName",
+                System.Reflection.BindingFlags.NonPublic |
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.Public);
             if (f != null) f.SetValue(ent, id);
         }
     }
 
+
+
+    private void FixCornerTile(Vector3Int pos, Vector3Int facingDir, bool isLeftSide)
+    {
+        if (!wallsTilemap) return; // just make sure the tilemap exists
+
+        TileBase corner = null;
+
+        if (facingDir == Vector3Int.up) // North Wall
+        {
+            corner = isLeftSide ? wallTiles.innerTopLeft : wallTiles.innerTopRight;
+        }
+        else if (facingDir == Vector3Int.down) // South Wall
+        {
+            corner = isLeftSide ? wallTiles.innerBottomLeft : wallTiles.innerBottomRight;
+        }
+        else if (facingDir == Vector3Int.right) // East Wall
+        {
+            corner = isLeftSide ? wallTiles.innerBottomRight : wallTiles.innerTopRight;
+        }
+        else if (facingDir == Vector3Int.left) // West Wall
+        {
+            corner = isLeftSide ? wallTiles.innerBottomLeft : wallTiles.innerTopLeft;
+        }
+
+        if (corner != null)
+            wallsTilemap.SetTile(pos, corner);
+    }
+
+
+    // --- Helpers ---
     private TileBase PickGroundTile() => (groundTileVariations!=null && groundTileVariations.Length>0 && rng.NextDouble()<0.3) ? groundTileVariations[rng.Next(groundTileVariations.Length)] : groundTile;
     private TileBase PickOutsideTile() => (outsideTiles!=null && outsideTiles.Length>0) ? outsideTiles[rng.Next(outsideTiles.Length)] : PickGroundTile();
     

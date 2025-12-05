@@ -352,7 +352,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.02, y: 0.7}
   m_AnchorMax: {x: 0.3, y: 0.98}
-  m_AnchoredPosition: {x: -76.79999, y: -226.80005}
+  m_AnchoredPosition: {x: -76.799805, y: -226.80005}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!4 &226339566 stripped
@@ -1517,9 +1517,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 62925813f3c7b074b9b007bc033bfbf8, type: 2}
   - {fileID: 11400000, guid: 8b29f3354d98b084081ea2d47ed4088d, type: 2}
   - {fileID: 11400000, guid: d427efaa1abfd5b4b92142eaaca9d4ab, type: 2}
+  visualFloorPadding: 2
   connectionType: 1
   portalPrefab: {fileID: 3651170909586374515, guid: ead31e4bce898984c958e707bb4e2026, type: 3}
   portalBaseRotation: 0
+  portalStubLength: 3
   wallTiles:
     topA: {fileID: 11400000, guid: a62b2337b0a2fe6469c739f4851aafc8, type: 2}
     topB: {fileID: 11400000, guid: df7b81f1a0a9892428d37603ddc0a349, type: 2}
@@ -1536,11 +1538,11 @@ MonoBehaviour:
     innerBottomRight: {fileID: 11400000, guid: bd34191dd0f6fbd4e90ebc04eb001eb0, type: 2}
     innerTopRight: {fileID: 11400000, guid: 2c6c9c1015d70d0419326f3267f0e5e2, type: 2}
   surroundWithWalls: 1
-  mapWidth: 500
-  mapHeight: 500
-  roomCount: 7
+  mapWidth: 140
+  mapHeight: 140
+  roomCount: 8
   extraConnections: 3
-  minLeafSize: 14
+  minLeafSize: 36
   minRoomSize: 25
   maxRoomSize: 30
   roomMargin: 2
@@ -1549,7 +1551,7 @@ MonoBehaviour:
   centerMapAtZero: 1
   clearOnStart: 1
   generateOnStart: 1
-  seed: 2345
+  seed: 1235123
   cameraConfiner: {fileID: 146163400}
   backgroundSortingOrder: -10
   offsetLeftTiles: 15
@@ -2039,6 +2041,14 @@ PrefabInstance:
     - target: {fileID: 1923845326, guid: c773d787b73f4f84293482b6636039ba, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2015717105, guid: c773d787b73f4f84293482b6636039ba, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -143.7998
+      objectReference: {fileID: 0}
+    - target: {fileID: 2015717105, guid: c773d787b73f4f84293482b6636039ba, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -63.899902
       objectReference: {fileID: 0}
     - target: {fileID: 1813447465255396978, guid: c773d787b73f4f84293482b6636039ba, type: 3}
       propertyPath: m_Name
