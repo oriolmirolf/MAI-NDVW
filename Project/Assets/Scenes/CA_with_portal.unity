@@ -682,7 +682,7 @@ MonoBehaviour:
   centerMapAtZero: 1
   clearOnStart: 1
   generateOnStart: 1
-  seed: 1235123
+  seed: 1234
   cameraConfiner: {fileID: 155803975}
   backgroundSortingOrder: -10
   offsetLeftTiles: 15
@@ -766,18 +766,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentTheme: {fileID: 11400000, guid: e3cfdd19c975ffd4d8aac0e9cf98a656, type: 2}
   combatRoomPopulator:
-    minEnemies: 2
-    maxEnemies: 5
-    minObstacles: 6
-    maxObstacles: 12
-    obstaclePlacementMargin: 2
+    minEnemies: 5
+    maxEnemies: 12
+    minObstacles: 2
+    maxObstacles: 4
+    obstaclePlacementMargin: 10
     enemyPlacementMargin: 1.5
   bossArenaPopulator:
     bossCenterOffset: 0
-    useHeavyDecoration: 1
+    useHeavyDecoration: 0
     decorationMultiplier: 1.5
   hazardPopulator:
-    lakeDensity: 0.4
+    lakeDensity: 0.45
     lakeIterations: 6
     lakeSurviveMin: 5
     lakeBirthMin: 4
@@ -3413,7 +3413,7 @@ TilemapRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 1
+  m_SortingOrder: 0
   m_ChunkSize: {x: 32, y: 32, z: 32}
   m_ChunkCullingBounds: {x: 0, y: 0, z: 0}
   m_MaxChunkCount: 16
