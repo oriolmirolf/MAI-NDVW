@@ -15,6 +15,7 @@ public class AgentHealth : MonoBehaviour
     private Flash flash;
 
     readonly int DEATH_HASH = Animator.StringToHash("Death");
+    readonly int IDLE_HASH = Animator.StringToHash("Idle");
 
     private void Awake() {
         flash = GetComponent<Flash>();
@@ -73,6 +74,8 @@ public class AgentHealth : MonoBehaviour
 
     public void ResetHealth() {
         IsDead = false;
+        GetComponent<Animator>().ResetTrigger(DEATH_HASH);
+        GetComponent<Animator>().Play(IDLE_HASH);
         currentHealth = maxHealth;
         canTakeDamage = true;
     }
