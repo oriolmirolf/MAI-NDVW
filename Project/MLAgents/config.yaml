@@ -1,4 +1,3 @@
-# Sword Agent big arena fine-tuning (resumed from sword_02)
 default_settings: null
 behaviors:
   My Behavior:
@@ -48,7 +47,7 @@ behaviors:
       initial_elo: 1200.0
     behavioral_cloning: null
 env_settings:
-  env_path: C:/Users/sanch/Unity/MAI-NDVW/Project/MLAgents/builds/sword_env_big/2D Top Down Pixel Combat.exe
+  env_path: C:/Users/sanch/Unity/MAI-NDVW/Project/MLAgents/builds/sword_env_big_heuristic_bow/2D Top Down Pixel Combat.exe
   env_args: null
   base_port: 5005
   num_envs: 5
@@ -57,18 +56,16 @@ engine_settings:
   width: 640
   height: 480
   quality_level: 0
-  time_scale: 50
+  time_scale: 1
   target_frame_rate: -1
   capture_frame_rate: 60
   no_graphics: true
 environment_parameters: null
 checkpoint_settings:
-  run_id: sword_03
-  initialize_from: null
-  load_model: false
-  resume: true
+  run_id: sword_07
+  initialize_from: sword_03
+  resume: false
   force: false
-  train_model: false
   inference: false
   results_dir: results
 torch_settings:

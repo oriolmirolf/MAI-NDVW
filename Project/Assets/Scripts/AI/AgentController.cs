@@ -15,15 +15,18 @@ public class AgentController : Agent, ICombatTarget
     [SerializeField] private Transform weaponCollider;
     
     [Header("Arena Bounds (for observation normalization)")]
-    [Tooltip("If set, arena bounds will be fetched from TrainingManager. Otherwise, use local values.")]
+    [Tooltip("If set, arena bounds will be fetched from TrainingManager. Otherwise, use set values through a AgentInferenceSetup component.")]
     [SerializeField] private TrainingManager trainingManager;
     
     [Header("Arena Bounds (Manual - used when TrainingManager is not set)")]
-    [SerializeField] private Vector2 manualArenaMin = new Vector2(-11f, -6f);
-    [SerializeField] private Vector2 manualArenaMax = new Vector2(11f, 7f);
-    
     private Vector2 arenaMin;
     private Vector2 arenaMax;
+
+    [Header("Heuristic Settings")]
+    [SerializeField, Range(0f, 1f)] private float aggressivenessRate = 1f;
+    [SerializeField] private float heuristicDecisionInterval = 0.5f;
+    private float nextHeuristicDecisionTime;
+    private bool isAggressiveDecision = true;
 
     private Rigidbody2D rb;
     private Animator myAnimator;
@@ -81,11 +84,6 @@ public class AgentController : Agent, ICombatTarget
             var bounds = trainingManager.GetArenaBounds();
             arenaMin = bounds.min;
             arenaMax = bounds.max;
-        }
-        else
-        {
-            arenaMin = manualArenaMin;
-            arenaMax = manualArenaMax;
         }
     }
 
@@ -304,7 +302,7 @@ public class AgentController : Agent, ICombatTarget
     {
         if (knockback.GettingKnockedBack || agentHealth.IsDead) { return; }
 
-        rb.MovePosition(rb.position + movement * (moveSpeed * Time.fixedDeltaTime));
+        rb.velocity = movement * moveSpeed;
         myAnimator.SetFloat("moveX", movement.x);
         myAnimator.SetFloat("moveY", movement.y);
     }
@@ -390,5 +388,56 @@ public class AgentController : Agent, ICombatTarget
         if (diff > 180f) diff = 360f - diff;
         
         return diff;
+    }
+
+    public override void Heuristic(in ActionBuffers actionsOut)
+    {
+        var discreteActionsOut = actionsOut.DiscreteActions;
+        var continuousActionsOut = actionsOut.ContinuousActions;
+
+        // Default: no movement, no attack, no dash
+        discreteActionsOut[0] = 0; // Movement
+        discreteActionsOut[1] = 0; // Weapon attack
+        discreteActionsOut[2] = 0; // Dash
+
+        if (enemyTarget == null) return;
+
+        // Update heuristic decision state
+        if (Time.time >= nextHeuristicDecisionTime)
+        {
+            isAggressiveDecision = Random.value < aggressivenessRate;
+            nextHeuristicDecisionTime = Time.time + heuristicDecisionInterval;
+        }
+
+        // === MOVEMENT: Move towards or away from the enemy ===
+        Vector2 directionToEnemy = (Vector2)(enemyTarget.Transform.position - transform.position);
+        
+        if (!isAggressiveDecision)
+        {
+            directionToEnemy = -directionToEnemy;
+        }
+        
+        // Choose the dominant axis for movement (discrete movement)
+        if (Mathf.Abs(directionToEnemy.x) > Mathf.Abs(directionToEnemy.y))
+        {
+            // Move horizontally
+            discreteActionsOut[0] = directionToEnemy.x > 0 ? 4 : 3; // 4=right, 3=left
+        }
+        else
+        {
+            // Move vertically
+            discreteActionsOut[0] = directionToEnemy.y > 0 ? 1 : 2; // 1=up, 2=down
+        }
+
+        // === AIMING: Aim towards the enemy ===
+        // GetAngleToEnemy returns angle where 0 = up, normalized to [-180, 180]
+        float angleToEnemy = GetAngleToEnemy();
+        // Convert to [-1, 1] range for the continuous action
+        float aimInput = (angleToEnemy + 180f) / 180f;
+        continuousActionsOut[0] = aimInput;
+
+        // === ATTACK: Constantly try to attack with current weapon ===
+        // Attack with weapon index 0 (action value 1 = weapon 0)
+        discreteActionsOut[1] = 2;
     }
 }
