@@ -93,4 +93,12 @@ public class PlayerHealth : Singleton<PlayerHealth>
         healthSlider.maxValue = maxHealth;
         healthSlider.value = currentHealth;
     }
+    
+    public int GetCurrentHealth() {
+        return currentHealth;
+    }
+    
+    public int GetMaxHealth() {
+        return maxHealth;
+    }
 }

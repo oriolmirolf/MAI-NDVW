@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerController : Singleton<PlayerController>
+public class PlayerController : Singleton<PlayerController>, ICombatTarget
 {
     public bool FacingLeft { get { return facingLeft; } }
 
@@ -21,6 +21,52 @@ public class PlayerController : Singleton<PlayerController>
 
     private bool facingLeft = false;
     private bool isDashing = false;
+    
+    // ICombatTarget implementation
+    public Transform Transform => transform;
+    public Rigidbody2D Rigidbody => rb;
+    public bool IsDead => PlayerHealth.Instance != null && PlayerHealth.Instance.IsDead;
+    
+    public float CurrentAimAngle
+    {
+        get
+        {
+            // Calculate aim angle based on mouse position
+            Vector3 mousePos = Input.mousePosition;
+            Vector3 playerScreenPoint = Camera.main.WorldToScreenPoint(transform.position);
+            Vector3 direction = mousePos - playerScreenPoint;
+            
+            // Atan2 returns angle where 0 = right, 90 = up
+            // We want 0 = up, so we subtract 90 degrees
+            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f;
+            
+            // Normalize to [-180, 180]
+            if (angle > 180f) angle -= 360f;
+            if (angle < -180f) angle += 360f;
+            
+            return angle;
+        }
+    }
+    
+    public float GetNormalizedHealth()
+    {
+        if (PlayerHealth.Instance == null) return 1f;
+        return (float)PlayerHealth.Instance.GetCurrentHealth() / PlayerHealth.Instance.GetMaxHealth();
+    }
+    
+    public float GetNormalizedWeaponIndex()
+    {
+        // Player typically uses one weapon at a time from inventory
+        // For simplicity, return 0 (sword) since agents only trained with swords
+        return 0f;
+    }
+    
+    public float GetNormalizedCooldownRemaining()
+    {
+        // Access cooldown state from ActiveWeapon
+        if (ActiveWeapon.Instance == null) return 0f;
+        return ActiveWeapon.Instance.GetNormalizedCooldownRemaining();
+    }
 
     protected override void Awake() {
         base.Awake();

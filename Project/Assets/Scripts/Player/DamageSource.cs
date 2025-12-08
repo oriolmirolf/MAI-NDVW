@@ -12,7 +12,24 @@ public class DamageSource : MonoBehaviour
     }
 
     private void OnTriggerEnter2D(Collider2D other) {
+        // Try to damage regular enemies (EnemyHealth)
         EnemyHealth enemyHealth = other.gameObject.GetComponent<EnemyHealth>();
-        enemyHealth?.TakeDamage(damageAmount);
+        if (enemyHealth != null)
+        {
+            enemyHealth.TakeDamage(damageAmount);
+            return;
+        }
+        
+        // Try to damage ML Agents (AgentHealth)
+        AgentHealth agentHealth = other.gameObject.GetComponent<AgentHealth>();
+        if (agentHealth != null)
+        {
+            // Make sure we're not hitting ourselves (in case player ever has AgentHealth)
+            AgentController agent = other.gameObject.GetComponent<AgentController>();
+            if (agent != null)
+            {
+                agentHealth.TakeDamage(damageAmount, PlayerController.Instance.transform);
+            }
+        }
     }
 }

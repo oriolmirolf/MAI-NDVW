@@ -8,6 +8,7 @@ public class ActiveWeapon : Singleton<ActiveWeapon>
     private PlayerControls playerControls;
     private float timeBetweenAttacks;
     private bool attackButtonDown, isAttacking = false;
+    private float lastAttackTime = -Mathf.Infinity;
 
 
     protected override void Awake() {
@@ -42,6 +43,7 @@ public class ActiveWeapon : Singleton<ActiveWeapon>
     private void AttackCoolDown()
     {
         isAttacking = true;
+        lastAttackTime = Time.time;
         StopAllCoroutines();
         StartCoroutine(TimeBetweenAttacksRoutine());
     }
@@ -71,5 +73,17 @@ public class ActiveWeapon : Singleton<ActiveWeapon>
             AttackCoolDown();
             (CurrentActiveWeapon as IWeapon).Attack();
         }
+    }
+    
+    /// <summary>
+    /// Get normalized cooldown remaining [0, 1] for ICombatTarget interface
+    /// 0 = ready to attack, 1 = just attacked
+    /// </summary>
+    public float GetNormalizedCooldownRemaining()
+    {
+        if (timeBetweenAttacks <= 0f) return 0f;
+        float timeSinceLastAttack = Time.time - lastAttackTime;
+        float cooldownRemaining = Mathf.Max(0f, timeBetweenAttacks - timeSinceLastAttack);
+        return Mathf.Clamp01(cooldownRemaining / timeBetweenAttacks);
     }
 }
