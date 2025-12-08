@@ -20,7 +20,8 @@ MonoBehaviour:
   blockingObstacles:
   - {fileID: 3713797055011001674, guid: ad4a8b21fa4b17f419459e034c2ba9a9, type: 3}
   - {fileID: 7156724546605552429, guid: 0274c6dd796217b45aa43bb4136d9ed9, type: 3}
-  hazardTiles: []
+  hazardTiles:
+  - {fileID: 11400000, guid: 00d4f8c6aa00ecb4692c4cc641171c43, type: 2}
   nonBlockingDecorations:
   - {fileID: 3713797055011001674, guid: 397c7b1945699344ebc873c6af941b87, type: 3}
   particleEffects: []

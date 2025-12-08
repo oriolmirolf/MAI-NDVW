@@ -3057,6 +3057,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 6504b8083513d8446bbe57a1712ca666, type: 2}
   - {fileID: 11400000, guid: 62925813f3c7b074b9b007bc033bfbf8, type: 2}
   - {fileID: 11400000, guid: 8b29f3354d98b084081ea2d47ed4088d, type: 2}
+  visualFloorPadding: 2
+  connectionType: 0
+  portalPrefab: {fileID: 0}
+  portalBaseRotation: 0
+  portalStubLength: 2
   wallTiles:
     topA: {fileID: 11400000, guid: a62b2337b0a2fe6469c739f4851aafc8, type: 2}
     topB: {fileID: 11400000, guid: df7b81f1a0a9892428d37603ddc0a349, type: 2}
@@ -3080,6 +3085,7 @@ MonoBehaviour:
   minLeafSize: 14
   minRoomSize: 15
   maxRoomSize: 30
+  roomMargin: 4
   corridorWidth: 4
   manhattanCorridors: 0
   centerMapAtZero: 1
@@ -3087,8 +3093,7 @@ MonoBehaviour:
   generateOnStart: 1
   seed: 2345
   cameraConfiner: {fileID: 391207387}
-  confinerPadding: 0
-  confinerInsetTiles: 5
+  backgroundSortingOrder: -10
   offsetLeftTiles: 15
   offsetRightTiles: 15
   offsetTopTiles: -5
@@ -3097,10 +3102,6 @@ MonoBehaviour:
   offsetRightWorld: 1
   offsetTopWorld: 0
   offsetBottomWorld: 0
-  forceSortingOrders: 1
-  backgroundSortingOrder: -10
-  floorSortingOrder: 0
-  wallsSortingOrder: 10
 --- !u!114 &2073045252
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3184,7 +3185,7 @@ MonoBehaviour:
     bossCenterOffset: 0
     useHeavyDecoration: 1
     decorationMultiplier: 1.5
-  bossRoomIndex: -1
+  bossRoomIndex: 3
   additionalBossRooms: 
 --- !u!1 &2132864179
 GameObject:
