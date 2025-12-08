@@ -79,7 +79,7 @@ public class AgentController : Agent
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        // Total observations: 17 floats
+        // Total observations: 18 floats
         // - Own position (normalized): 2
         // - Distance to enemy: 2  
         // - Own velocity: 2
@@ -93,12 +93,13 @@ public class AgentController : Agent
         // - Enemy attack cooldown (normalized): 1
         // - Own aim angle (normalized): 1
         // - Enemy aim angle (normalized): 1
+        // - Own angle to enemy (normalized): 1
         
         if (!enemyAgent)
         {
             Debug.LogWarning("Enemy agent not set for observations.");
-            // Add zeros for all 17 observations
-            for (int i = 0; i < 17; i++)
+            // Add zeros for all 18 observations
+            for (int i = 0; i < 18; i++)
             {
                 sensor.AddObservation(0f);
             }
@@ -159,6 +160,11 @@ public class AgentController : Agent
         // 13. Enemy aim angle normalized [-1, 1] (1 float)
         // Helps predict/dodge enemy attacks
         sensor.AddObservation(enemyAgent.currentAimAngle / 180f);
+
+        // 14. Own angle to enemy normalized [-1, 1] (1 float)
+        // The angle from this agent to the enemy, centered so 0 = up
+        float angleToEnemy = GetAngleToEnemy();
+        sensor.AddObservation(angleToEnemy / 180f);
     }
 
     private Vector2 NormalizePosition(Vector3 position)
@@ -203,9 +209,9 @@ public class AgentController : Agent
         
         // Aiming angle (continuous: -1 to 1, mapped so that 0 = up)
         // This ensures left/right are symmetric around 0:
-        //   0 = up (90°), -0.5 = left (180°), +0.5 = right (0°), ±1 = down (-90°)
+        //   0 = up (90°), +0.5 = left (180°), -0.5 = right (0°), ±1 = down (-90°)
         float aimInput = actions.ContinuousActions[0];
-        currentAimAngle = 90f - (aimInput * 180f); // Convert [-1, 1] to [270°, -90°] with 0 = up
+        currentAimAngle = (aimInput * 180f) - 90f; // Convert [-1, 1] to [270°, -90°] with 0 = up
         
         // Normalize angle to [-180, 180] range
         if (currentAimAngle > 180f) currentAimAngle -= 360f;
@@ -213,7 +219,7 @@ public class AgentController : Agent
         
         // Update facing direction based on aim angle
         // Face left when aiming into the left hemisphere (90° to 180° or -90° to -180°)
-        facingLeft = Mathf.Abs(currentAimAngle) > 90f;
+        facingLeft = currentAimAngle > 0f;
         mySpriteRender.flipX = facingLeft;
     }
 
@@ -281,5 +287,32 @@ public class AgentController : Agent
     public Transform GetWeaponCollider()
     {
         return weaponCollider;
+    }
+
+    public float GetAngleToEnemy()
+    {
+        if (!enemyAgent) return 0f;
+        
+        Vector2 directionToEnemy = (Vector2)(enemyAgent.transform.position - transform.position);
+        // Atan2 returns angle where 0 = right, 90 = up
+        // We want 0 = up, so we subtract 90 degrees
+        float angle = Mathf.Atan2(directionToEnemy.y, directionToEnemy.x) * Mathf.Rad2Deg - 90f;
+        
+        // Normalize to [-180, 180]
+        if (angle > 180f) angle -= 360f;
+        if (angle < -180f) angle += 360f;
+        
+        return angle;
+    }
+
+    public float GetAimAngleDifferenceToEnemy()
+    {
+        float angleToEnemy = GetAngleToEnemy();
+        float diff = Mathf.Abs(currentAimAngle - angleToEnemy);
+        
+        // Handle wraparound (e.g., -170 vs 170 should be 20 degrees apart, not 340)
+        if (diff > 180f) diff = 360f - diff;
+        
+        return diff;
     }
 }

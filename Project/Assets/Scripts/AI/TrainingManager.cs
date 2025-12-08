@@ -6,6 +6,9 @@ public class TrainingManager : MonoBehaviour
     [SerializeField] private AgentController agent1;
     [SerializeField] private AgentController agent2;
 
+    // Statistics tracking (per reporting window, not cumulative)
+    private StatsRecorder statsRecorder;
+
     [Header("Reward Parameters")]
     [Tooltip("Penalty applied every time step.")]
     public float timePenalty = -0.001f;
@@ -29,6 +32,14 @@ public class TrainingManager : MonoBehaviour
     public float proximityRewardScale = 0.001f;
     [Tooltip("Distance at which proximity reward starts (no reward beyond this).")]
     public float maxProximityDistance = 22f;
+
+    [Header("Aiming Accuracy Reward")]
+    [Tooltip("Enable aiming accuracy reward to encourage agents to aim at each other.")]
+    public bool enableAimingReward = true;
+    [Tooltip("Maximum reward per step when aiming perfectly at the enemy.")]
+    public float aimingRewardScale = 0.005f;
+    [Tooltip("Angle threshold in degrees. Agent receives reward when aiming within this angle of the enemy.")]
+    public float aimingAngleThreshold = 20f;
 
     [Header("Episode Settings")]
     [Tooltip("Maximum steps per episode. Episode ends if this limit is reached.")]
@@ -66,6 +77,9 @@ public class TrainingManager : MonoBehaviour
 
         agent1Health = agent1.GetComponent<AgentHealth>();
         agent2Health = agent2.GetComponent<AgentHealth>();
+
+        // Initialize stats recorder for TensorBoard logging
+        statsRecorder = Academy.Instance.StatsRecorder;
     }
 
     private void FixedUpdate()
@@ -90,12 +104,41 @@ public class TrainingManager : MonoBehaviour
             }
         }
 
+        // Aiming accuracy reward to encourage agents to aim at each other
+        if (enableAimingReward)
+        {
+            // Agent 1 aiming reward
+            float agent1AimDiff = agent1.GetAimAngleDifferenceToEnemy();
+            if (agent1AimDiff < aimingAngleThreshold)
+            {
+                // Reward scales inversely with angle difference (closer to perfect aim = higher reward)
+                float aimingReward1 = aimingRewardScale * (1f - agent1AimDiff / aimingAngleThreshold);
+                agent1.AddReward(aimingReward1);
+                // Debug.Log($"[Aiming Reward] Agent1: +{aimingReward1:F4} (Total: {agent1.GetCumulativeReward():F4})");
+                // Debug.Log($"Agent 1: Current Aim Angle: {agent1.CurrentAimAngle}, Angle To Enemy: {agent1.GetAngleToEnemy()}");
+            }
+
+            // Agent 2 aiming reward
+            float agent2AimDiff = agent2.GetAimAngleDifferenceToEnemy();
+            if (agent2AimDiff < aimingAngleThreshold)
+            {
+                float aimingReward2 = aimingRewardScale * (1f - agent2AimDiff / aimingAngleThreshold);
+                agent2.AddReward(aimingReward2);
+                // Debug.Log($"[Aiming Reward] Agent2: +{aimingReward2:F4} (Total: {agent2.GetCumulativeReward():F4})");
+                // Debug.Log($"Agent 2: Current Aim Angle: {agent2.CurrentAimAngle}, Angle To Enemy: {agent2.GetAngleToEnemy()}");
+            }
+        }
+
         // Check for max episode steps (timeout - draw)
         if (currentEpisodeSteps >= maxEpisodeSteps)
         {
             agent1.SetReward(defeatPenalty);
             agent2.SetReward(defeatPenalty);
             Debug.Log($"[Timeout Draw] Agent1: {defeatPenalty:F4} (Total: {agent1.GetCumulativeReward():F4}) | Agent2: {defeatPenalty:F4} (Total: {agent2.GetCumulativeReward():F4})");
+            
+            // Track statistics - this is a timeout (not a real fight)
+            RecordEpisodeOutcome(isTimeout: true);
+            
             agent1.EndEpisode();
             agent2.EndEpisode();
             ResetScene();
@@ -120,16 +163,27 @@ public class TrainingManager : MonoBehaviour
             }
             else
             {
-                // Draw
+                // Draw - both died at the same time (still a real fight!)
                 agent1.SetReward(defeatPenalty);
                 agent2.SetReward(defeatPenalty);
                 Debug.Log($"[Draw] Both dead! Agent1: {defeatPenalty:F4} (Total: {agent1.GetCumulativeReward():F4}) | Agent2: {defeatPenalty:F4} (Total: {agent2.GetCumulativeReward():F4})");
             }
 
+            // Track statistics - this is a real fight (not a timeout)
+            RecordEpisodeOutcome(isTimeout: false);
+
             agent1.EndEpisode();
             agent2.EndEpisode();
             ResetScene();
         }
+    }
+
+    private void RecordEpisodeOutcome(bool isTimeout)
+    {
+        // Log per-episode outcome: 1 = real fight, 0 = timeout
+        // StatsRecorder automatically averages these over the summary_freq window
+        // So this will show the "current" non-timeout rate, not cumulative
+        statsRecorder.Add("Environment/Non-Timeout Rate", isTimeout ? 0f : 1f);
     }
 
     public void OnAgentHit(AgentController attacker, AgentController receiver)
