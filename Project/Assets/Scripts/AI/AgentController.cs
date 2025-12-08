@@ -3,8 +3,9 @@ using Unity.MLAgents;
 using Unity.MLAgents.Sensors;
 using Unity.MLAgents.Actuators;
 using System.Collections;
+using Unity.VisualScripting;
 
-public class AgentController : Agent
+public class AgentController : Agent, ICombatTarget
 {
     public bool FacingLeft { get { return facingLeft; } }
 
@@ -16,6 +17,11 @@ public class AgentController : Agent
     [Header("Arena Bounds (for observation normalization)")]
     [Tooltip("If set, arena bounds will be fetched from TrainingManager. Otherwise, use local values.")]
     [SerializeField] private TrainingManager trainingManager;
+    
+    [Header("Arena Bounds (Manual - used when TrainingManager is not set)")]
+    [SerializeField] private Vector2 manualArenaMin = new Vector2(-11f, -6f);
+    [SerializeField] private Vector2 manualArenaMax = new Vector2(11f, 7f);
+    
     private Vector2 arenaMin;
     private Vector2 arenaMax;
 
@@ -32,9 +38,30 @@ public class AgentController : Agent
     private bool isDashing = false;
     private float currentAimAngle = 0f; // Aim angle in degrees (-180 to 180)
 
-    private AgentController enemyAgent;
+    // Support for both AgentController (self-play) and PlayerController (inference) as enemies
+    private ICombatTarget enemyTarget;
+    private AgentController enemyAgent; // Keep for backwards compatibility with training
 
+    // ICombatTarget implementation
+    public Transform Transform => transform;
+    public Rigidbody2D Rigidbody => rb;
+    public bool IsDead => agentHealth != null && agentHealth.IsDead;
     public float CurrentAimAngle => currentAimAngle;
+    
+    public float GetNormalizedHealth()
+    {
+        return agentHealth != null ? agentHealth.GetNormalizedHealth() : 1f;
+    }
+    
+    public float GetNormalizedWeaponIndex()
+    {
+        return agentWeapons != null ? agentWeapons.GetNormalizedWeaponIndex() : 0f;
+    }
+    
+    public float GetNormalizedCooldownRemaining()
+    {
+        return agentWeapons != null ? agentWeapons.GetNormalizedCooldownRemaining() : 0f;
+    }
 
     public override void Initialize()
     {
@@ -48,18 +75,62 @@ public class AgentController : Agent
         agentWeapons = GetComponent<AgentWeapons>();
         startingMoveSpeed = moveSpeed;
 
-        // Fetch arena bounds from TrainingManager if available
+        // Fetch arena bounds from TrainingManager if available, otherwise use manual values
         if (trainingManager != null)
         {
             var bounds = trainingManager.GetArenaBounds();
             arenaMin = bounds.min;
             arenaMax = bounds.max;
         }
+        else
+        {
+            arenaMin = manualArenaMin;
+            arenaMax = manualArenaMax;
+        }
     }
 
+    /// <summary>
+    /// Set arena bounds manually (useful for inference when TrainingManager is not present)
+    /// </summary>
+    public void SetArenaBounds(Vector2 min, Vector2 max)
+    {
+        arenaMin = min;
+        arenaMax = max;
+    }
+
+    /// <summary>
+    /// Set an AgentController as the enemy (for self-play training)
+    /// </summary>
     public void SetEnemyAgent(AgentController enemy)
     {
         enemyAgent = enemy;
+        enemyTarget = enemy;
+    }
+    
+    /// <summary>
+    /// Set any ICombatTarget as the enemy (for inference against player or other targets)
+    /// </summary>
+    public void SetEnemyTarget(ICombatTarget target)
+    {
+        enemyTarget = target;
+        // Also set enemyAgent if the target is an AgentController (for backwards compatibility)
+        enemyAgent = target as AgentController;
+    }
+    
+    /// <summary>
+    /// Automatically find and set the player as the enemy target.
+    /// Call this during initialization when using the agent in inference mode against the player.
+    /// </summary>
+    public void SetPlayerAsEnemy()
+    {
+        if (PlayerController.Instance != null)
+        {
+            SetEnemyTarget(PlayerController.Instance);
+        }
+        else
+        {
+            Debug.LogWarning("AgentController: PlayerController.Instance not found. Cannot set player as enemy.");
+        }
     }
 
     public override void OnEpisodeBegin()
@@ -95,9 +166,9 @@ public class AgentController : Agent
         // - Enemy aim angle (normalized): 1
         // - Own angle to enemy (normalized): 1
         
-        if (!enemyAgent)
+        if (enemyTarget == null)
         {
-            Debug.LogWarning("Enemy agent not set for observations.");
+            Debug.LogWarning("Enemy target not set for observations.");
             // Add zeros for all 18 observations
             for (int i = 0; i < 18; i++)
             {
@@ -111,9 +182,9 @@ public class AgentController : Agent
         Vector2 normalizedOwnPos = NormalizePosition(transform.position);
         sensor.AddObservation(normalizedOwnPos);
 
-        // 2. Distance to enemy agent, normalized by arena size (2 floats)
+        // 2. Distance to enemy, normalized by arena size (2 floats)
         // This gives explicit range information for combat decisions
-        Vector2 distanceToEnemy = (Vector2)(enemyAgent.transform.position - transform.position);
+        Vector2 distanceToEnemy = (Vector2)(enemyTarget.Transform.position - transform.position);
         Vector2 arenaSize = arenaMax - arenaMin;
         Vector2 normalizedDistance = new Vector2(
             distanceToEnemy.x / arenaSize.x,
@@ -128,13 +199,13 @@ public class AgentController : Agent
 
         // 4. Enemy velocity normalized (2 floats)
         // Helps predict enemy movement
-        sensor.AddObservation(enemyAgent.rb.velocity / maxSpeed);
+        sensor.AddObservation(enemyTarget.Rigidbody.velocity / maxSpeed);
 
         // 5. Own health normalized [0, 1] (1 float)
         sensor.AddObservation(agentHealth.GetNormalizedHealth());
 
         // 6. Enemy health normalized [0, 1] (1 float)
-        sensor.AddObservation(enemyAgent.agentHealth.GetNormalizedHealth());
+        sensor.AddObservation(enemyTarget.GetNormalizedHealth());
 
         // 7. Own stamina normalized [0, 1] (1 float)
         sensor.AddObservation(agentStamina.GetNormalizedStamina());
@@ -143,7 +214,7 @@ public class AgentController : Agent
         sensor.AddObservation(agentWeapons.GetNormalizedWeaponIndex());
 
         // 9. Enemy weapon index normalized [0, 1] (1 float)
-        sensor.AddObservation(enemyAgent.agentWeapons.GetNormalizedWeaponIndex());
+        sensor.AddObservation(enemyTarget.GetNormalizedWeaponIndex());
 
         // 10. Own attack cooldown normalized [0, 1] (1 float)
         // 0 = ready to attack, 1 = just attacked
@@ -151,7 +222,7 @@ public class AgentController : Agent
 
         // 11. Enemy attack cooldown normalized [0, 1] (1 float)
         // Knowing enemy cooldown helps time attacks/dodges
-        sensor.AddObservation(enemyAgent.agentWeapons.GetNormalizedCooldownRemaining());
+        sensor.AddObservation(enemyTarget.GetNormalizedCooldownRemaining());
 
         // 12. Own aim angle normalized [-1, 1] (1 float)
         // Helps agent track where it's currently aiming
@@ -159,7 +230,7 @@ public class AgentController : Agent
 
         // 13. Enemy aim angle normalized [-1, 1] (1 float)
         // Helps predict/dodge enemy attacks
-        sensor.AddObservation(enemyAgent.currentAimAngle / 180f);
+        sensor.AddObservation(enemyTarget.CurrentAimAngle / 180f);
 
         // 14. Own angle to enemy normalized [-1, 1] (1 float)
         // The angle from this agent to the enemy, centered so 0 = up
@@ -192,7 +263,7 @@ public class AgentController : Agent
         // Combined weapon attack action (0 = no attack, 1+ = attack with weapon index-1)
         // This action has a cooldown that prevents constant attacking/switching
         int weaponAttackAction = actions.DiscreteActions[1];
-        if (weaponAttackAction > 0)
+        if (weaponAttackAction > 0 && !agentHealth.IsDead)
         {
             int targetWeaponIndex = weaponAttackAction - 1;
             agentWeapons.AttackWithWeapon(targetWeaponIndex, this);
@@ -262,15 +333,20 @@ public class AgentController : Agent
             myTrailRenderer.emitting = true;
             StartCoroutine(EndDashRoutine());
         }
-        else
+        else if (trainingManager != null)
         {
+            // Only penalize during training
             trainingManager.PenalizeDashSpamming(this);
         }
     }
 
     public void PenalizeAttackSpamming()
     {
-        trainingManager.PenalizeAttackSpamming(this);
+        // Only penalize during training
+        if (trainingManager != null)
+        {
+            trainingManager.PenalizeAttackSpamming(this);
+        }
     }
 
     private IEnumerator EndDashRoutine()
@@ -291,9 +367,9 @@ public class AgentController : Agent
 
     public float GetAngleToEnemy()
     {
-        if (!enemyAgent) return 0f;
+        if (enemyTarget == null) return 0f;
         
-        Vector2 directionToEnemy = (Vector2)(enemyAgent.transform.position - transform.position);
+        Vector2 directionToEnemy = (Vector2)(enemyTarget.Transform.position - transform.position);
         // Atan2 returns angle where 0 = right, 90 = up
         // We want 0 = up, so we subtract 90 degrees
         float angle = Mathf.Atan2(directionToEnemy.y, directionToEnemy.x) * Mathf.Rad2Deg - 90f;
