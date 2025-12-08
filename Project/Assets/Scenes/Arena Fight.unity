@@ -14947,6 +14947,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2687577504509315219, guid: 174c969b1cffbe04b8e0439ad74da698, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: -1247382438, guid: 10396048f3f6c694c8b5d4c20d67b634, type: 3}
+    - target: {fileID: 2687577504509315219, guid: 174c969b1cffbe04b8e0439ad74da698, type: 3}
+      propertyPath: m_WasSpriteAssigned
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5993499513375202492, guid: 174c969b1cffbe04b8e0439ad74da698, type: 3}
       propertyPath: deathVFXPrefab
       value: 
