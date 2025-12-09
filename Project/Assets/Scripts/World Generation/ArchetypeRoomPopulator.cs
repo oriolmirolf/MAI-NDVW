@@ -13,6 +13,7 @@ public class ArchetypeRoomPopulator : MonoBehaviour, IRoomPopulator
     [Header("Archetype Populators")]
     [SerializeField] private CombatRoomPopulator combatRoomPopulator = new CombatRoomPopulator();
     [SerializeField] private BossArenaPopulator bossArenaPopulator = new BossArenaPopulator();
+    [SerializeField] private EnvironmentalHazardPopulator hazardPopulator = new EnvironmentalHazardPopulator();
 
     [Header("Archetype Assignment")]
     [Tooltip("Which room index is the boss room? (0-based, -1 = none)")]
@@ -20,6 +21,9 @@ public class ArchetypeRoomPopulator : MonoBehaviour, IRoomPopulator
 
     [Tooltip("Mark specific room indices as boss arenas (comma separated)")]
     [SerializeField] private string additionalBossRooms = "";
+
+    [Tooltip("Mark specific room indices as hazard rooms with lakes (comma separated, e.g. '1,3,5')")]
+    [SerializeField] private string hazardRoomIndices = "";
 
     private void Awake()
     {
@@ -33,6 +37,9 @@ public class ArchetypeRoomPopulator : MonoBehaviour, IRoomPopulator
 
         if (bossArenaPopulator == null)
             bossArenaPopulator = new BossArenaPopulator();
+
+        if (hazardPopulator == null)
+            hazardPopulator = new EnvironmentalHazardPopulator();
     }
 
     public void Populate(
@@ -73,6 +80,11 @@ public class ArchetypeRoomPopulator : MonoBehaviour, IRoomPopulator
             return RoomArchetype.BossArena;
         }
 
+        if (IsHazardRoom(room.index))
+        {
+            return RoomArchetype.EnvironmentalHazard;
+        }
+
         return RoomArchetype.CombatRoom;
     }
 
@@ -97,6 +109,23 @@ public class ArchetypeRoomPopulator : MonoBehaviour, IRoomPopulator
         return false;
     }
 
+    private bool IsHazardRoom(int roomIndex)
+    {
+        if (!string.IsNullOrEmpty(hazardRoomIndices))
+        {
+            string[] indices = hazardRoomIndices.Split(',');
+            foreach (string indexStr in indices)
+            {
+                if (int.TryParse(indexStr.Trim(), out int index))
+                {
+                    if (index == roomIndex)
+                        return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private IArchetypePopulator GetPopulator(RoomArchetype archetype)
     {
         switch (archetype)
@@ -106,6 +135,9 @@ public class ArchetypeRoomPopulator : MonoBehaviour, IRoomPopulator
 
             case RoomArchetype.BossArena:
                 return bossArenaPopulator;
+
+            case RoomArchetype.EnvironmentalHazard:
+                return hazardPopulator;
 
             default:
                 Debug.LogWarning($"No populator for archetype {archetype}");
