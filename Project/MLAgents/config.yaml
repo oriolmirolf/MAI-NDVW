@@ -1,3 +1,4 @@
+# Sword Agent post-training: big arena self-play (from sword_08)
 default_settings: null
 behaviors:
   My Behavior:
@@ -47,7 +48,7 @@ behaviors:
       initial_elo: 1200.0
     behavioral_cloning: null
 env_settings:
-  env_path: C:/Users/sanch/Unity/MAI-NDVW/Project/MLAgents/builds/sword_env_big_heuristic_bow/2D Top Down Pixel Combat.exe
+  env_path: C:/Users/sanch/Unity/MAI-NDVW/Project/MLAgents/builds/sword_env_big/2D Top Down Pixel Combat.exe
   env_args: null
   base_port: 5005
   num_envs: 5
@@ -62,8 +63,8 @@ engine_settings:
   no_graphics: true
 environment_parameters: null
 checkpoint_settings:
-  run_id: sword_07
-  initialize_from: sword_03
+  run_id: sword_09
+  initialize_from: sword_08
   resume: false
   force: false
   inference: false
