@@ -33,6 +33,9 @@ public class EnemyAI : MonoBehaviour
     }
 
     private void Update() {
+        if (PlayerController.Instance == null) { 
+            return; 
+        }
         MovementStateControl();
     }
 

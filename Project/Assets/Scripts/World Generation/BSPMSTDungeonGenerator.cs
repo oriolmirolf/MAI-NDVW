@@ -62,7 +62,7 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
     public bool manhattanCorridors = true;
     public bool centerMapAtZero = true;
     public bool clearOnStart = true;
-    public bool generateOnStart = true;
+    public bool generateOnStart = false;
     public int seed = 12345;
 
     [Header("Camera")]
@@ -89,15 +89,29 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
     private void Awake()
     {
         populators = GetComponentsInChildren<IRoomPopulator>(includeInactive: true).ToList();
+
+        if (objectsParent == null)
+        {
+            objectsParent = new GameObject("Objects").transform;
+            objectsParent.SetParent(transform);
+        }
+
+        if (enemiesParent == null)
+        {
+            enemiesParent = new GameObject("Enemies").transform;
+            enemiesParent.SetParent(transform);
+        }
+
+        if (roomsParent == null)
+        {
+            roomsParent = new GameObject("RoomsBounds").transform;
+            roomsParent.SetParent(transform);
+        }
     }
 
     private void Start()
     {
-        objectsParent = new GameObject("Objects").transform; objectsParent.SetParent(transform);
-        enemiesParent = new GameObject("Enemies").transform; enemiesParent.SetParent(transform);
-        roomsParent = new GameObject("RoomsBounds").transform; roomsParent.SetParent(transform);
-        rng = new System.Random(seed);
-
+        // DO NOT recreate parents here anymore
         if (generateOnStart)
         {
             GenerateDungeon();
@@ -105,9 +119,29 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
         }
     }
 
+
+
+    public void GenerateWithSeed(int seedOverride)
+    {
+        seed = seedOverride;
+        GenerateDungeon();
+    }
+
+    // Optional convenience:
+    public void GenerateWithSeedAndPlacePlayer(int seedOverride)
+    {
+        seed = seedOverride;
+        GenerateDungeon();
+        MovePlayerAndCamera();
+    }
+
+
+
     [ContextMenu("Generate Now")]
     public void GenerateDungeon()
     {
+        rng = new System.Random(seed);
+
         if (!floorTilemap || !groundTile) { Debug.LogError("Assign Tilemaps!"); return; }
 
         if (clearOnStart)
@@ -231,6 +265,54 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
         }
 
         if (connectionType == ConnectionType.Corridors) UpdateGlobalConfiner();
+
+    }
+
+    [Header("Chapter Exit")]
+    [SerializeField] private GameObject chapterExitPortalPrefab;
+
+    public void SpawnChapterExitPortalAtBossRoom()
+    {
+        if (chapterExitPortalPrefab == null) return;
+        if (rooms == null || rooms.Count == 0) return;
+
+        var bossRoom = GetLikelyBossRoom();
+        if (bossRoom == null) return;
+
+        Vector3 cellWorldPos = floorTilemap.CellToWorld(bossRoom.Center);
+        
+        // Keep the Z -5 offset so it stays visible!
+        Vector3 finalSpawnPos = new Vector3(cellWorldPos.x + 0.5f, cellWorldPos.y + 0.5f, -5.0f);
+
+        // FIX: Change 'null' back to 'objectsParent'
+        // This ensures the generator deletes the old portal when rewriting the chapter.
+        GameObject portal = Instantiate(chapterExitPortalPrefab, finalSpawnPos, Quaternion.identity, objectsParent);
+        
+        portal.name = ">>> EXIT PORTAL <<<"; 
+    }
+
+    
+
+
+    public Room GetLikelyBossRoom()
+    {
+        if (rooms == null || rooms.Count == 0) return null;
+
+        // simple heuristic: farthest room from room 0 center
+        var start = rooms[0].Center;
+        Room best = rooms[0];
+        float bestDist = 0f;
+
+        foreach (var r in rooms)
+        {
+            float d = Vector3Int.Distance(start, r.Center);
+            if (d > bestDist)
+            {
+                bestDist = d;
+                best = r;
+            }
+        }
+        return best;
     }
 
     private void PaintVisualPadding()
@@ -600,7 +682,7 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
         if (conf) conf.InvalidateCache();
     }
 
-    private void MovePlayerAndCamera()
+    public void MovePlayerAndCamera()
     {
         if (rooms == null || rooms.Count == 0) return;
         var spawn = (Vector3)rooms[0].Center + new Vector3(0.5f, 0.5f, 0);
@@ -672,7 +754,7 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
         }
     }
 
-    private class Room
+    public class Room
     {
         public RectInt rect;
         public Vector3Int Center => new Vector3Int((int)rect.center.x, (int)rect.center.y, 0);

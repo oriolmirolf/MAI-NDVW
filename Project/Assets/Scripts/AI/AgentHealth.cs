@@ -35,7 +35,7 @@ public class AgentHealth : MonoBehaviour
     }
 
     public void TakeDamage(int damageAmount, Transform hitTransform) {
-        if (!canTakeDamage) { return; }
+        if (IsDead || !canTakeDamage) { return; }
 
         ScreenShakeManager.Instance.ShakeScreen();
         knockback.GetKnockedBack(hitTransform, knockBackThrustAmount);
@@ -46,11 +46,36 @@ public class AgentHealth : MonoBehaviour
         CheckIfPlayerDeath();
     }
 
-    private void CheckIfPlayerDeath() {
-        if (currentHealth <= 0 && !IsDead) {
+    private void CheckIfPlayerDeath()
+    {
+        if (currentHealth <= 0 && !IsDead)
+        {
             IsDead = true;
             currentHealth = 0;
+
+            // 1. Play the animation
             GetComponent<Animator>().SetTrigger(DEATH_HASH);
+
+            // 2. Disable further damage so enemies don't keep hitting a corpse
+            canTakeDamage = false;
+
+            // 3. Wait for the animation to finish, then tell the Manager
+            StartCoroutine(WaitAndRespawn());
+        }
+    }
+    
+    private IEnumerator WaitAndRespawn()
+    {
+        // Adjust this delay to match the length of your death animation!
+        yield return new WaitForSeconds(2.0f); 
+
+        if (DungeonRunManager.Instance != null)
+        {
+            DungeonRunManager.Instance.OnPlayerDeath();
+        }
+        else
+        {
+            Debug.LogError("DungeonRunManager missing! Cannot respawn.");
         }
     }
 
