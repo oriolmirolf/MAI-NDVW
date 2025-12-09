@@ -57,6 +57,8 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
     [Min(8)] public int minLeafSize = 36;
     [Min(4)] public int minRoomSize = 25;
     [Min(4)] public int maxRoomSize = 30;
+    [Min(4)] public int minBossRoomSize = 15;
+    [Min(4)] public int maxBossRoomSize = 30;
     [Min(1)] public int roomMargin = 4;
     [Min(1)] public int corridorWidth = 2;
     public bool manhattanCorridors = true;
@@ -176,10 +178,28 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
         }
 
         // 2. Create Rooms
-        rooms = new List<Room>();
-        foreach (var leaf in leaves.Where(l => l.IsLeaf).Take(roomCount))
+        // First, decide which room index will be the boss room (non-starting room)
+        var leafList = leaves.Where(l => l.IsLeaf).Take(roomCount).ToList();
+        int bossRoomIndex = leafList.Count > 1 ? rng.Next(1, leafList.Count) : -1;
+        if (bossRoomIndex >= 0)
         {
-            var r = leaf.CreateRoom(rng, minRoomSize, maxRoomSize, roomMargin);
+            Debug.Log($"Boss room will be at index: {bossRoomIndex}");
+        }
+
+        rooms = new List<Room>();
+        for (int i = 0; i < leafList.Count; i++)
+        {
+            var leaf = leafList[i];
+            Room r;
+            if (i == bossRoomIndex)
+            {
+                // Use different boss room size parameters
+                r = leaf.CreateRoom(rng, minBossRoomSize, maxBossRoomSize, roomMargin);
+            }
+            else
+            {
+                r = leaf.CreateRoom(rng, minRoomSize, maxRoomSize, roomMargin);
+            }
             if (r != null) rooms.Add(r);
         }
         if (rooms.Count == 0) return;
@@ -246,6 +266,13 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
 
         if (populators != null)
         {
+            foreach (var p in populators)
+            {
+                if (p is ArchetypeRoomPopulator archetypePopulator)
+                {
+                    archetypePopulator.SetBossRoomIndex(bossRoomIndex);
+                }
+            }
             for (int i = 0; i < rooms.Count; i++)
             {
                 var r = rooms[i];

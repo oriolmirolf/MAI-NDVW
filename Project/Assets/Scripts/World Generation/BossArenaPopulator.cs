@@ -99,6 +99,18 @@ public class BossArenaPopulator : IArchetypePopulator
         GameObject boss = Object.Instantiate(theme.bossPrefab, centerPos, Quaternion.identity, parent);
         boss.name = $"Boss_{roomData.index}";
 
+        // Configure AgentInferenceSetup with room bounds
+        var agentSetup = boss.GetComponent<AgentInferenceSetup>();
+        if (agentSetup != null)
+        {
+            // Calculate arena bounds from room rect (with small padding)
+            Vector2 arenaMin = new Vector2(roomData.rect.xMin + 1f, roomData.rect.yMin + 1f);
+            Vector2 arenaMax = new Vector2(roomData.rect.xMax - 1f, roomData.rect.yMax - 1f);
+            agentSetup.SetArenaBounds(arenaMin, arenaMax);
+            agentSetup.SetWaitForPlayer(true, roomData.rect);
+            Debug.Log($"Boss arena bounds set: {arenaMin} to {arenaMax}");
+        }
+
         Vector3Int gridPos = Vector3Int.FloorToInt(centerPos);
         occupiedPositions.Add(gridPos);
 

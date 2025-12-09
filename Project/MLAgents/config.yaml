@@ -1,4 +1,4 @@
-# Sword Agent big arena fine-tuning (resumed from sword_02)
+# Sword Agent post-training: big arena self-play (from sword_08)
 default_settings: null
 behaviors:
   My Behavior:
@@ -57,18 +57,16 @@ engine_settings:
   width: 640
   height: 480
   quality_level: 0
-  time_scale: 50
+  time_scale: 1
   target_frame_rate: -1
   capture_frame_rate: 60
   no_graphics: true
 environment_parameters: null
 checkpoint_settings:
-  run_id: sword_03
-  initialize_from: null
-  load_model: false
-  resume: true
+  run_id: sword_09
+  initialize_from: sword_08
+  resume: false
   force: false
-  train_model: false
   inference: false
   results_dir: results
 torch_settings:
