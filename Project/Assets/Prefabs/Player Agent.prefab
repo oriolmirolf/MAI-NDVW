@@ -500,7 +500,7 @@ MonoBehaviour:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
   MaxStep: 0
-  moveSpeed: 4
+  moveSpeed: 5
   dashSpeed: 4
   myTrailRenderer: {fileID: 2687577503540171484}
   weaponCollider: {fileID: 2687577504381944744}
@@ -529,7 +529,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: c1a357e93bad6024897c0fdae4f7f66b, type: 3}
+  m_Model: {fileID: 5022602860645237092, guid: 4b6a4f6f1940cce4bb1c8f714671de12, type: 3}
   m_InferenceDevice: 0
   m_BehaviorType: 2
   m_BehaviorName: My Behavior
@@ -564,7 +564,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22fcfbc50ff931143899ebb0c76f6455, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  timeBetweenStaminaRefresh: 3
+  timeBetweenStaminaRefresh: 1
 --- !u!114 &7527599985441341028
 MonoBehaviour:
   m_ObjectHideFlags: 0
