@@ -30,14 +30,27 @@ public class AgentInferenceSetup : MonoBehaviour
     [Tooltip("Prefab to spawn when the agent dies.")]
     [SerializeField] private GameObject deathVFXPrefab;
     
+    [Header("Wait For Player")]
+    [Tooltip("If true, the boss will stand still until the player enters the room.")]
+    [SerializeField] private bool waitForPlayer = false;
+    [Tooltip("The room bounds to check for player entry.")]
+    [SerializeField] private RectInt roomBounds;
+    [Tooltip("How often to check if player has entered (in seconds).")]
+    [SerializeField] private float playerCheckInterval = 0.2f;
+    
     private AgentController agentController;
     private AgentHealth agentHealth;
+    private Unity.MLAgents.Agent mlAgent;
+    private Rigidbody2D rb;
     private bool isDying = false;
+    private bool isWaitingForPlayer = false;
     
     private void Awake()
     {
         agentController = GetComponent<AgentController>();
         agentHealth = GetComponent<AgentHealth>();
+        mlAgent = GetComponent<Unity.MLAgents.Agent>();
+        rb = GetComponent<Rigidbody2D>();
         
         if (agentController == null)
         {
@@ -54,8 +67,14 @@ public class AgentInferenceSetup : MonoBehaviour
             agentController.SetArenaBounds(arenaBoundsMin, arenaBoundsMax);
         }
         
-        // Set player as enemy target
-        if (autoTargetPlayer && agentController != null)
+        // Handle waiting for player
+        if (waitForPlayer)
+        {
+            isWaitingForPlayer = true;
+            DisableAgent();
+            StartCoroutine(WaitForPlayerCoroutine());
+        }
+        else if (autoTargetPlayer && agentController != null)
         {
             // Delay slightly to ensure PlayerController singleton is initialized
             Invoke(nameof(SetupPlayerTarget), 0.1f);
@@ -119,5 +138,83 @@ public class AgentInferenceSetup : MonoBehaviour
         {
             agentController.SetEnemyTarget(target);
         }
+    }
+    
+    /// <summary>
+    /// Configure the agent to wait for player entry before activating
+    /// </summary>
+    public void SetWaitForPlayer(bool wait, RectInt bounds)
+    {
+        waitForPlayer = wait;
+        roomBounds = bounds;
+    }
+    
+    private void DisableAgent()
+    {
+        // Disable ML Agent decision making
+        if (mlAgent != null)
+        {
+            mlAgent.enabled = false;
+        }
+        
+        // Freeze the rigidbody
+        if (rb != null)
+        {
+            rb.velocity = Vector2.zero;
+            rb.constraints = RigidbodyConstraints2D.FreezeAll;
+        }
+    }
+    
+    private void EnableAgent()
+    {
+        // Enable ML Agent decision making
+        if (mlAgent != null)
+        {
+            mlAgent.enabled = true;
+        }
+        
+        // Unfreeze the rigidbody (keep rotation frozen as typical for 2D)
+        if (rb != null)
+        {
+            rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+        }
+        
+        // Set player as target
+        if (autoTargetPlayer && agentController != null)
+        {
+            SetupPlayerTarget();
+        }
+        
+        isWaitingForPlayer = false;
+    }
+    
+    private System.Collections.IEnumerator WaitForPlayerCoroutine()
+    {
+        WaitForSeconds waitInterval = new WaitForSeconds(playerCheckInterval);
+        
+        while (isWaitingForPlayer)
+        {
+            if (IsPlayerInRoom())
+            {
+                Debug.Log("Player entered boss room - activating boss!");
+                EnableAgent();
+                yield break;
+            }
+            
+            yield return waitInterval;
+        }
+    }
+    
+    private bool IsPlayerInRoom()
+    {
+        if (PlayerController.Instance == null)
+            return false;
+        
+        Vector3 playerPos = PlayerController.Instance.transform.position;
+        
+        return playerPos.x >= roomBounds.xMin && 
+               playerPos.x <= roomBounds.xMax &&
+               playerPos.y >= roomBounds.yMin && 
+               playerPos.y <= roomBounds.yMax;
     }
 }

@@ -29,7 +29,7 @@ MonoBehaviour:
   commonEnemies:
   - {fileID: 4675430477267506724, guid: a0635851dee6b1143afbc6ad7bf6edd2, type: 3}
   - {fileID: 9034311603430229389, guid: facd13da21d5930458d401b5faaa572c, type: 3}
-  bossPrefab: {fileID: 0}
+  bossPrefab: {fileID: 2687577504509315217, guid: 174c969b1cffbe04b8e0439ad74da698, type: 3}
   ambientColor: {r: 1, g: 1, b: 1, a: 1}
   ambientIntensity: 1
   decorationDensity: 0.3

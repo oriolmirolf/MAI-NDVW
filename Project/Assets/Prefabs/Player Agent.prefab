@@ -446,12 +446,12 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -1573861276, guid: d20c3bab9cbf82647adbb6816167182a, type: 3}
+  m_Sprite: {fileID: -1247382438, guid: 10396048f3f6c694c8b5d4c20d67b634, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 6, y: 4}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -500,13 +500,13 @@ MonoBehaviour:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
   MaxStep: 0
-  moveSpeed: 4
+  moveSpeed: 5
   dashSpeed: 4
   myTrailRenderer: {fileID: 2687577503540171484}
   weaponCollider: {fileID: 2687577504381944744}
   trainingManager: {fileID: 0}
-  manualArenaMin: {x: -11, y: -6}
-  manualArenaMax: {x: 11, y: 7}
+  aggressivenessRate: 1
+  heuristicDecisionInterval: 0.5
 --- !u!114 &6154323605328318547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -529,7 +529,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: 8dbec1f940092824088eaa4a62175059, type: 3}
+  m_Model: {fileID: 5022602860645237092, guid: 4b6a4f6f1940cce4bb1c8f714671de12, type: 3}
   m_InferenceDevice: 0
   m_BehaviorType: 2
   m_BehaviorName: My Behavior
@@ -549,9 +549,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eb79e8ba4907e6f4193de40c8711f2b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 3
+  maxHealth: 7
   knockBackThrustAmount: 10
-  damageRecoveryTime: 1
+  damageRecoveryTime: 0.5
 --- !u!114 &3535797532788184218
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -564,7 +564,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22fcfbc50ff931143899ebb0c76f6455, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  timeBetweenStaminaRefresh: 3
+  timeBetweenStaminaRefresh: 1
 --- !u!114 &7527599985441341028
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -590,7 +590,7 @@ Animator:
   m_GameObject: {fileID: 2687577504509315217}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 25f19cda6c0faba41a82f82ffb3eec27, type: 2}
+  m_Controller: {fileID: 9100000, guid: a83ccfda6f144854a9372095ad183359, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -632,8 +632,8 @@ CapsuleCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.0584426, y: -0.05104909}
-  m_Size: {x: 0.5697889, y: 0.24865423}
+  m_Offset: {x: 0.07351489, y: 0.026099646}
+  m_Size: {x: 0.6585245, y: 0.40295762}
   m_Direction: 1
 --- !u!210 &2687577504509315222
 SortingGroup:
@@ -687,9 +687,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   autoTargetPlayer: 1
-  overrideArenaBounds: 0
+  overrideArenaBounds: 1
   arenaBoundsMin: {x: -3.5, y: -2}
   arenaBoundsMax: {x: 3.5, y: 3}
   destroyOnDeath: 1
   deathDestroyDelay: 0.5
   deathVFXPrefab: {fileID: 7882678833386788365, guid: 47d79da9e43ef8a49a53dc5e78fdcbef, type: 3}
+  waitForPlayer: 1
+  roomBounds:
+    x: 0
+    y: 0
+    width: 0
+    height: 0
+  playerCheckInterval: 0.2

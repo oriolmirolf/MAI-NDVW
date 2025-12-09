@@ -80,7 +80,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 7400000, guid: ef8812cd810ebb1409e2bf81985f01b8, type: 2}
+  m_Motion: {fileID: 7400000, guid: 4e8164ac431b165449d7ff4d226089e4, type: 2}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -142,7 +142,7 @@ AnimatorController:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Player
+  m_Name: Villain
   serializedVersion: 5
   m_AnimatorParameters:
   - m_Name: moveX
@@ -250,7 +250,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 7400000, guid: 8890283e6c34a49419a221c0acf9acc7, type: 2}
+  m_Motion: {fileID: 7400000, guid: 898a2f21dc1cb234eb958c5bfe0136d6, type: 2}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -305,7 +305,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 7400000, guid: 96d2268a4969a344b829220f502c4c2a, type: 2}
+  m_Motion: {fileID: 7400000, guid: 48fc5872503477c4887b0d9029ed3564, type: 2}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 

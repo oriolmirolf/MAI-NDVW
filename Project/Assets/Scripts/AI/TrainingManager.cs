@@ -30,8 +30,6 @@ public class TrainingManager : MonoBehaviour
     public bool enableProximityReward = true;
     [Tooltip("Maximum reward per step when agents are very close.")]
     public float proximityRewardScale = 0.001f;
-    [Tooltip("Distance at which proximity reward starts (no reward beyond this).")]
-    public float maxProximityDistance = 22f;
 
     [Header("Aiming Accuracy Reward")]
     [Tooltip("Enable aiming accuracy reward to encourage agents to aim at each other.")]
@@ -64,6 +62,8 @@ public class TrainingManager : MonoBehaviour
     private Quaternion agent2StartRot;
     private AgentHealth agent1Health;
     private AgentHealth agent2Health;
+    private Rigidbody2D agent1Rb;
+    private Rigidbody2D agent2Rb;
 
     private void Awake()
     {
@@ -77,6 +77,8 @@ public class TrainingManager : MonoBehaviour
 
         agent1Health = agent1.GetComponent<AgentHealth>();
         agent2Health = agent2.GetComponent<AgentHealth>();
+        agent1Rb = agent1.GetComponent<Rigidbody2D>();
+        agent2Rb = agent2.GetComponent<Rigidbody2D>();
 
         // Initialize stats recorder for TensorBoard logging
         statsRecorder = Academy.Instance.StatsRecorder;
@@ -93,15 +95,27 @@ public class TrainingManager : MonoBehaviour
         // Proximity reward to encourage agents to approach each other
         if (enableProximityReward)
         {
-            float distance = Vector2.Distance(agent1.transform.position, agent2.transform.position);
-            if (distance < maxProximityDistance)
-            {
-                // Reward scales inversely with distance (closer = higher reward)
-                float proximityReward = proximityRewardScale * (1f - distance / maxProximityDistance);
-                agent1.AddReward(proximityReward);
-                agent2.AddReward(proximityReward);
-                // Debug.Log($"[Proximity Reward] Agent1: +{proximityReward:F4} (Total: {agent1.GetCumulativeReward():F4}) | Agent2: +{proximityReward:F4} (Total: {agent2.GetCumulativeReward():F4})");
-            }
+            Vector2 vectorToAgent2 = agent2.transform.position - agent1.transform.position;
+            Vector2 dirToAgent2 = vectorToAgent2.normalized;
+
+            // Reward based on velocity towards enemy (dot product)
+            float dot1 = Vector2.Dot(agent1Rb.velocity, dirToAgent2);
+            agent1.AddReward(dot1 * proximityRewardScale);
+            // if (agent1Rb.velocity != Vector2.zero)
+            // {
+            //     Debug.Log($"Agent 1 Velocity: {agent1Rb.velocity}, Dir to Agent 2: {dirToAgent2}, Dot: {dot1:F4}");
+            //     Debug.Log($"[Proximity Reward] Agent1: +{(dot1 * proximityRewardScale):F4} (Total: {agent1.GetCumulativeReward():F4})");
+            // }
+
+            // For agent 2, direction is opposite
+            Vector2 dirToAgent1 = -dirToAgent2;
+            float dot2 = Vector2.Dot(agent2Rb.velocity, dirToAgent1);
+            agent2.AddReward(dot2 * proximityRewardScale);
+            // if (agent2Rb.velocity != Vector2.zero)
+            // {
+            //     Debug.Log($"Agent 2 Velocity: {agent2Rb.velocity}, Dir to Agent 1: {dirToAgent1}, Dot: {dot2:F4}");
+            //     Debug.Log($"[Proximity Reward] Agent2: +{(dot2 * proximityRewardScale):F4} (Total: {agent2.GetCumulativeReward():F4})");
+            // }
         }
 
         // Aiming accuracy reward to encourage agents to aim at each other
@@ -234,9 +248,6 @@ public class TrainingManager : MonoBehaviour
             agent2.transform.position = agent2StartPos;
             agent2.transform.rotation = agent2StartRot;
         }
-
-        var agent1Rb = agent1.GetComponent<Rigidbody2D>();
-        var agent2Rb = agent2.GetComponent<Rigidbody2D>();
 
         agent1Rb.velocity = Vector2.zero;
         agent1Rb.angularVelocity = 0f;
