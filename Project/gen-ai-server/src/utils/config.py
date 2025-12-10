@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     narrative_model: str = "llama2"
     music_model: str = "facebook/musicgen-medium"
     output_dir: str = "output"
+    enable_vision: bool = False  # Disable by default to save ~2GB VRAM
+    enable_music: bool = True
 
     class Config:
         env_file = ".env"

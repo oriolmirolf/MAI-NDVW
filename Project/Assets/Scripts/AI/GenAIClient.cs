@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -114,9 +116,7 @@ public class GenAIClient : Singleton<GenAIClient>
             }
             else
             {
-                string error = $"Vision request failed: {request.error} (Code: {request.responseCode})";
-                Debug.LogError(error);
-                onError?.Invoke(error);
+                onError?.Invoke($"Vision request failed: {request.error}");
             }
         }
     }
@@ -158,6 +158,82 @@ public class GenAIClient : Singleton<GenAIClient>
         }, onError);
     }
 
+    public IEnumerator GenerateDungeonContent(
+        DungeonContentRequest request,
+        Action<DungeonContentResponse> onSuccess,
+        Action<string> onError
+    )
+    {
+        string endpoint = $"{serverUrl}/generate/dungeon-content";
+        string jsonData = JsonUtility.ToJson(request);
+
+        yield return PostRequest(endpoint, jsonData, (response) =>
+        {
+            try
+            {
+                DungeonContentResponse content = ParseDungeonContentResponse(response);
+                onSuccess?.Invoke(content);
+            }
+            catch (Exception e)
+            {
+                onError?.Invoke($"Failed to parse dungeon content: {e.Message}\nResponse: {response}");
+            }
+        }, onError);
+    }
+
+    private DungeonContentResponse ParseDungeonContentResponse(string json)
+    {
+        var response = new DungeonContentResponse();
+        response.rooms = new Dictionary<string, RoomContent>();
+
+        // Extract seed
+        var seedMatch = Regex.Match(json, @"""seed""\s*:\s*(\d+)");
+        if (seedMatch.Success) response.seed = int.Parse(seedMatch.Groups[1].Value);
+
+        // Extract theme
+        var themeMatch = Regex.Match(json, @"""theme""\s*:\s*""([^""]+)""");
+        if (themeMatch.Success) response.theme = themeMatch.Groups[1].Value;
+
+        // Find all enemy spawns: {"type": "X", "count": N}
+        var enemyPattern = @"\{\s*""type""\s*:\s*""([^""]+)""\s*,\s*""count""\s*:\s*(\d+)\s*\}";
+        var allEnemies = Regex.Matches(json, enemyPattern);
+
+        // Find all room blocks with their IDs
+        // Match "X": { "room_id": X, ... "description": "..." }
+        var roomPattern = @"""(\d+)""\s*:\s*\{\s*""room_id""\s*:\s*(\d+)\s*,\s*""enemies""\s*:\s*\[(.*?)\]\s*,\s*""description""\s*:\s*""([^""]*)""";
+        var roomMatches = Regex.Matches(json, roomPattern, RegexOptions.Singleline);
+
+        foreach (Match roomMatch in roomMatches)
+        {
+            string roomKey = roomMatch.Groups[1].Value;
+            int roomId = int.Parse(roomMatch.Groups[2].Value);
+            string enemiesBlock = roomMatch.Groups[3].Value;
+            string description = roomMatch.Groups[4].Value;
+
+            var roomContent = new RoomContent();
+            roomContent.room_id = roomId;
+            roomContent.description = description;
+            roomContent.enemies = new List<EnemySpawn>();
+
+            // Parse enemies within this room's block
+            var enemyMatches = Regex.Matches(enemiesBlock, enemyPattern);
+            foreach (Match enemyMatch in enemyMatches)
+            {
+                roomContent.enemies.Add(new EnemySpawn
+                {
+                    type = enemyMatch.Groups[1].Value,
+                    count = int.Parse(enemyMatch.Groups[2].Value)
+                });
+            }
+
+            response.rooms[roomKey] = roomContent;
+            Debug.Log($"[AI Parse] Room {roomId}: {roomContent.enemies.Count} enemy types, desc='{description}'");
+        }
+
+        Debug.Log($"[AI Parse] Total rooms parsed: {response.rooms.Count}");
+        return response;
+    }
+
     private IEnumerator PostRequest(
         string url,
         string jsonData,
@@ -182,9 +258,7 @@ public class GenAIClient : Singleton<GenAIClient>
             }
             else
             {
-                string error = $"Request failed: {request.error} (Code: {request.responseCode})";
-                Debug.LogError(error);
-                onError?.Invoke(error);
+                onError?.Invoke($"Request failed: {request.error}");
             }
         }
     }
@@ -216,6 +290,7 @@ public class NPCResponse
 {
     public string name;
     public string[] dialogue;
+    public string[] audio_paths;
 }
 
 [Serializable]
@@ -264,5 +339,53 @@ public class CacheStats
     public int narrative_count;
     public int music_count;
     public int vision_count;
+    public int dungeon_count;
     public int total_entries;
+}
+
+[Serializable]
+public class RoomInfo
+{
+    public int id;
+    public string[] connections;
+    public bool is_start;
+    public bool is_boss;
+}
+
+[Serializable]
+public class DungeonContentRequest
+{
+    public int seed;
+    public string theme;
+    public RoomInfo[] rooms;
+    public string[] available_enemies;
+    public bool use_cache = true;
+}
+
+[Serializable]
+public class EnemySpawn
+{
+    public string type;
+    public int count;
+}
+
+[Serializable]
+public class RoomContent
+{
+    public int room_id;
+    public List<EnemySpawn> enemies = new List<EnemySpawn>();
+    public string description;
+}
+
+public class DungeonContentResponse
+{
+    public int seed;
+    public string theme;
+    public Dictionary<string, RoomContent> rooms = new Dictionary<string, RoomContent>();
+
+    public RoomContent GetRoom(int roomId)
+    {
+        string key = roomId.ToString();
+        return rooms.ContainsKey(key) ? rooms[key] : null;
+    }
 }

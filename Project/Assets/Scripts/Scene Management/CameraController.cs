@@ -8,20 +8,34 @@ public class CameraController : Singleton<CameraController>
     private CinemachineVirtualCamera cinemachineVirtualCamera;
 
     private void Start() {
-        SetPlayerCameraFollow();
+        cinemachineVirtualCamera = FindObjectOfType<CinemachineVirtualCamera>();
+
+        // For dungeon scenes with room system, camera is controlled by RoomInstance.SnapCameraToRoom()
+        // Only set player follow if there's no DungeonGraph (non-dungeon scenes)
+        if (DungeonGraph.Instance == null)
+        {
+            SetPlayerCameraFollow();
+        }
     }
 
     public void SetPlayerCameraFollow() {
-        cinemachineVirtualCamera = FindObjectOfType<CinemachineVirtualCamera>();
-        
-        if (PlayerController.Instance != null)
+        if (cinemachineVirtualCamera == null)
+            cinemachineVirtualCamera = FindObjectOfType<CinemachineVirtualCamera>();
+
+        if (cinemachineVirtualCamera != null && PlayerController.Instance != null)
         {
             cinemachineVirtualCamera.Follow = PlayerController.Instance.transform;
         }
-        else
+    }
+
+    public void SetRoomCameraTarget(Transform target) {
+        if (cinemachineVirtualCamera == null)
+            cinemachineVirtualCamera = FindObjectOfType<CinemachineVirtualCamera>();
+
+        if (cinemachineVirtualCamera != null)
         {
-            cinemachineVirtualCamera.Follow = null;
-            cinemachineVirtualCamera.transform.position = new Vector3(0, 0.5f, -10);
+            cinemachineVirtualCamera.Follow = target;
+            cinemachineVirtualCamera.PreviousStateIsValid = false;
         }
     }
 }
