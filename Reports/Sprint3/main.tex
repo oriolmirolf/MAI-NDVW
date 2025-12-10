@@ -137,7 +137,7 @@
     \vspace{0.5cm}
     {\large \textbf{Normative and Dynamic Virtual Worlds}\\ Final Report (Sprint 3)\par}
     \vspace{1cm}
-    {\large\bfseries November 17th, 2025\par}
+    {\large\bfseries December 16th, 2025\par}
 \end{titlepage}
 
 
@@ -251,7 +251,14 @@ In this section, we describe the design and behavior of the various agents withi
 
 \subsubsection{Player Agent}
 
-The player controls a knight character, navigating the dungeon and engaging in combat. The agent's mechanics (implemented following the tutorial mentioned in Section~\ref{sec:tutorial}) are designed to be intuitive and offer a variety of tactical options.
+The player controls a knight character, navigating the dungeon and engaging in combat. The agent's mechanics (implemented following the tutorial mentioned in Section~\ref{sec:tutorial}) are designed to be intuitive and offer a variety of tactical options. Figure~\ref{fig:player_agent} shows the sprite for the hero.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[height=0.2\linewidth]{figures/Hero_Idle.png}
+    \caption{Sprite for the Player Agent.}
+    \label{fig:player_agent}
+\end{figure}
 
 \paragraph{Movement and Abilities}
 The player uses the standard WASD keys for top-down movement. Aiming is controlled by the mouse cursor, allowing for 360-degree targeting independent of movement direction. A key defensive ability is the dash, triggered by the space bar, which provides a short burst of invulnerability and speed. Dashing consumes stamina from a dedicated bar, which regenerates automatically over time, requiring players to manage its use strategically.
@@ -298,11 +305,16 @@ Currently, there are two types of enemies implemented, as shown in Figure~\ref{f
 
 The three main bosses in the game are designed to be significant challenges that test the player's skill. Their behavior is controlled by agents trained using Reinforcement Learning (RL), allowing them to react to the player's actions and create dynamic, unscripted encounters.
 
-Our primary approach is to model the boss agents as enhanced, hostile versions of the player character. At their core, these bosses possess the same set of abilities as the player's knight, but they are controlled by a trained RL agent. To make them more menacing and visually distinct, they may be scaled up in size, given a different color palette, and their attacks may inflict more damage.
+Our approach is to model the boss agents as enhanced, hostile versions of the player character. At their core, these bosses possess a similar set of abilities as the player's knight, but they are controlled by a trained RL agent. To make them more menacing and visually distinct, we gave them a different color palette (see Figure~\ref{fig:boss_agent}), more health points, and their movements are faster.
 
-The three bosses will represent a progression in difficulty. If time allows it, this will be achieved by using three different checkpoints of the training process of the agent, corresponding to Easy, Medium, and Hard difficulty levels. However, our ideal plan is to diversify the encounters. In this scenario, the first two bosses could be RL-powered versions of the standard Slime and Ghost enemies, featuring more complex and aggressive behaviors. This would make the final confrontation against the final boss (an evil replica of the player character) a unique and climactic event.
+\begin{figure}[H]
+    \centering
+    \includegraphics[height=0.2\linewidth]{figures/Villain_Idle.png}
+    \caption{Sprite for the Boss Agents.}
+    \label{fig:boss_agent}
+\end{figure}
 
-The technical specifics of the self-play training process, reward functions, and agent architecture for these bosses are detailed further in Section~\ref{sec:rl_bosses}.
+The technical specifics of the training process, reward functions, and agent architecture for these bosses are detailed further in Section~\ref{sec:rl_bosses}.
 
 \section{Related Work}
 
