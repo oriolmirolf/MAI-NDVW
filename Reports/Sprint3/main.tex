@@ -125,15 +125,17 @@
     \includegraphics[width=0.3\textwidth]{figures/ub_logo.png}
 
     \vspace{1.5cm}
-    {\Huge\bfseries Sprint 3: Final Report\par}
+    {\Huge\bfseries NDVW Final Report\par}
     \vspace{1cm}
     {\large Procedurally Generated 2D RPG with AI-Driven Narrative\par}
     \vspace{2cm}
+    {\large\bfseries Group 3:\par}
+    \vspace{0.2cm}
     {\large Oriol MIR\'O, Jean DI\'E, Bruno S\'ANCHEZ, D\'aniel M\'ACSAI\par}
     \vspace{3cm}
     {\large \textbf{Master in Artificial Intelligence}\par}
     \vspace{0.5cm}
-    {\large \textbf{Normative and Dynamic Virtual Worlds}\\ Sprint 3: Final Report\par}
+    {\large \textbf{Normative and Dynamic Virtual Worlds}\\ Final Report (Sprint 3)\par}
     \vspace{1cm}
     {\large\bfseries November 17th, 2025\par}
 \end{titlepage}
@@ -164,6 +166,48 @@ See Figure~\ref{fig:game_flow} for a schematic representation of this.
     \caption{The player's journey through three procedurally generated dungeon sections, each culminating in a boss fight that serves as a checkpoint. Death sends the player back to their last checkpoint, where both the dungeon and narrative regenerate.}
     \label{fig:game_flow}
 \end{figure}
+
+\subsection{Scenario}
+\label{sec:scenario}
+
+We now present the story of our game.
+We tried to create a story that is coherent and consistent with the game mechanics.
+
+Sir Cael of the Shattered Vow is trapped inside the Chronicle of Light, a living book that reshapes itself whenever he dies. 
+Once a knight of the fallen Kingdom of Virel, he tried to destroy the godlike Chronicler who feeds on stories. 
+As punishment, his essence was bound within the Chronicle, forced to relive his tale endlessly. 
+Each death causes the world to be rewritten: dungeons shift, faces change, and the same myths return in new forms. Yet not everything is lost to the quill’s rewriting.
+
+Within the ever-changing dungeon lie three great beings that anchor the story: the Sentinel, the Herald, and the Chronicler. 
+These are not just enemies, but keepers of the book’s three chapters. 
+When Cael defeats the Sentinel or the Herald, that chapter becomes fixed in ink. 
+Its rooms, people, and memories stop changing, as if the Chronicle itself acknowledges those victories as canon. 
+Death still sends him back to the beginning of the next unwritten chapter, but the world behind him stays intact, a part of the story that can no longer be erased.
+
+Only the final chapter remains mutable. 
+Beyond its shifting corridors waits the Chronicler, the source of the curse and perhaps Cael’s reflection. 
+If he defeats it, the book will end, and the world will finally stop rewriting itself. 
+But to do so, Cael must accept that every sealed chapter, with all its flaws and failures, is truly his -- that perfection lies not in rewriting the story again, but in letting it end.
+
+\subsubsection{Spoilers!}
+The twist is that Sir Cael is the Chronicler himself.
+
+Long ago, he wasn’t a knight at all but a scholar obsessed with preserving the perfect version of history.
+When the Kingdom of Virel began to fall, he used forbidden magic to bind reality into the Chronicle of Light so the story could be rewritten until it was flawless. 
+In doing so, he split himself in two: the writer (the Chronicler) and the written (Sir Cael), condemning himself to live and rewrite the same tale forever. 
+Each death, each regeneration of the dungeon, is the Chronicler trying once more to ``fix'' his own mistakes — through Cael.
+
+The first two bosses, the Sentinel and the Herald, are fragments of his guilt. 
+The Sentinel represents his fear of loss, the Herald his denial of failure. 
+When those chapters are completed, they are ``fixed'' because Cael has accepted those truths. 
+The final battle, against the Chronicler, is a confrontation with himself: the part of him that refuses to let the story end. 
+To win, Cael must stop fighting -- not kill the Chronicler, but accept the story as it is. 
+Only by choosing imperfection and closure does the book stop rewriting, freeing both halves of his soul and ending the curse.
+
+For the game to be consistent with the lore, we suggest that when the Chronicler’s health reaches its last sliver during the final battle, the player is prompted to ``Strike the final blow'', but a second option appears: ``Lower your sword''.
+If the player attacks, the loop restarts.
+If the player lowers the sword, Cael says, ``No more rewrites''. Thus, the story ends when he stopped trying to perfect it.
+However, this is an optional feature that we may or may not implement in-game depending on time constraints.
 
 \subsection{Tutorial we start from}\label{sec:tutorial}
 
@@ -259,48 +303,6 @@ Our primary approach is to model the boss agents as enhanced, hostile versions o
 The three bosses will represent a progression in difficulty. If time allows it, this will be achieved by using three different checkpoints of the training process of the agent, corresponding to Easy, Medium, and Hard difficulty levels. However, our ideal plan is to diversify the encounters. In this scenario, the first two bosses could be RL-powered versions of the standard Slime and Ghost enemies, featuring more complex and aggressive behaviors. This would make the final confrontation against the final boss (an evil replica of the player character) a unique and climactic event.
 
 The technical specifics of the self-play training process, reward functions, and agent architecture for these bosses are detailed further in Section~\ref{sec:rl_bosses}.
-
-\subsection{Scenario}
-\label{sec:scenario}
-
-We now present the story of our game.
-We tried to create a story that is coherent and consistent with the game mechanics.
-
-Sir Cael of the Shattered Vow is trapped inside the Chronicle of Light, a living book that reshapes itself whenever he dies. 
-Once a knight of the fallen Kingdom of Virel, he tried to destroy the godlike Chronicler who feeds on stories. 
-As punishment, his essence was bound within the Chronicle, forced to relive his tale endlessly. 
-Each death causes the world to be rewritten: dungeons shift, faces change, and the same myths return in new forms. Yet not everything is lost to the quill’s rewriting.
-
-Within the ever-changing dungeon lie three great beings that anchor the story: the Sentinel, the Herald, and the Chronicler. 
-These are not just enemies, but keepers of the book’s three chapters. 
-When Cael defeats the Sentinel or the Herald, that chapter becomes fixed in ink. 
-Its rooms, people, and memories stop changing, as if the Chronicle itself acknowledges those victories as canon. 
-Death still sends him back to the beginning of the next unwritten chapter, but the world behind him stays intact, a part of the story that can no longer be erased.
-
-Only the final chapter remains mutable. 
-Beyond its shifting corridors waits the Chronicler, the source of the curse and perhaps Cael’s reflection. 
-If he defeats it, the book will end, and the world will finally stop rewriting itself. 
-But to do so, Cael must accept that every sealed chapter, with all its flaws and failures, is truly his -- that perfection lies not in rewriting the story again, but in letting it end.
-
-\subsubsection{Spoilers!}
-The twist is that Sir Cael is the Chronicler himself.
-
-Long ago, he wasn’t a knight at all but a scholar obsessed with preserving the perfect version of history.
-When the Kingdom of Virel began to fall, he used forbidden magic to bind reality into the Chronicle of Light so the story could be rewritten until it was flawless. 
-In doing so, he split himself in two: the writer (the Chronicler) and the written (Sir Cael), condemning himself to live and rewrite the same tale forever. 
-Each death, each regeneration of the dungeon, is the Chronicler trying once more to ``fix'' his own mistakes — through Cael.
-
-The first two bosses, the Sentinel and the Herald, are fragments of his guilt. 
-The Sentinel represents his fear of loss, the Herald his denial of failure. 
-When those chapters are completed, they are ``fixed'' because Cael has accepted those truths. 
-The final battle, against the Chronicler, is a confrontation with himself: the part of him that refuses to let the story end. 
-To win, Cael must stop fighting -- not kill the Chronicler, but accept the story as it is. 
-Only by choosing imperfection and closure does the book stop rewriting, freeing both halves of his soul and ending the curse.
-
-For the game to be consistent with the lore, we suggest that when the Chronicler’s health reaches its last sliver during the final battle, the player is prompted to ``Strike the final blow'', but a second option appears: ``Lower your sword''.
-If the player attacks, the loop restarts.
-If the player lowers the sword, Cael says, ``No more rewrites''. Thus, the story ends when he stopped trying to perfect it.
-However, this is an optional feature that we may or may not implement in-game depending on time constraints.
 
 \section{Related Work}
 
