@@ -3,48 +3,57 @@ using UnityEngine;
 public class AreaExit : MonoBehaviour
 {
     [Header("Generator Settings")]
-    public string sceneTransitionName; 
+    public string sceneTransitionName;
 
     [Header("Manual Settings")]
     [SerializeField] private string sceneToLoad;
 
-    private void OnTriggerEnter2D(Collider2D other) 
+    private void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Player")) 
+        bool isPlayer = other.CompareTag("Player") || other.GetComponent<PlayerController>() != null;
+        if (!isPlayer) return;
+
+        bool isDungeonPortal = !string.IsNullOrEmpty(sceneTransitionName);
+        if (!isDungeonPortal && !string.IsNullOrEmpty(sceneToLoad)) return;
+
+        var entrances = FindObjectsOfType<AreaEntrance>();
+        foreach (var ent in entrances)
         {
-            // 1. Check if this is a Dungeon Portal (Generator ID exists)
-            bool isDungeonPortal = !string.IsNullOrEmpty(sceneTransitionName);
+            string entName = "";
+            var field = typeof(AreaEntrance).GetField("transitionName",
+                System.Reflection.BindingFlags.NonPublic |
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.Public);
 
-            if (isDungeonPortal || string.IsNullOrEmpty(sceneToLoad)) 
+            if (field != null) entName = (string)field.GetValue(ent) ?? "";
+
+            bool isSamePortal = ent.transform.parent == this.transform;
+            bool idMatches = entName == this.sceneTransitionName;
+
+            if (idMatches && !isSamePortal)
             {
-                // 2. Find all entrances in the scene
-                var entrances = FindObjectsOfType<AreaEntrance>();
-                foreach(var ent in entrances) 
+                Vector3 targetPos = ent.transform.position;
+                var targetPortal = ent.GetComponentInParent<AreaExit>();
+                if (targetPortal != null)
                 {
-                    string entName = "";
-                    
-                    // Reflection to read private 'transitionName'
-                    var field = typeof(AreaEntrance).GetField("transitionName", 
-                        System.Reflection.BindingFlags.NonPublic | 
-                        System.Reflection.BindingFlags.Instance | 
-                        System.Reflection.BindingFlags.Public);
-                    
-                    if (field != null) entName = (string)field.GetValue(ent);
-
-                    // 3. Teleport instantly if ID matches (and it's not our own entrance)
-                    if (entName == this.sceneTransitionName && ent.transform.parent != this.transform) 
-                    {
-                        other.transform.position = ent.transform.position;
-
-                        // Optional: Snap Cinemachine camera instantly if you have one
-                        var vcam = FindObjectOfType<Cinemachine.CinemachineVirtualCamera>();
-                        if (vcam) vcam.OnTargetObjectWarped(other.transform, ent.transform.position - other.transform.position);
-                        
-                        return;
-                    }
+                    targetPos += -targetPortal.transform.right * 2f;
                 }
+
+                Vector3 delta = targetPos - other.transform.position;
+                other.transform.position = targetPos;
+
+                var roomInstance = ent.GetComponentInParent<RoomInstance>();
+                if (roomInstance != null)
+                {
+                    roomInstance.SnapCameraToRoom();
+                }
+                else
+                {
+                    var vcam = FindObjectOfType<Cinemachine.CinemachineVirtualCamera>();
+                    if (vcam) vcam.OnTargetObjectWarped(other.transform, delta);
+                }
+                return;
             }
-            // else { ... Scene loading logic ... }
         }
     }
 }

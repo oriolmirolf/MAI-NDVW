@@ -11,8 +11,10 @@ from pathlib import Path
 from src.generators.narrative import NarrativeGenerator
 from src.generators.music import MusicGenerator
 from src.generators.vision import VisionGenerator
-from src.models.requests import NarrativeRequest, MusicRequest, VisionRequest
-from src.models.responses import MusicResponse, VisionResponse
+from src.generators.dungeon import DungeonContentGenerator
+from src.generators.voice import VoiceGenerator
+from src.models.requests import NarrativeRequest, MusicRequest, VisionRequest, DungeonContentRequest
+from src.models.responses import MusicResponse, VisionResponse, DungeonContentResponse
 from src.utils.config import settings
 from src.utils.health import check_ollama
 from src.utils.cache import CacheManager
@@ -24,11 +26,13 @@ logging.getLogger("transformers").setLevel(logging.ERROR)
 narrative_gen = None
 music_gen = None
 vision_gen = None
+dungeon_gen = None
+voice_gen = None
 cache_manager = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global narrative_gen, music_gen, vision_gen, cache_manager
+    global narrative_gen, music_gen, vision_gen, dungeon_gen, voice_gen, cache_manager
 
     if not check_ollama(settings.narrative_model):
         print("ERROR: Ollama check failed. Exiting.")
@@ -36,12 +40,23 @@ async def lifespan(app: FastAPI):
 
     print("Initializing AI generators...")
     cache_manager = CacheManager()
-    narrative_gen = NarrativeGenerator(model=settings.narrative_model)
-    music_gen = MusicGenerator(
-        model=settings.music_model,
-        output_dir=settings.output_dir
-    )
-    vision_gen = VisionGenerator()
+    voice_gen = VoiceGenerator(output_dir="output/voice")
+    narrative_gen = NarrativeGenerator(model=settings.narrative_model, voice_generator=voice_gen)
+
+    if settings.enable_music:
+        music_gen = MusicGenerator(
+            model=settings.music_model,
+            output_dir=settings.output_dir
+        )
+    else:
+        print("[MUSIC] Disabled (set ENABLE_MUSIC=true to enable)")
+
+    if settings.enable_vision:
+        vision_gen = VisionGenerator()
+    else:
+        print("[VISION] Disabled (set ENABLE_VISION=true to enable)")
+
+    dungeon_gen = DungeonContentGenerator(model=settings.narrative_model)
     print("Server ready")
 
     cache_stats = cache_manager.stats()
@@ -63,11 +78,12 @@ app = FastAPI(title="Gen AI Server", lifespan=lifespan)
 def root():
     return {
         "status": "online",
-        "services": ["narrative", "music", "vision"],
+        "services": ["narrative", "music", "vision", "dungeon"],
         "models": {
             "narrative": settings.narrative_model,
             "music": settings.music_model,
-            "vision": "moondream2"
+            "vision": "moondream2",
+            "dungeon": settings.narrative_model
         },
         "cache_stats": cache_manager.stats()
     }
@@ -107,6 +123,8 @@ async def generate_narrative(request: NarrativeRequest):
 
 @app.post("/generate/music", response_model=MusicResponse)
 async def generate_music(request: MusicRequest):
+    if music_gen is None:
+        raise HTTPException(status_code=503, detail="Music model is disabled. Set ENABLE_MUSIC=true to enable.")
     try:
         seed = request.seed if request.seed is not None else music_gen.last_seed
 
@@ -133,6 +151,8 @@ async def generate_music(request: MusicRequest):
 @app.post("/analyze/vision", response_model=VisionResponse)
 async def analyze_vision(file: UploadFile = File(...), use_cache: str = "true"):
     global vision_gen
+    if vision_gen is None:
+        raise HTTPException(status_code=503, detail="Vision model is disabled. Set ENABLE_VISION=true to enable.")
     try:
         # Parse use_cache from form data (comes as string)
         cache_enabled = use_cache.lower() in ("true", "1", "yes")
@@ -164,6 +184,35 @@ async def analyze_vision(file: UploadFile = File(...), use_cache: str = "true"):
         print(f"[API] ✗ Vision analysis failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/generate/dungeon-content", response_model=DungeonContentResponse)
+async def generate_dungeon_content(request: DungeonContentRequest):
+    try:
+        cache_key = f"{request.seed}_{len(request.rooms)}_{request.theme}"
+
+        if request.use_cache:
+            cached = cache_manager.get_dungeon(cache_key)
+            if cached:
+                print(f"[API] Dungeon content cache hit")
+                return cached
+
+        print(f"[API] Generating dungeon content for {len(request.rooms)} rooms")
+        result = await dungeon_gen.generate(
+            seed=request.seed,
+            theme=request.theme,
+            rooms=request.rooms,
+            available_enemies=request.available_enemies
+        )
+
+        result_dict = result.model_dump()
+
+        if request.use_cache:
+            cache_manager.set_dungeon(cache_key, result_dict)
+
+        return result_dict
+    except Exception as e:
+        print(f"[API] Dungeon content generation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/cache/stats")
 def get_cache_stats():
     return cache_manager.stats()
@@ -176,6 +225,13 @@ def clear_cache():
 @app.get("/audio/{filename}")
 def get_audio(filename: str):
     file_path = f"{settings.output_dir}/{filename}"
+    return FileResponse(file_path, media_type="audio/wav")
+
+@app.get("/voice/{filename}")
+def get_voice(filename: str):
+    file_path = f"output/voice/{filename}"
+    if not Path(file_path).exists():
+        raise HTTPException(status_code=404, detail="Voice file not found")
     return FileResponse(file_path, media_type="audio/wav")
 
 if __name__ == "__main__":

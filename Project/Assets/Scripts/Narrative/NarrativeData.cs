@@ -20,6 +20,7 @@ public class RoomNarrative {
 public class NPCDialogue {
     public string npcName;
     public List<string> dialogueLines;
+    public List<string> audioPaths;
     public Vector2 spawnPosition;
 }
 

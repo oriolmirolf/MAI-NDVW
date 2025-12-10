@@ -17,6 +17,7 @@ public class LLMNarrativeGenerator : Singleton<LLMNarrativeGenerator>
 
     private Dictionary<int, RoomNarrative> narrativeCache = new Dictionary<int, RoomNarrative>();
     private bool isGenerating = false;
+    private bool generationComplete = false;
     private System.Random random;
     private string CachePath => Path.Combine(Application.persistentDataPath, cacheFileName);
 
@@ -28,17 +29,33 @@ public class LLMNarrativeGenerator : Singleton<LLMNarrativeGenerator>
 
     private void Start()
     {
-        if (useCache && LoadFromCache())
+        // Sync totalRooms with DungeonGraph if available
+        if (DungeonGraph.Instance != null)
         {
-            Debug.Log($"Loaded {narrativeCache.Count} narratives from cache");
+            totalRooms = DungeonGraph.Instance.RoomCount;
+            seed = DungeonGraph.Instance.Seed;
+        }
+
+        // Check cache validity (must match room count and seed)
+        if (useCache && LoadFromCache() && narrativeCache.Count == totalRooms)
+        {
+            Debug.Log($"[Narrative] Loaded {narrativeCache.Count} narratives from cache");
+            generationComplete = true;
         }
         else
         {
-            Debug.Log("Generating narratives...");
+            if (narrativeCache.Count > 0 && narrativeCache.Count != totalRooms)
+            {
+                Debug.Log($"[Narrative] Cache mismatch ({narrativeCache.Count} vs {totalRooms} rooms), regenerating...");
+                ClearCache();
+            }
+            Debug.Log($"[Narrative] Pre-generating all {totalRooms} narratives with voice...");
+            Time.timeScale = 0f; // Pause game during generation
             GenerateAllNarratives(() =>
             {
-                Debug.Log($"Generated {totalRooms} narratives");
+                Debug.Log($"[Narrative] All {totalRooms} narratives ready with voice!");
                 SaveToCache();
+                Time.timeScale = 1f; // Resume game
             });
         }
     }
@@ -55,11 +72,14 @@ public class LLMNarrativeGenerator : Singleton<LLMNarrativeGenerator>
 
         for (int i = 0; i < totalRooms; i++)
         {
+            Debug.Log($"[Narrative] Generating room {i + 1}/{totalRooms}...");
             yield return GenerateRoomNarrative(i);
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSecondsRealtime(0.1f); // Use realtime since game may be paused
         }
 
         isGenerating = false;
+        generationComplete = true;
+        Debug.Log($"[Narrative] Generation complete: {narrativeCache.Count}/{totalRooms} rooms succeeded");
         onComplete?.Invoke();
     }
 
@@ -96,7 +116,51 @@ public class LLMNarrativeGenerator : Singleton<LLMNarrativeGenerator>
         if (errorMsg != null)
         {
             Debug.LogError($"Room {roomIndex} failed: {errorMsg}");
+            // Create fallback narrative so game can still run
+            narrativeCache[roomIndex] = CreateFallbackNarrative(roomIndex);
+            Debug.Log($"[Narrative] Created fallback narrative for room {roomIndex}");
         }
+    }
+
+    private RoomNarrative CreateFallbackNarrative(int roomIndex)
+    {
+        string[] fallbackNames = { "Mysterious Stranger", "Ancient Spirit", "Wandering Soul", "Silent Guardian" };
+        string[] fallbackDialogue = {
+            "Welcome traveler. This dungeon holds many secrets.",
+            "Be careful as you venture deeper. Danger lurks in every shadow.",
+            "May fortune favor the bold. Good luck on your journey."
+        };
+
+        return new RoomNarrative
+        {
+            roomIndex = roomIndex,
+            environmentDescription = "A dark chamber filled with mystery.",
+            npcDialogues = new List<NPCDialogue>
+            {
+                new NPCDialogue
+                {
+                    npcName = fallbackNames[roomIndex % fallbackNames.Length],
+                    dialogueLines = new List<string>(fallbackDialogue),
+                    audioPaths = new List<string>(),
+                    spawnPosition = GetRandomSafePosition()
+                }
+            },
+            questObjective = new QuestObjective
+            {
+                objectiveText = "Clear the room of enemies",
+                type = QuestType.DefeatEnemies,
+                targetCount = 3
+            },
+            loreEntries = new List<LoreEntry>
+            {
+                new LoreEntry
+                {
+                    title = "Ancient Ruins",
+                    content = "These ruins hold secrets from ages past.",
+                    spawnPosition = GetRandomSafePosition()
+                }
+            }
+        };
     }
 
     private string BuildStoryContext(int currentRoomIndex)
@@ -128,19 +192,19 @@ public class LLMNarrativeGenerator : Singleton<LLMNarrativeGenerator>
 
     private RoomNarrative ConvertResponse(NarrativeResponse response)
     {
+        var npcDialogue = new NPCDialogue
+        {
+            npcName = response.npc.name,
+            dialogueLines = new List<string>(response.npc.dialogue),
+            audioPaths = response.npc.audio_paths != null ? new List<string>(response.npc.audio_paths) : new List<string>(),
+            spawnPosition = GetRandomSafePosition()
+        };
+
         return new RoomNarrative
         {
             roomIndex = response.roomIndex,
             environmentDescription = response.environment,
-            npcDialogues = new List<NPCDialogue>
-            {
-                new NPCDialogue
-                {
-                    npcName = response.npc.name,
-                    dialogueLines = new List<string>(response.npc.dialogue),
-                    spawnPosition = GetRandomSafePosition()
-                }
-            },
+            npcDialogues = new List<NPCDialogue> { npcDialogue },
             questObjective = new QuestObjective
             {
                 objectiveText = response.quest.objective,
@@ -252,16 +316,18 @@ public class LLMNarrativeGenerator : Singleton<LLMNarrativeGenerator>
 
     public RoomNarrative GetNarrative(int roomIndex)
     {
+        Debug.Log($"[Narrative] GetNarrative({roomIndex}): cache has {narrativeCache.Count} entries, isGenerating={isGenerating}");
         if (narrativeCache.TryGetValue(roomIndex, out RoomNarrative narrative))
         {
+            Debug.Log($"[Narrative] Found narrative for room {roomIndex}: {narrative.npcDialogues[0]?.npcName ?? "no NPC"}");
             return narrative;
         }
-        Debug.LogWarning($"No narrative for room {roomIndex}");
+        Debug.LogWarning($"[Narrative] No narrative for room {roomIndex} - keys in cache: [{string.Join(", ", narrativeCache.Keys)}]");
         return null;
     }
 
     public bool IsReady()
     {
-        return !isGenerating && narrativeCache.Count == totalRooms;
+        return generationComplete;
     }
 }

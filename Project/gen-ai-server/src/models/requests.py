@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List, Dict
 
 class NarrativeRequest(BaseModel):
     roomIndex: int = Field(..., ge=0)
@@ -16,4 +16,17 @@ class MusicRequest(BaseModel):
     use_cache: bool = True
 
 class VisionRequest(BaseModel):
+    use_cache: bool = True
+
+class RoomInfo(BaseModel):
+    id: int
+    connections: List[str]  # ["north", "south", "east", "west"]
+    is_start: bool = False
+    is_boss: bool = False
+
+class DungeonContentRequest(BaseModel):
+    seed: int = 12345
+    theme: str = "dark forest"
+    rooms: List[RoomInfo]
+    available_enemies: List[str] = ["slime", "ghost", "grape"]
     use_cache: bool = True

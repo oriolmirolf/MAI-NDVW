@@ -11,10 +11,12 @@ class CacheManager:
         self.vision_cache = self.cache_dir / "vision"
         self.narrative_cache = self.cache_dir / "narrative"
         self.music_cache = self.cache_dir / "music"
+        self.dungeon_cache = self.cache_dir / "dungeon"
 
         self.vision_cache.mkdir(exist_ok=True)
         self.narrative_cache.mkdir(exist_ok=True)
         self.music_cache.mkdir(exist_ok=True)
+        self.dungeon_cache.mkdir(exist_ok=True)
 
     def _hash_key(self, key: str) -> str:
         return hashlib.sha256(key.encode()).hexdigest()[:16]
@@ -28,6 +30,7 @@ class CacheManager:
         return None
 
     def set_vision(self, image_hash: str, data: dict):
+        self.vision_cache.mkdir(parents=True, exist_ok=True)
         cache_file = self.vision_cache / f"{image_hash}.json"
         with open(cache_file, 'w') as f:
             json.dump(data, f, indent=2)
@@ -47,6 +50,7 @@ class CacheManager:
     def set_narrative(self, room_index: int, total_rooms: int, theme: str, seed: int, data: dict):
         key = f"{room_index}_{total_rooms}_{theme}_{seed}"
         cache_hash = self._hash_key(key)
+        self.narrative_cache.mkdir(parents=True, exist_ok=True)
         cache_file = self.narrative_cache / f"{cache_hash}.json"
 
         with open(cache_file, 'w') as f:
@@ -69,14 +73,34 @@ class CacheManager:
     def set_music(self, description: str, seed: int, duration: float, audio_path: str):
         key = f"{description}_{seed}_{duration}"
         cache_hash = self._hash_key(key)
+        self.music_cache.mkdir(parents=True, exist_ok=True)
         cache_file = self.music_cache / f"{cache_hash}.txt"
 
         with open(cache_file, 'w') as f:
             f.write(audio_path)
         print(f"[CACHE SAVE] Music: {description[:30]}..., seed {seed}")
 
+    def get_dungeon(self, cache_key: str) -> Optional[dict]:
+        cache_hash = self._hash_key(cache_key)
+        cache_file = self.dungeon_cache / f"{cache_hash}.json"
+
+        if cache_file.exists():
+            with open(cache_file, 'r') as f:
+                print(f"[CACHE HIT] Dungeon: {cache_key}")
+                return json.load(f)
+        return None
+
+    def set_dungeon(self, cache_key: str, data: dict):
+        cache_hash = self._hash_key(cache_key)
+        self.dungeon_cache.mkdir(parents=True, exist_ok=True)
+        cache_file = self.dungeon_cache / f"{cache_hash}.json"
+
+        with open(cache_file, 'w') as f:
+            json.dump(data, f, indent=2)
+        print(f"[CACHE SAVE] Dungeon: {cache_key}")
+
     def clear_all(self):
-        for cache_type in [self.vision_cache, self.narrative_cache, self.music_cache]:
+        for cache_type in [self.vision_cache, self.narrative_cache, self.music_cache, self.dungeon_cache]:
             for file in cache_type.glob("*"):
                 file.unlink()
         print("[CACHE] Cleared all caches")
@@ -85,5 +109,6 @@ class CacheManager:
         return {
             "vision": len(list(self.vision_cache.glob("*.json"))),
             "narrative": len(list(self.narrative_cache.glob("*.json"))),
-            "music": len(list(self.music_cache.glob("*.txt")))
+            "music": len(list(self.music_cache.glob("*.txt"))),
+            "dungeon": len(list(self.dungeon_cache.glob("*.json")))
         }
