@@ -91,21 +91,21 @@ Using the pre-trained policy as initialization, self-play training refines the a
 
 \subsubsection{Experimental Results}
 
-Figure~\ref{fig:rl_pretraining_selfplay} shows the cumulative reward progression across both training phases. The pre-training phase (steps 0--820K) establishes a baseline performance, followed by self-play refinement that continues improving the policy.
+Figure~\ref{fig:rl_pretraining_selfplay} shows the cumulative reward progression across both training phases. The pre-training phase (820K steps) establishes a baseline performance, followed by self-play refinement that continues improving the policy (4.8M steps).
 
-\begin{figure}[H]
+\begin{figure}[h]
     \centering
-    % \includegraphics[width=0.8\linewidth]{figures/rl_pretraining_selfplay.png}
-    \caption{Cumulative reward during the two-phase training: pre-training against heuristic opponent (0--820K steps) followed by self-play refinement (820K--5.6M steps).}
+    \includegraphics[width=0.9\linewidth]{figures/rl_pretraining_selfplay.png}
+    \caption{Cumulative reward during the two-phase training: pre-training against heuristic opponent followed by self-play refinement.}
     \label{fig:rl_pretraining_selfplay}
 \end{figure}
 
-Figure~\ref{fig:rl_selfplay_comparison} compares the self-play phase of our two-phase approach against pure self-play training (starting from a randomly initialized policy). The pre-trained agent achieves significantly higher rewards and more stable learning, reaching an average cumulative reward of approximately $+1.5$, while pure self-play struggles to exceed $+0.1$ even after equivalent training time.
+Figure~\ref{fig:rl_selfplay_comparison} compares the self-play phase of our two-phase approach against pure self-play training (starting from a randomly initialized policy). The pre-trained agent achieves significantly higher rewards and more stable learning, reaching an average cumulative reward of approximately $+0.5$, while pure self-play struggles to surpass $0$ even after equivalent training time.
 
-\begin{figure}[H]
+\begin{figure}[h]
     \centering
-    % \includegraphics[width=0.8\linewidth]{figures/rl_selfplay_comparison.png}
-    \caption{Comparison of self-play training performance: pure self-play (orange) versus self-play initialized from pre-trained policy (blue). The pre-trained initialization leads to substantially higher rewards and more effective combat behavior.}
+    \includegraphics[width=0.9\linewidth]{figures/rl_selfplay_comparison.png}
+    \caption{Comparison of self-play training performance: pure self-play (pink) versus self-play initialized from pre-trained policy (blue). The pre-trained initialization leads to substantially higher rewards and more effective combat behavior.}
     \label{fig:rl_selfplay_comparison}
 \end{figure}
 
