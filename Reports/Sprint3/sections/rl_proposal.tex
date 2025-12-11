@@ -1,0 +1,85 @@
+\subsection{Reinforcement Learning for Boss Behavior}\label{sec:rl_proposal}
+
+Boss behavior is trained through Reinforcement Learning (RL) to produce adaptive and challenging encounters. As mentioned in Section~\ref{sec:boss_agents}, these bosses are modeled as replicas of the player character, possessing similar movement and attack capabilities.
+
+The agents controlling these bosses are designed to mimic the player's capabilities while exhibiting complex human-like strategies. The setup for their training takes place in a custom Arena environment where two instances of the agents can fight each other, illustrated in Figure~\ref{fig:rl_training_arena}.
+
+Rather than employing pure self-play from the start, the agents are first pre-trained against a heuristic opponent to establish a solid foundation of basic combat mechanics. The heuristic behavior moves directly towards or away from the agent (determined stochastically by an aggressiveness parameter $\alpha = 0.75$) and constantly attempts to attack in the direction of its target. After this pre-training phase, the agents are pitted against each other in self-play to develop more sophisticated strategies and counter-strategies.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.6\linewidth]{figures/rl_training_arena.png}
+    \caption{Screenshot of the Arena Unity Scene used for RL training, where the boss agent learns through self-play against a copy of itself.}
+    \label{fig:rl_training_arena}
+\end{figure}
+
+The RL agents are implemented using the Unity ML-Agents Toolkit, which provides a framework for training intelligent agents in Unity environments. The specific software architecture and implementation details are discussed in Section~\ref{sec:rl_methodology_and_results}.
+
+\subsubsection{Observation Space}
+
+The observation space consists of 18 continuous values that provide the agent with comprehensive information about the combat state All values are normalized to $[-1, 1]$ range:
+
+\begin{enumerate}
+    \item \textbf{Own position} (2 values): The agent's $(x, y)$ coordinates, normalized based on arena bounds.
+    \item \textbf{Distance to enemy} (2 values): The relative position vector to the opponent.
+    \item \textbf{Own velocity} (2 values): The agent's current velocity vector, normalized by maximum possible speed (during dash).
+    \item \textbf{Enemy velocity} (2 values): The opponent's velocity vector, enabling prediction of enemy movement.
+    \item \textbf{Own health} (1 value): Current health as a fraction of maximum health.
+    \item \textbf{Enemy health} (1 value): Opponent's health fraction.
+    \item \textbf{Own stamina} (1 value): Current stamina level (used for dashing).
+    \item \textbf{Own weapon index} (1 value): Index of currently equipped weapon.
+    \item \textbf{Enemy weapon index} (1 value): Opponent's equipped weapon index.
+    \item \textbf{Own attack cooldown} (1 value): Remaining cooldown time..
+    \item \textbf{Enemy attack cooldown} (1 value): Opponent's cooldown state, enabling strategic timing of attacks and dodges.
+    \item \textbf{Own aim angle} (1 value): Current weapon aim direction.
+    \item \textbf{Enemy aim angle} (1 value): Opponent's aim direction, useful for anticipating attacks.
+    \item \textbf{Angle to enemy} (1 value): The angle from the agent to the opponent.
+\end{enumerate}
+
+\subsubsection{Action Space}
+
+The action space combines discrete and continuous components:
+
+\begin{itemize}
+    \item \textbf{Discrete actions} (3 branches):
+    \begin{itemize}
+        \item \textit{Movement} (5 actions): Stand still, move up, down, left, or right.
+        \item \textit{Attack} (2 actions): No action, or attack with sword.
+        \item \textit{Dash} (2 actions): No dash, or perform dash.
+    \end{itemize}
+    \item \textbf{Continuous actions} (1 value):
+    \begin{itemize}
+        \item \textit{Aim angle}: A continuous value in $[-1, 1]$ that controls weapon aiming direction. The mapping is defined such that $0$ corresponds to aiming upward ($90^{\circ}$), with positive values rotating counterclockwise and negative values rotating clockwise. This symmetric representation around the vertical axis facilitates learning of balanced left-right behaviors.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Reward Function}
+
+The reward function $R$ is designed to encourage aggressive yet strategic behavior. The final reward values used are:
+
+\begin{itemize}
+    \item \textbf{Victory reward}: $r_{\mathrm{win}} = +1.0$ for defeating the opponent.
+    \item \textbf{Defeat penalty}: $r_{\mathrm{lose}} = -0.8$ for being defeated.
+    \item \textbf{Hit reward}: $r_{\mathrm{hit}} = +0.5$ for successfully landing an attack.
+    \item \textbf{Damage penalty}: $r_{\mathrm{damage}} = -0.4$ for receiving damage.
+    \item \textbf{Proximity reward}: $r_{\mathrm{prox}} = +0.001 \cdot \cos(\theta_v)$ per timestep, where $\theta_v$ is the angle between the agent's velocity vector and the direction to the enemy. This formulation rewards movement \emph{towards} the opponent rather than simply being close, which prevents orbiting behaviors where agents circle each other without engaging.
+    \item \textbf{Time penalty}: $r_{\mathrm{time}} = -0.001$ per timestep to encourage efficient combat resolution.
+\end{itemize}
+
+
+The cumulative reward for an episode is thus:
+\begin{equation}
+    R_{\mathrm{episode}} = r_{\mathrm{outcome}} + \sum_{t=1}^{T} \left( r_{\mathrm{hit}}^{(t)} + r_{\mathrm{damage}}^{(t)} + r_{\mathrm{prox}}^{(t)} + r_{\mathrm{time}} \right)
+\end{equation}
+where $r_{\mathrm{outcome}} \in \{r_{\mathrm{win}}, r_{\mathrm{lose}}\}$ and $T$ is the episode length.
+
+\subsubsection{Training Algorithm}
+
+For the training process, we use the Proximal Policy Optimization (PPO) algorithm~\cite{schulman2017proximal}, known for its stability and effectiveness in continuous control tasks. We use the default ML-Agents hyperparameters with the following modifications:
+\begin{itemize}
+    \item \textbf{Batch size}: 2048 (increased from default 1024 for more stable gradient estimates).
+    \item \textbf{Buffer size}: 20480 (increased proportionally with batch size).
+    \item \textbf{Self-play parameters}: We configure the self-play mechanism with a window of 5 past policies, swapping opponents every 10,000 steps, and maintaining a 50\% probability of playing against the latest model versus a historical snapshot.
+\end{itemize}
+
+The training methodology, including the pre-training strategy against heuristic opponents and the experimental results, are detailed in Section~\ref{sec:rl_methodology_and_results}.

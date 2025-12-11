@@ -266,18 +266,20 @@ The player uses the standard WASD keys for top-down movement. Aiming is controll
 \paragraph{Combat and Weapons}
 Attacks are initiated with a left-click. The player has access to three distinct weapons, which can be switched using the number keys (1-3):
 \begin{itemize}
-    \item \textbf{Sword (Key 1):} A melee weapon that performs a sweeping attack in a short arc in front of the player. It is ideal for close-quarters combat against multiple weak enemies.
-    \item \textbf{Bow (Key 2):} A long-range weapon that shoots a single arrow. The arrow is destroyed upon hitting an enemy, making it suited for picking off targets from a distance.
-    \item \textbf{Magic Staff (Key 3):} A medium-range weapon that fires a piercing beam of magic. The beam travels through all enemies in its path, making it effective for dealing with lined-up groups.
+    \item \textbf{Sword (Key 1):} A melee weapon that performs a sweeping attack in a short arc in front of the player. It is ideal for close-quarters combat against multiple weak enemies. Deals 1 damage.
+    \item \textbf{Bow (Key 2):} A long-range weapon that shoots a single arrow. The arrow is destroyed upon hitting an enemy, making it suited for picking off targets from a distance. Deals 1 damage.
+    \item \textbf{Magic Staff (Key 3):} A medium-range weapon that fires a piercing beam of magic. The beam slowly travels through all enemies in its path, making it effective for dealing with lined-up groups. Deals 3 damage.
 \end{itemize}
 All successful attacks apply a knockback effect to enemies, providing a brief moment of crowd control and repositioning opportunity.
 
 \paragraph{Health and Resources}
-The player has a health bar that decreases upon taking damage from enemy attacks. Health can be replenished by collecting hearts, which have a chance to drop from defeated enemies. Additionally, fallen enemies drop coins that can be collected. While not yet implemented, the plan is for these coins to be used as currency in a shop system, should time permit its development.
+The player starts with 3 health points by default, represented by a health bar that decreases upon taking damage from enemy attacks. Health can be replenished by collecting hearts, which have a chance to drop from defeated enemies. Additionally, fallen enemies drop coins that can be collected. While not yet implemented, the plan is for these coins to be used as currency in a shop system, should time permit its development.
 
 \subsubsection{Basic Monsters Agents}
 
-The behavior of common enemies is governed by a Finite State Machine (FSM) that dictates their actions based on the player's proximity. Each enemy agent operates in one of two states: \texttt{Roaming} or \texttt{Attacking}. When in the \texttt{Roaming} state, the enemy moves to randomly generated points within the dungeon. If the player enters a predefined \texttt{attackRange}, the enemy transitions to the \texttt{Attacking} state. While attacking, each enemy is subject to an \texttt{attackCooldown} timer, which prevents it from attacking continuously and enforces a minimum delay between consecutive attacks. The enemy will remain in the \texttt{Attacking} state until the player moves out of range, at which point it returns to \texttt{Roaming}. Figure~\ref{fig:enemy_fsm} illustrates the finite state machine (FSM) governing enemy behavior. The diagram shows the two main states (\texttt{Roaming} and \texttt{Attacking}) and the transitions triggered by the player's proximity.
+The behavior of common enemies is governed by a Finite State Machine (FSM) that dictates their actions based on the player's proximity. However, the main focus of our AI work in this project is on procedural content generation (PCG), generative AI, and reinforcement learning (RL) agents, which are introduced and covered in detail in later sections. As such, the FSM governing the basic monsters is purely inherited from the base game and intentionally kept very simple.
+
+Each enemy agent operates in one of two states: \texttt{Roaming} or \texttt{Attacking}. When in the \texttt{Roaming} state, the enemy moves to randomly generated points within the dungeon. If the player enters a predefined \texttt{attackRange}, the enemy transitions to the \texttt{Attacking} state. While attacking, each enemy is subject to an \texttt{attackCooldown} timer, which prevents it from attacking continuously and enforces a minimum delay between consecutive attacks. The enemy will remain in the \texttt{Attacking} state until the player moves out of range, at which point it returns to \texttt{Roaming}. Figure~\ref{fig:enemy_fsm} illustrates the finite state machine (FSM) governing enemy behavior. The diagram shows the two main states (\texttt{Roaming} and \texttt{Attacking}) and the transitions triggered by the player's proximity.
 
 \begin{figure}[H]
   \centering
@@ -305,7 +307,9 @@ Currently, there are two types of enemies implemented, as shown in Figure~\ref{f
 
 The three main bosses in the game are designed to be significant challenges that test the player's skill. Their behavior is controlled by agents trained using Reinforcement Learning (RL), allowing them to react to the player's actions and create dynamic, unscripted encounters.
 
-Our approach is to model the boss agents as enhanced, hostile versions of the player character. At their core, these bosses possess a similar set of abilities as the player's knight, but they are controlled by a trained RL agent. To make them more menacing and visually distinct, we gave them a different color palette (see Figure~\ref{fig:boss_agent}), more health points, and their movements are faster.
+Our approach is to model the boss agents as enhanced, hostile versions of the player character. At their core, these bosses possess a similar set of abilities as the player's knight, but they are controlled by a trained RL agent.
+
+Unlike the player, boss agents only have access to the Sword weapon; however, to compensate for this limitation, we increased their health points (7 HP instead of the player's 3), and their movement speed (from 4 to 5). To make them more menacing and visually distinct, we gave them a different color palette (see Figure~\ref{fig:boss_agent}).
 
 \begin{figure}[H]
     \centering
@@ -314,7 +318,7 @@ Our approach is to model the boss agents as enhanced, hostile versions of the pl
     \label{fig:boss_agent}
 \end{figure}
 
-The technical specifics of the training process, reward functions, and agent architecture for these bosses are detailed further in Section~\ref{sec:rl_bosses}.
+The technical specifics of the training process, reward functions, and agent architecture for these bosses are detailed further in Sections~\ref{sec:rl_proposal} and \ref{sec:rl_methodology_and_results}.
 
 \section{Related Work}
 
@@ -702,55 +706,29 @@ However, for Sprint 3 substantial work remains to integrate these systems with t
 Additionally, we are exploring the possibility of incorporating voice generation models to create a narrative experience. 
 For instance, generated story segments could be converted to speech using text-to-speech models, creating a narrator that reads the lore and dialogue to players. This remains an experimental direction that has not yet been tested, and feasibility will depend on available time and technical constraints.
 
-\subsection{Reinforcement Learning for Boss Behavior}\label{sec:rl_bosses}
+\input{sections/rl_proposal.tex}
 
-Boss behaviours (Sentinel, Herald, and Chronicler) are trained through reinforcement learning (RL) to produce adaptive and challenging encounters. As mentioned in Section~\ref{sec:boss_agents}, these bosses are currently modelled as replicas of the player character, possessing similar movement and attack capabilities. If time permits, we may diversify the first two bosses to be RL-powered variants of the Slime and Ghost enemies, but for now we focus on the RL training of the player-like boss.
+\section{Methodology and Results}
 
-The agents in control of these bosses are designed to mimic the player's capabilities while exhibiting complex human-like strategies. The setup for their training takes place in a custom Arena environment that will allow the agents to learn through self-play. That is, the agent will play against a copy of itself, allowing it to explore a wide range of strategies and counter-strategies. Figure~\ref{fig:rl_training_arena} illustrates the Arena training setup.
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.6\linewidth]{figures/rl_training_arena.png}
-    \caption{Screenshot of the Arena Unity Scene used for RL training, where the boss agent learns through self-play against a copy of itself.}
-    \label{fig:rl_training_arena}
-\end{figure}
+\input{sections/rl_methodology_and_results.tex}
 
-We consider the possibility of creating a scene with multiple copies of the Arena environment running in parallel, to speed up data collection during training, although this has not yet been implemented.
-
-The RL agents are implemented using the Unity ML-Agents Toolkit, which provides a framework for training intelligent agents in Unity environments. Therefore, the \texttt{AgentController} is defined as a subclass of the \texttt{Agent} class provided by ML-Agents.
-
-In this class, we define the observation space and action spaces for the boss agents:
-\begin{itemize}
-  \item The observation space includes 6 continuous values:
-  \begin{itemize}
-    \item The agent's own position (x, y) coordinates.
-    \item The agent's own health.
-    \item The opponent's position (x, y) coordinates.
-    \item The opponent's health.
-  \end{itemize}
-  \item The action space consists of 3 discrete action branches:
-  \begin{itemize}
-    \item 5 movement actions: stand still, move forward, backward, left, or right.
-    \item 4 attack actions: do nothing, use sword, bow, or magic staff.
-    \item 2 dashing actions: no dash, or dash.
-  \end{itemize}
-\end{itemize}
-
-In order for these systems to work under the use of ML-Agents in a self-play scenario (with two agents in the same scene), we had to implement custom \texttt{AgentHealth}, \texttt{AgentWeapons}, \texttt{AgentStamina}, \texttt{AgentDamageSource} components, which are similar to the player character's components but adapted to work with the \texttt{AgentController} and without singletons.
-
-In addition to this, we implemented a \texttt{TrainingManager} component to handle the initialization and resetting of the Arena scene after each episode, as well as the reward system for the agents.
-
-The reward function is designed to encourage aggressive yet strategic behavior, rewarding successful hits on the opponent while penalizing damage taken. The agent also receives a significant reward for winning the match and a penalty for losing. Additionally, small time penalties are applied every timestep to encourage the agent to conclude matches efficiently.
-
-For the training process, we use the Proximal Policy Optimization (PPO) algorithm, for its versatility and effectiveness in control tasks, with the default hyperparameters provided by ML-Agents. If necessary, we will tune these hyperparameters based on initial training results to improve learning stability and performance.
-
-Once all of the components are defined and set-up, the training loop is executed using the \texttt{mlagents-learn} command-line tool, which interfaces with the Unity environment to collect experience data and update the agent's policy. For efficiency, we run the training with graphics disabled, allowing for faster simulation speeds. Note that this does not truly disable rendering, but instead allows the training to run unsynchronized from the rendering, speeding up the process.
-
-As a planned extension, the Sentinel and Herald bosses can be implemented as enhanced versions of the Slime and Ghost enemies. This would require designing new agent controllers with action spaces adapted to their specific abilities. Unlike the self-play approach used for the final boss, these agents would be trained by competing against the pre-trained, player-like agent in the Arena environment. This methodology ensures that they learn to counter the player's strategies effectively, providing a varied and escalating challenge.
-
+\section{Conclusion}
+Conclusion here.
 
 \bibliographystyle{model1-num-names}
 \bibliography{references}
+
+\newpage
+\appendix
+\section{Tasks Allocation}
+
+\begin{itemize}
+  \item \textbf{Oriol Miró}: Procedural dungeon generation (BSP implementation)
+  \item \textbf{Dániel Mácsai}: Procedural room population (CA implementation)
+  \item \textbf{Jean Dié}: Generative AI pipeline (vision analysis, LLM-driven narrative, and music generation)
+  \item \textbf{Bruno Sánchez}: Boss agents (Reinforcement Learning design and training)
+\end{itemize}
 
 
 %% Authors are advised to submit their bibtex database files. They are

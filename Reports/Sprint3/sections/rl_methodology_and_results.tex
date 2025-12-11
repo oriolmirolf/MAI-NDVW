@@ -1,0 +1,112 @@
+\subsection{Reinforcement Learning: Implementation and Results}\label{sec:rl_methodology_and_results}
+
+This section describes the software architecture of the RL-based boss behavior system, the training strategy employed, and the experimental results obtained.
+
+\subsubsection{Software Architecture}
+
+The RL system is built around several interconnected components that handle agent behavior, combat mechanics, and training orchestration.
+
+\paragraph{Agent Controller}
+The \texttt{AgentController} class is the central component, extending the ML-Agents \texttt{Agent} base class. It is responsible for:
+\begin{itemize}
+    \item Collecting observations from the environment and formatting them for the neural network.
+    \item Receiving actions from the trained policy and executing them (movement, attacks, dashing, aiming).
+    \item Implementing a heuristic behavior mode (via the \texttt{Heuristic()} method) used during pre-training, which provides a simple opponent that moves towards/away from the agent based on the aggressiveness parameter and constantly attacks.
+\end{itemize}
+
+\paragraph{Combat Target Interface}
+A key architectural challenge arose from the player's combat system being built around singletons (e.g., \texttt{PlayerHealth.Instance}, \texttt{PlayerController.Instance}), which is incompatible with self-play training where two identical agents must coexist in the same scene. To address this, we designed the \texttt{ICombatTarget} interface that abstracts combat-relevant properties:
+
+\begin{itemize}
+    \item Transform and Rigidbody references for position and velocity tracking.
+    \item Health, weapon, and cooldown state accessors (normalized to $[0,1]$).
+    \item Aim angle and facing direction for attack prediction.
+\end{itemize}
+
+Both \texttt{PlayerController} and \texttt{AgentController} implement this interface, allowing agents to seamlessly target either other agents (during training) or the player (during inference in the actual game). This abstraction enables the same trained policy to function in both contexts without modification.
+
+\paragraph{Agent-Specific Components}
+To support self-play, we implemented agent-specific versions of the player's combat components:
+\begin{itemize}
+    \item \texttt{AgentHealth}: Manages health state and damage reception without singleton dependencies.
+    \item \texttt{AgentStamina}: Tracks stamina for dashing abilities.
+    \item \texttt{AgentWeapons}: Handles weapon equipping, attack execution, and cooldown management.
+    \item \texttt{AgentDamageSource}: Attached to weapon colliders, routes damage to the appropriate target (agent or player) and reports hits to the training manager when in training mode.
+\end{itemize}
+
+\paragraph{Training Manager}
+The \texttt{TrainingManager} component orchestrates the training process within the Arena scene:
+\begin{itemize}
+    \item Initializes both agents and sets them as each other's targets.
+    \item Applies per-timestep rewards (time penalty, proximity reward).
+    \item Detects combat events (hits, deaths) and assigns appropriate rewards.
+    \item Handles episode termination conditions (victory, defeat, timeout) and scene resets.
+    \item Logs statistics to TensorBoard for monitoring training progress.
+\end{itemize}
+
+\paragraph{Inference Setup}
+During actual gameplay, the \texttt{TrainingManager} is not present. Instead, boss agents are configured via the \texttt{AgentInferenceSetup} component, which:
+\begin{itemize}
+    \item Automatically sets the player as the enemy target on initialization.
+    \item Configures arena bounds for observation normalization based on the current room.
+    \item Handles agent death (spawning VFX, triggering loot drops, destroying the GameObject).
+    \item Optionally delays agent activation until the player enters the boss room.
+\end{itemize}
+
+This separation allows the same trained agent prefab to be used in both training and gameplay contexts with appropriate configuration.
+
+\subsubsection{Training Infrastructure}
+
+Rather than creating multiple copies of the Arena environment within Unity (which would be resource-intensive), we leveraged ML-Agents' capability to use a built executable as the training environment. This approach offers several advantages:
+
+\begin{itemize}
+    \item \textbf{Parallel environments}: By setting \texttt{num\_envs: 5} in the configuration, five independent environment instances run simultaneously, dramatically increasing data collection throughput.
+    \item \textbf{Headless execution}: With \texttt{no\_graphics: true}, the environments run without rendering, reducing computational overhead to a fraction of what running within the Unity Editor would require.
+    \item \textbf{Scalability}: Additional environments can be spawned simply by adjusting the configuration, without modifying the Unity project.
+\end{itemize}
+
+Training is executed via the \texttt{mlagents-learn} command-line tool, which interfaces with the Unity executables to collect experience data and update the policy using PyTorch on GPU.
+
+\subsubsection{Training Strategy}
+
+Initial experiments with pure self-play revealed a significant limitation: while agents learned to fight effectively against each other, the emergent behaviors appeared unintuitive when facing human players. A common example was agents learning to retreat to arena corners, where the constrained space made it easier to land hits on an opponent that would follow them. Against a human player who does not follow such patterns, this behavior appears confused and passive rather than intelligent.
+
+To address this, we adopted a two-phase training strategy:
+
+\paragraph{Phase 1: Pre-training against Heuristic (820K steps)}
+The agent first trains against the built-in heuristic opponent, which provides a consistent, aggressive baseline behavior. This phase establishes fundamental skills:
+\begin{itemize}
+    \item Moving towards enemies to engage in combat.
+    \item Aiming and timing attacks effectively.
+    \item Basic defensive responses to incoming attacks.
+\end{itemize}
+
+\paragraph{Phase 2: Self-play Refinement (4.8M steps)}
+Using the pre-trained policy as initialization, self-play training refines the agent's strategies:
+\begin{itemize}
+    \item Developing counter-strategies against diverse opponent behaviors.
+    \item Learning to predict and exploit opponent patterns.
+    \item Improving overall combat sophistication while maintaining the aggressive foundation from Phase 1.
+\end{itemize}
+
+\subsubsection{Experimental Results}
+
+Figure~\ref{fig:rl_pretraining_selfplay} shows the cumulative reward progression across both training phases. The pre-training phase (steps 0--820K) establishes a baseline performance, followed by self-play refinement that continues improving the policy.
+
+\begin{figure}[H]
+    \centering
+    % \includegraphics[width=0.8\linewidth]{figures/rl_pretraining_selfplay.png}
+    \caption{Cumulative reward during the two-phase training: pre-training against heuristic opponent (0--820K steps) followed by self-play refinement (820K--5.6M steps).}
+    \label{fig:rl_pretraining_selfplay}
+\end{figure}
+
+Figure~\ref{fig:rl_selfplay_comparison} compares the self-play phase of our two-phase approach against pure self-play training (starting from a randomly initialized policy). The pre-trained agent achieves significantly higher rewards and more stable learning, reaching an average cumulative reward of approximately $+1.5$, while pure self-play struggles to exceed $+0.1$ even after equivalent training time.
+
+\begin{figure}[H]
+    \centering
+    % \includegraphics[width=0.8\linewidth]{figures/rl_selfplay_comparison.png}
+    \caption{Comparison of self-play training performance: pure self-play (orange) versus self-play initialized from pre-trained policy (blue). The pre-trained initialization leads to substantially higher rewards and more effective combat behavior.}
+    \label{fig:rl_selfplay_comparison}
+\end{figure}
+
+The qualitative difference is equally significant: agents trained with our two-phase approach actively pursue the player, engage in combat, and exhibit varied attack patterns. In contrast, pure self-play agents often display passive or exploitative behaviors that, while effective in self-play, fail to create engaging boss encounters in the actual game.
