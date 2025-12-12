@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 010e7b6c1ab77534592773f01f959479, type: 3}
+  m_Name: Chapter2_NightTheme
+  m_EditorClassIdentifier: 
+  mainFloorTile: {fileID: 11400000, guid: 0a25a1a514f95e145b170795a26d9fb6, type: 2}
+  floorVariations:
+  - {fileID: 11400000, guid: 6504b8083513d8446bbe57a1712ca666, type: 2}
+  - {fileID: 11400000, guid: 62925813f3c7b074b9b007bc033bfbf8, type: 2}
+  - {fileID: 11400000, guid: 8b29f3354d98b084081ea2d47ed4088d, type: 2}
+  blockingObstacles:
+  - {fileID: 3713797055011001674, guid: ad4a8b21fa4b17f419459e034c2ba9a9, type: 3}
+  - {fileID: 7156724546605552429, guid: 0274c6dd796217b45aa43bb4136d9ed9, type: 3}
+  - {fileID: 6485860328230942731, guid: 1ed6f1ddb02605d4db8dc56f51d8796c, type: 3}
+  hazardTiles:
+  - {fileID: 11400000, guid: 00d4f8c6aa00ecb4692c4cc641171c43, type: 2}
+  waterRuleTile: {fileID: 11400000, guid: 9c1c50d6b866ee6448870333dcca7fa0, type: 2}
+  pathRuleTile: {fileID: 11400000, guid: 0c26e089ba310184c90125c7d82e78d7, type: 2}
+  nonBlockingDecorations:
+  - {fileID: 3713797055011001674, guid: 397c7b1945699344ebc873c6af941b87, type: 3}
+  particleEffects: []
+  commonEnemies:
+  - {fileID: 4675430477267506724, guid: a0635851dee6b1143afbc6ad7bf6edd2, type: 3}
+  - {fileID: 9034311603430229389, guid: facd13da21d5930458d401b5faaa572c, type: 3}
+  bossPrefab: {fileID: 2687577504509315217, guid: 174c969b1cffbe04b8e0439ad74da698, type: 3}
+  ambientColor: {r: 0.34517616, g: 0.6181707, b: 0.9528302, a: 1}
+  ambientIntensity: 0.7
+  decorationDensity: 0.4
+  caIterations: 6
+  caSurviveMin: 4
+  caBirthMin: 3
+  enablePaths: 1
+  portalPathDensity: 0.4
+  ambientPathDensity: 0.08
+  portalSeedRadius: 3
+  pathIterations: 4
+  pathSurviveMin: 3
+  pathBirthMin: 2

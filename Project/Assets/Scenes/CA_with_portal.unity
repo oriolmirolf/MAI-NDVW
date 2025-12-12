@@ -948,7 +948,7 @@ MonoBehaviour:
   surroundWithWalls: 1
   mapWidth: 140
   mapHeight: 140
-  roomCount: 2
+  roomCount: 8
   extraConnections: 3
   minLeafSize: 36
   minRoomSize: 25
@@ -1046,10 +1046,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentTheme: {fileID: 11400000, guid: e3cfdd19c975ffd4d8aac0e9cf98a656, type: 2}
   combatRoomPopulator:
-    minEnemies: 5
+    minEnemies: 8
     maxEnemies: 12
-    minObstacles: 5
-    maxObstacles: 5
+    minObstacles: 2
+    maxObstacles: 6
     obstaclePlacementMargin: 10
     enemyPlacementMargin: 1.5
   bossArenaPopulator:
@@ -1057,7 +1057,7 @@ MonoBehaviour:
     useHeavyDecoration: 0
     decorationMultiplier: 1.5
   hazardPopulator:
-    lakeDensity: 0.4
+    lakeDensity: 0.45
     lakeIterations: 6
     lakeSurviveMin: 5
     lakeBirthMin: 4
@@ -3062,6 +3062,10 @@ MonoBehaviour:
   runSeed: 12345
   transitionUI: {fileID: 303824415}
   victoryWaitDuration: 4
+  chapterThemes:
+  - {fileID: 11400000, guid: e3cfdd19c975ffd4d8aac0e9cf98a656, type: 2}
+  - {fileID: 11400000, guid: b7309d67ae9bbc148b021b61dc9a48df, type: 2}
+  - {fileID: 11400000, guid: 79c32c28eefd481419bc17199932c8d6, type: 2}
 --- !u!1 &1267196839
 GameObject:
   m_ObjectHideFlags: 0

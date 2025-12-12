@@ -88,6 +88,8 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
     private List<Room> rooms;
     private HashSet<Vector3Int> floorCells = new HashSet<Vector3Int>();
     private Transform objectsParent, enemiesParent, roomsParent, dropsParent;
+    private ChapterTheme currentTheme; // Store theme to apply after generation
+    private int actualBossRoomIndex = -1; // Store the actual boss room index for portal spawning
 
     // Public property to access the drops parent for spawning pickups
     public Transform DropsParent => dropsParent;
@@ -193,6 +195,7 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
         // First, decide which room index will be the boss room (non-starting room)
         var leafList = leaves.Where(l => l.IsLeaf).Take(roomCount).ToList();
         int bossRoomIndex = leafList.Count > 1 ? rng.Next(1, leafList.Count) : -1;
+        actualBossRoomIndex = bossRoomIndex; // Store for portal spawning
         if (bossRoomIndex >= 0)
         {
             Debug.Log($"Boss room will be at index: {bossRoomIndex}");
@@ -311,6 +314,11 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
 
         if (connectionType == ConnectionType.Corridors) UpdateGlobalConfiner();
 
+        // Apply theme lighting AFTER everything is generated and spawned
+        if (currentTheme != null)
+        {
+            ApplyThemeLighting(currentTheme);
+        }
     }
 
     [Header("Chapter Exit")]
@@ -320,20 +328,24 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
     {
         if (chapterExitPortalPrefab == null) return;
         if (rooms == null || rooms.Count == 0) return;
+        if (actualBossRoomIndex < 0 || actualBossRoomIndex >= rooms.Count)
+        {
+            Debug.LogWarning($"Invalid boss room index: {actualBossRoomIndex}");
+            return;
+        }
 
-        var bossRoom = GetLikelyBossRoom();
-        if (bossRoom == null) return;
-
+        var bossRoom = rooms[actualBossRoomIndex];
         Vector3 cellWorldPos = floorTilemap.CellToWorld(bossRoom.Center);
-        
+
         // Keep the Z -5 offset so it stays visible!
         Vector3 finalSpawnPos = new Vector3(cellWorldPos.x + 0.5f, cellWorldPos.y + 0.5f, -5.0f);
 
         // FIX: Change 'null' back to 'objectsParent'
         // This ensures the generator deletes the old portal when rewriting the chapter.
         GameObject portal = Instantiate(chapterExitPortalPrefab, finalSpawnPos, Quaternion.identity, objectsParent);
-        
-        portal.name = ">>> EXIT PORTAL <<<"; 
+
+        portal.name = ">>> EXIT PORTAL <<<";
+        Debug.Log($"Portal spawned at boss room index {actualBossRoomIndex} at position {finalSpawnPos}");
     }
 
     
@@ -358,6 +370,111 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
             }
         }
         return best;
+    }
+
+    /// <summary>
+    /// Set the theme to use for the next dungeon generation
+    /// </summary>
+    public void SetThemeForNextGeneration(ChapterTheme theme)
+    {
+        if (theme == null)
+        {
+            Debug.LogWarning("[BSPMSTDungeonGenerator] Attempted to set null theme!");
+            return;
+        }
+
+        // Store theme to apply after generation
+        currentTheme = theme;
+
+        // Find the ArchetypeRoomPopulator and set its theme
+        var archetypePopulator = GetComponentInChildren<ArchetypeRoomPopulator>();
+        if (archetypePopulator != null)
+        {
+            archetypePopulator.SetTheme(theme);
+            Debug.Log($"[BSPMSTDungeonGenerator] Theme set to: {theme.name}");
+        }
+        else
+        {
+            Debug.LogError("[BSPMSTDungeonGenerator] ArchetypeRoomPopulator not found!");
+        }
+    }
+
+    /// <summary>
+    /// Apply the theme's ambient lighting settings to the scene (for 2D)
+    /// </summary>
+    private void ApplyThemeLighting(ChapterTheme theme)
+    {
+        if (theme == null) return;
+
+        // For 2D games, we apply color tinting to the tilemaps
+        Color tintColor = theme.ambientColor * theme.ambientIntensity;
+
+        // Apply color tint to floor tilemap
+        if (floorTilemap != null)
+        {
+            floorTilemap.color = tintColor;
+        }
+
+        // Apply color tint to path tilemap
+        if (pathTilemap != null)
+        {
+            pathTilemap.color = tintColor;
+        }
+
+        // Apply color tint to outside/border tilemap
+        if (outsideTilemap != null)
+        {
+            outsideTilemap.color = tintColor;
+        }
+
+        // Apply color tint to walls tilemap
+        if (wallsTilemap != null)
+        {
+            wallsTilemap.color = tintColor;
+        }
+
+        // Apply color tint to water tilemap (lakes)
+        if (waterTilemap != null)
+        {
+            waterTilemap.color = tintColor;
+        }
+
+        // Apply color tint to all decoration/obstacle objects
+        if (objectsParent != null)
+        {
+            ApplyColorTintToChildren(objectsParent, tintColor);
+        }
+
+        // Change camera background color to match theme
+        Camera mainCamera = Camera.main;
+        if (mainCamera != null)
+        {
+            // Darken the tint color for background
+            mainCamera.backgroundColor = tintColor * 0.2f;
+        }
+
+        Debug.Log($"[BSPMSTDungeonGenerator] Applied 2D lighting tint - Color: {tintColor}");
+    }
+
+    /// <summary>
+    /// Apply color tint to all SpriteRenderers under a parent transform
+    /// </summary>
+    private void ApplyColorTintToChildren(Transform parent, Color tintColor)
+    {
+        if (parent == null) return;
+
+        foreach (Transform child in parent)
+        {
+            // Tint sprite renderers
+            SpriteRenderer sr = child.GetComponent<SpriteRenderer>();
+            if (sr != null)
+            {
+                sr.color = tintColor;
+            }
+
+            // Recursively tint children
+            ApplyColorTintToChildren(child, tintColor);
+        }
     }
 
     private void PaintVisualPadding()
