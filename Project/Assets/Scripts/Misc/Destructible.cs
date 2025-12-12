@@ -15,7 +15,8 @@ public class Destructible : MonoBehaviour
 
             PickUpSpawner pickUpSpawner = GetComponent<PickUpSpawner>();
             pickUpSpawner?.DropItems();
-            Instantiate(destroyVFX, transform.position, Quaternion.identity);
+            Transform dropsParent = FindObjectOfType<BSPMSTDungeonGenerator>()?.DropsParent;
+            Instantiate(destroyVFX, transform.position, Quaternion.identity, dropsParent);
             Destroy(gameObject);
         }
     }

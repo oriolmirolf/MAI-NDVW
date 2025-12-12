@@ -27,6 +27,7 @@ public class Grape : MonoBehaviour, IEnemy
     }
 
     public void SpawnProjectileAnimEvent() {
-        Instantiate(grapeProjectilePrefab, transform.position, Quaternion.identity);
+        Transform dropsParent = FindObjectOfType<BSPMSTDungeonGenerator>()?.DropsParent;
+        Instantiate(grapeProjectilePrefab, transform.position, Quaternion.identity, dropsParent);
     }
 }

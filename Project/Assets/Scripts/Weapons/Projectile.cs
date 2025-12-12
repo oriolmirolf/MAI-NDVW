@@ -42,10 +42,12 @@ public class Projectile : MonoBehaviour
         if (!other.isTrigger && (enemyHealth || indestructible || player)) {
             if ((player && isEnemyProjectile) || (enemyHealth && !isEnemyProjectile)) {
                 player?.TakeDamage(1, transform);
-                Instantiate(particleOnHitPrefabVFX, transform.position, transform.rotation);
+                Transform dropsParent = FindObjectOfType<BSPMSTDungeonGenerator>()?.DropsParent;
+                Instantiate(particleOnHitPrefabVFX, transform.position, transform.rotation, dropsParent);
                 Destroy(gameObject);
             } else if (!other.isTrigger && indestructible) {
-                Instantiate(particleOnHitPrefabVFX, transform.position, transform.rotation);
+                Transform dropsParent = FindObjectOfType<BSPMSTDungeonGenerator>()?.DropsParent;
+                Instantiate(particleOnHitPrefabVFX, transform.position, transform.rotation, dropsParent);
                 Destroy(gameObject);
             }
         }

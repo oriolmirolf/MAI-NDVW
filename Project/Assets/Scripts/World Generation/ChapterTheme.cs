@@ -21,6 +21,12 @@ public class ChapterTheme : ScriptableObject
     [Tooltip("Environmental hazards that block movement - water, lava pools")]
     public TileBase[] hazardTiles;
 
+    [Tooltip("Water RuleTile for automatic border generation")]
+    public RuleTile waterRuleTile;
+
+    [Tooltip("Path RuleTile for automatic path generation")]
+    public RuleTile pathRuleTile;
+
     [Header("Non-Blocking Decorations (All Rooms)")]
     [Tooltip("Decorations that DON'T block movement - grass, flowers, small stones")]
     public GameObject[] nonBlockingDecorations;
@@ -58,4 +64,32 @@ public class ChapterTheme : ScriptableObject
     [Tooltip("Minimum neighbors for cell to be born")]
     [Range(2, 8)]
     public int caBirthMin = 3;
+
+    [Header("Path Generation Settings")]
+    [Tooltip("Enable path generation in rooms")]
+    public bool enablePaths = true;
+
+    [Tooltip("Initial path density near portals (0-1)")]
+    [Range(0f, 1f)]
+    public float portalPathDensity = 0.9f;
+
+    [Tooltip("Initial path density away from portals (0-1)")]
+    [Range(0f, 1f)]
+    public float ambientPathDensity = 0.2f;
+
+    [Tooltip("Radius around portals to seed paths (in tiles)")]
+    [Range(1, 8)]
+    public int portalSeedRadius = 3;
+
+    [Tooltip("Number of CA iterations for path smoothing")]
+    [Range(1, 10)]
+    public int pathIterations = 4;
+
+    [Tooltip("Minimum neighbors for path cell to survive")]
+    [Range(2, 8)]
+    public int pathSurviveMin = 3;
+
+    [Tooltip("Minimum neighbors for path cell to be born")]
+    [Range(2, 8)]
+    public int pathBirthMin = 2;
 }

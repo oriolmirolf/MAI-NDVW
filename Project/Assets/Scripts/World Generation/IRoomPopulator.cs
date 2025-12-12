@@ -6,7 +6,7 @@ using System.Collections.Generic;
 public interface IRoomPopulator
 {
     // Called once for each room after tiles are carved.
-    void Populate(RoomData room, System.Random rng, Transform objectsParent, Transform enemiesParent, Tilemap floorTilemap);
+    void Populate(RoomData room, System.Random rng, Transform objectsParent, Transform enemiesParent, Tilemap floorTilemap, Tilemap pathTilemap);
 }
 
 [System.Serializable]

@@ -912,6 +912,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   floorTilemap: {fileID: 1267196842}
   pathTilemap: {fileID: 535911911}
+  waterTilemap: {fileID: 1941814402}
   usePathForCorridors: 1
   wallsTilemap: {fileID: 1362037496}
   fillOutside: 0
@@ -952,6 +953,8 @@ MonoBehaviour:
   minLeafSize: 36
   minRoomSize: 25
   maxRoomSize: 30
+  minBossRoomSize: 15
+  maxBossRoomSize: 30
   roomMargin: 2
   corridorWidth: 4
   manhattanCorridors: 0
@@ -1045,8 +1048,8 @@ MonoBehaviour:
   combatRoomPopulator:
     minEnemies: 5
     maxEnemies: 12
-    minObstacles: 2
-    maxObstacles: 4
+    minObstacles: 5
+    maxObstacles: 5
     obstaclePlacementMargin: 10
     enemyPlacementMargin: 1.5
   bossArenaPopulator:
@@ -1054,7 +1057,7 @@ MonoBehaviour:
     useHeavyDecoration: 0
     decorationMultiplier: 1.5
   hazardPopulator:
-    lakeDensity: 0.45
+    lakeDensity: 0.4
     lakeIterations: 6
     lakeSurviveMin: 5
     lakeBirthMin: 4
@@ -1438,7 +1441,7 @@ TilemapRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: -10
+  m_SortingOrder: -9
   m_ChunkSize: {x: 32, y: 32, z: 32}
   m_ChunkCullingBounds: {x: 0, y: 0, z: 0}
   m_MaxChunkCount: 16

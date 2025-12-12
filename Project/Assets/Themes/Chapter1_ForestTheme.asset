@@ -23,6 +23,8 @@ MonoBehaviour:
   - {fileID: 6485860328230942731, guid: 1ed6f1ddb02605d4db8dc56f51d8796c, type: 3}
   hazardTiles:
   - {fileID: 11400000, guid: 00d4f8c6aa00ecb4692c4cc641171c43, type: 2}
+  waterRuleTile: {fileID: 11400000, guid: 9c1c50d6b866ee6448870333dcca7fa0, type: 2}
+  pathRuleTile: {fileID: 11400000, guid: 0c26e089ba310184c90125c7d82e78d7, type: 2}
   nonBlockingDecorations:
   - {fileID: 3713797055011001674, guid: 397c7b1945699344ebc873c6af941b87, type: 3}
   particleEffects: []
@@ -36,3 +38,10 @@ MonoBehaviour:
   caIterations: 5
   caSurviveMin: 4
   caBirthMin: 3
+  enablePaths: 1
+  portalPathDensity: 0.4
+  ambientPathDensity: 0.08
+  portalSeedRadius: 3
+  pathIterations: 4
+  pathSurviveMin: 3
+  pathBirthMin: 2

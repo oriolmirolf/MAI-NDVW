@@ -47,7 +47,8 @@ public class ArchetypeRoomPopulator : MonoBehaviour, IRoomPopulator
         System.Random rng,
         Transform objectsParent,
         Transform enemiesParent,
-        Tilemap floorTilemap)
+        Tilemap floorTilemap,
+        Tilemap pathTilemap)
     {
         if (currentTheme == null)
         {
@@ -64,7 +65,7 @@ public class ArchetypeRoomPopulator : MonoBehaviour, IRoomPopulator
 
         if (populator != null)
         {
-            populator.PopulateRoom(room, currentTheme, rng, floorTilemap, objectsParent, enemiesParent);
+            populator.PopulateRoom(room, currentTheme, rng, floorTilemap, pathTilemap, objectsParent, enemiesParent);
             Debug.Log($"Room {room.index} populated successfully");
         }
         else

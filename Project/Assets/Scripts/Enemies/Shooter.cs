@@ -65,7 +65,8 @@ public class Shooter : MonoBehaviour, IEnemy
             {
                 Vector2 pos = FindBulletSpawnPos(currentAngle);
 
-                GameObject newBullet = Instantiate(bulletPrefab, pos, Quaternion.identity);
+                Transform dropsParent = FindObjectOfType<BSPMSTDungeonGenerator>()?.DropsParent;
+                GameObject newBullet = Instantiate(bulletPrefab, pos, Quaternion.identity, dropsParent);
                 newBullet.transform.right = newBullet.transform.position - transform.position;
 
                 if (newBullet.TryGetComponent(out Projectile projectile))

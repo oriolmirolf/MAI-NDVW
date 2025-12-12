@@ -13,6 +13,7 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
     [Header("Tilemaps")]
     [SerializeField] private Tilemap floorTilemap;
     [SerializeField] private Tilemap pathTilemap;
+    [SerializeField] private Tilemap waterTilemap;
     [SerializeField] private bool usePathForCorridors = false;
     [SerializeField] private Tilemap wallsTilemap;
 
@@ -86,7 +87,10 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
     private System.Random rng;
     private List<Room> rooms;
     private HashSet<Vector3Int> floorCells = new HashSet<Vector3Int>();
-    private Transform objectsParent, enemiesParent, roomsParent;
+    private Transform objectsParent, enemiesParent, roomsParent, dropsParent;
+
+    // Public property to access the drops parent for spawning pickups
+    public Transform DropsParent => dropsParent;
 
     private void Awake()
     {
@@ -108,6 +112,12 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
         {
             roomsParent = new GameObject("RoomsBounds").transform;
             roomsParent.SetParent(transform);
+        }
+
+        if (dropsParent == null)
+        {
+            dropsParent = new GameObject("Drops").transform;
+            dropsParent.SetParent(transform);
         }
     }
 
@@ -151,11 +161,13 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
             if (outsideTilemap) outsideTilemap.ClearAllTiles();
             floorTilemap.ClearAllTiles();
             if (pathTilemap) pathTilemap.ClearAllTiles();
+            if (waterTilemap) waterTilemap.ClearAllTiles();
             if (wallsTilemap) wallsTilemap.ClearAllTiles();
             floorCells.Clear();
             foreach (Transform t in objectsParent) Destroy(t.gameObject);
             foreach (Transform t in enemiesParent) Destroy(t.gameObject);
             foreach (Transform t in roomsParent) Destroy(t.gameObject);
+            foreach (Transform t in dropsParent) Destroy(t.gameObject);
         }
 
         var bounds = centerMapAtZero
@@ -285,9 +297,15 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
                 };
                 foreach (var p in populators)
                 {
-                    try { p.Populate(data, rng, objectsParent, enemiesParent, floorTilemap); }
+                    try { p.Populate(data, rng, objectsParent, enemiesParent, floorTilemap, pathTilemap); }
                     catch (System.Exception ex) { Debug.LogError(ex); }
                 }
+            }
+
+            // Find safe spawn position for first room (avoid water and obstacles)
+            if (rooms.Count > 0 && rooms[0].SafeSpawnPosition == null)
+            {
+                rooms[0].SafeSpawnPosition = FindSafeSpawnPosition(rooms[0], floorTilemap, rng);
             }
         }
 
@@ -712,7 +730,10 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
     public void MovePlayerAndCamera()
     {
         if (rooms == null || rooms.Count == 0) return;
-        var spawn = (Vector3)rooms[0].Center + new Vector3(0.5f, 0.5f, 0);
+
+        // Use safe spawn position if available, otherwise use room center
+        Vector3 spawn = rooms[0].SafeSpawnPosition ?? ((Vector3)rooms[0].Center + new Vector3(0.5f, 0.5f, 0));
+
         if (PlayerController.Instance != null)
         {
             PlayerController.Instance.transform.position = spawn;
@@ -721,6 +742,72 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
             CameraController.Instance?.SetPlayerCameraFollow();
             UIFade.Instance?.FadeToClear();
         }
+    }
+
+    /// <summary>
+    /// Find a safe spawn position in a room that avoids water tiles
+    /// Uses spiral search from room center
+    /// </summary>
+    private Vector3 FindSafeSpawnPosition(Room room, Tilemap tilemap, System.Random rng)
+    {
+        Vector3Int center = room.Center;
+
+        // Try center first
+        if (IsSafeSpawnTile(center, tilemap))
+        {
+            return (Vector3)center + new Vector3(0.5f, 0.5f, 0);
+        }
+
+        // Spiral search outward from center
+        int maxRadius = Mathf.Max(room.rect.width, room.rect.height) / 2;
+
+        for (int radius = 1; radius <= maxRadius; radius++)
+        {
+            for (int dx = -radius; dx <= radius; dx++)
+            {
+                for (int dy = -radius; dy <= radius; dy++)
+                {
+                    // Only check positions on the current radius ring
+                    if (Mathf.Abs(dx) != radius && Mathf.Abs(dy) != radius)
+                        continue;
+
+                    Vector3Int testPos = center + new Vector3Int(dx, dy, 0);
+
+                    // Check if position is within room bounds
+                    if (!room.rect.Contains((Vector2Int)testPos))
+                        continue;
+
+                    if (IsSafeSpawnTile(testPos, tilemap))
+                    {
+                        return (Vector3)testPos + new Vector3(0.5f, 0.5f, 0);
+                    }
+                }
+            }
+        }
+
+        // Fallback: return room center even if not ideal
+        Debug.LogWarning($"Could not find safe spawn position in room 0, using center as fallback");
+        return (Vector3)center + new Vector3(0.5f, 0.5f, 0);
+    }
+
+    /// <summary>
+    /// Check if a tile position is safe for player spawn (not water)
+    /// </summary>
+    private bool IsSafeSpawnTile(Vector3Int position, Tilemap tilemap)
+    {
+        TileBase tile = tilemap.GetTile(position);
+
+        // If no tile, not safe
+        if (tile == null)
+            return false;
+
+        // Check if it's a water RuleTile (blocking)
+        // Water tiles should have "Water" in their name
+        if (tile.name.Contains("Water"))
+            return false;
+
+        // Position is safe
+        return true;
     }
 
     // Classes
@@ -786,6 +873,7 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
         public RectInt rect;
         public Vector3Int Center => new Vector3Int((int)rect.center.x, (int)rect.center.y, 0);
         public List<PortalInfo> portals = new List<PortalInfo>();
+        public Vector3? SafeSpawnPosition { get; set; }
 
         public Room(RectInt r) { rect = r; }
     }

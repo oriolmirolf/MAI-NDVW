@@ -14,6 +14,7 @@ public interface IArchetypePopulator
         ChapterTheme theme,
         System.Random rng,
         Tilemap floorTilemap,
+        Tilemap pathTilemap,
         Transform objectsParent,
         Transform enemiesParent
     );

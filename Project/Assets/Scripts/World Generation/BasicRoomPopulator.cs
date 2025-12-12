@@ -17,7 +17,7 @@ public class BasicRoomPopulator : MonoBehaviour, IRoomPopulator
     [SerializeField] private float margin = 1.0f; // keep spawns away from walls
 
     public void Populate(RoomData room, System.Random rng,
-                         Transform objectsParent, Transform enemiesParent, Tilemap floorTilemap)
+                         Transform objectsParent, Transform enemiesParent, Tilemap floorTilemap, Tilemap pathTilemap)
     {
         // Objects
         if (objectPrefabs != null && objectPrefabs.Length > 0 && maxObjects > 0)

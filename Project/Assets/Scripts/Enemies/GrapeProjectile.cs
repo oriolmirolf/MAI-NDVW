@@ -11,8 +11,9 @@ public class GrapeProjectile : MonoBehaviour
     [SerializeField] private GameObject splatterPrefab;
 
     private void Start() {
-        GameObject grapeShadow = 
-        Instantiate(grapeProjectileShadow, transform.position + new Vector3(0, -0.3f, 0), Quaternion.identity);
+        Transform dropsParent = FindObjectOfType<BSPMSTDungeonGenerator>()?.DropsParent;
+        GameObject grapeShadow =
+        Instantiate(grapeProjectileShadow, transform.position + new Vector3(0, -0.3f, 0), Quaternion.identity, dropsParent);
 
         Vector3 playerPos = PlayerController.Instance.transform.position;
         Vector3 grapeShadowStartPosition = grapeShadow.transform.position;
@@ -36,7 +37,8 @@ public class GrapeProjectile : MonoBehaviour
             yield return null;
         }
 
-        Instantiate(splatterPrefab, transform.position, Quaternion.identity);
+        Transform dropsParent = FindObjectOfType<BSPMSTDungeonGenerator>()?.DropsParent;
+        Instantiate(splatterPrefab, transform.position, Quaternion.identity, dropsParent);
         Destroy(gameObject);
     } 
 
