@@ -37,6 +37,10 @@ public class AgentInferenceSetup : MonoBehaviour
     [SerializeField] private RectInt roomBounds;
     [Tooltip("How often to check if player has entered (in seconds).")]
     [SerializeField] private float playerCheckInterval = 0.2f;
+
+    [Header("Boss Settings")]
+    [Tooltip("If true, spawns a chapter exit portal when this agent dies.")]
+    [SerializeField] private bool isBoss = false;
     
     private AgentController agentController;
     private AgentHealth agentHealth;
@@ -98,19 +102,45 @@ public class AgentInferenceSetup : MonoBehaviour
     
     private void HandleDeath()
     {
+        // Immediately disable all colliders to prevent blocking the exit portal
+        var colliders = GetComponents<Collider2D>();
+        foreach (var col in colliders)
+        {
+            col.enabled = false;
+        }
+
+        // Make boss invisible immediately
+        var spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.enabled = false;
+        }
+
         // Spawn death VFX if assigned
         if (deathVFXPrefab != null)
         {
-            Instantiate(deathVFXPrefab, transform.position, Quaternion.identity);
+            Transform dropsParent = FindObjectOfType<BSPMSTDungeonGenerator>()?.DropsParent;
+            Instantiate(deathVFXPrefab, transform.position, Quaternion.identity, dropsParent);
         }
-        
+
         // Optionally spawn pickups (if PickUpSpawner is present)
         var pickupSpawner = GetComponent<PickUpSpawner>();
         if (pickupSpawner != null)
         {
             pickupSpawner.DropItems();
         }
-        
+
+        // If this is a boss, trigger the boss defeated logic
+        if (isBoss)
+        {
+            var dungeonManager = DungeonRunManager.Instance;
+            if (dungeonManager != null)
+            {
+                dungeonManager.OnBossDefeated();
+                Debug.Log("Boss defeated! Chapter completed and exit portal spawned.");
+            }
+        }
+
         // Destroy after delay
         Destroy(gameObject, deathDestroyDelay);
     }
@@ -148,7 +178,15 @@ public class AgentInferenceSetup : MonoBehaviour
         waitForPlayer = wait;
         roomBounds = bounds;
     }
-    
+
+    /// <summary>
+    /// Mark this agent as a boss (spawns chapter exit portal on death)
+    /// </summary>
+    public void SetIsBoss(bool boss)
+    {
+        isBoss = boss;
+    }
+
     private void DisableAgent()
     {
         // Disable ML Agent decision making

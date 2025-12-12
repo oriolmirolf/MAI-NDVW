@@ -16,6 +16,10 @@ public class DungeonRunManager : MonoBehaviour
     [SerializeField] private TransitionScreenUI transitionUI;
     [SerializeField] private float victoryWaitDuration = 4.0f; // Time to bask in glory
 
+    [Header("Chapter Themes")]
+    [Tooltip("Assign one theme per chapter (index matches chapter number)")]
+    [SerializeField] private ChapterTheme[] chapterThemes = new ChapterTheme[3];
+
     [Serializable]
     private struct ChapterState
     {
@@ -77,6 +81,12 @@ public class DungeonRunManager : MonoBehaviour
         int seed = chapters[currentChapterIndex].layoutSeed;
 
         Debug.Log($"<color=cyan>[DungeonRunManager]</color> Loading Chapter {currentChapterIndex + 1}/{totalChapters} (Seed: {seed})");
+
+        // Set the theme for this chapter
+        if (chapterThemes != null && currentChapterIndex < chapterThemes.Length && chapterThemes[currentChapterIndex] != null)
+        {
+            worldGenerator.SetThemeForNextGeneration(chapterThemes[currentChapterIndex]);
+        }
 
         // 1. Generate the world
         worldGenerator.GenerateWithSeedAndPlacePlayer(seed);
@@ -141,17 +151,16 @@ public class DungeonRunManager : MonoBehaviour
     {
         Debug.Log("<color=red>[DungeonRunManager] Player Died.</color>");
 
-        // If we died in a chapter AHEAD of our checkpoint (e.g., cleared dungeon 1, died in 2)
-        // We re-roll the seed for the current dungeon so it's different next time.
+        // Always restart in the chapter we died in
+        // (Even if we killed the boss, we didn't go through the portal, so restart here)
+        int restartChapter = currentChapterIndex;
+
+        // Re-roll the seed if we're in a chapter ahead of our checkpoint
         if (currentChapterIndex > checkpointChapterIndex)
         {
             chapters[currentChapterIndex].layoutSeed = rng.Next();
         }
 
-        // Reload the last reached stage (checkpoint + 1)
-        int restartChapter = checkpointChapterIndex + 1;
-        restartChapter = Mathf.Clamp(restartChapter, 0, totalChapters - 1);
-        
         LoadChapter(restartChapter);
     }
 

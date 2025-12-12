@@ -35,7 +35,8 @@ public class EnemyHealth : MonoBehaviour
 
     public void DetectDeath() {
         if (currentHealth <= 0) {
-            Instantiate(deathVFXPrefab, transform.position, Quaternion.identity);
+            Transform dropsParent = FindObjectOfType<BSPMSTDungeonGenerator>()?.DropsParent;
+            Instantiate(deathVFXPrefab, transform.position, Quaternion.identity, dropsParent);
             GetComponent<PickUpSpawner>().DropItems();
             Destroy(gameObject);
         }

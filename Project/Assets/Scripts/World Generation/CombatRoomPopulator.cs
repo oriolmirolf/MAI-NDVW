@@ -21,6 +21,7 @@ public class CombatRoomPopulator : IArchetypePopulator
         ChapterTheme theme,
         System.Random rng,
         Tilemap floorTilemap,
+        Tilemap pathTilemap,
         Transform objectsParent,
         Transform enemiesParent)
     {
@@ -28,9 +29,19 @@ public class CombatRoomPopulator : IArchetypePopulator
 
         HashSet<Vector3Int> occupiedPositions = new HashSet<Vector3Int>();
 
+        // 1. Floor tiles (base layer)
         PlaceFloorTiles(roomData, theme, rng, floorTilemap);
+
+        // 2. Paths (terrain, non-blocking) - seeded near portals
+        PathGenerator.GeneratePaths(roomData, theme, rng, floorTilemap, pathTilemap, occupiedPositions);
+
+        // 3. Blocking obstacles (avoid paths)
         PlaceBlockingObstacles(roomData, theme, rng, objectsParent, occupiedPositions);
+
+        // 4. Enemies (avoid obstacles, CAN spawn on paths)
         PlaceEnemies(roomData, theme, rng, enemiesParent, occupiedPositions);
+
+        // 5. Decorations (visual variety)
         CADecorator.DecorateRoom(roomData, theme, rng, objectsParent, occupiedPositions);
 
         Debug.Log($"Combat Room {roomData.index} complete: {occupiedPositions.Count} occupied positions");
@@ -84,10 +95,6 @@ public class CombatRoomPopulator : IArchetypePopulator
         for (int i = 0; i < count && attempts < maxAttempts; attempts++)
         {
             Vector3 pos = GetRandomRoomPosition(roomData, rng, obstaclePlacementMargin);
-            Vector3Int gridPos = Vector3Int.FloorToInt(pos);
-
-            if (occupiedPositions.Contains(gridPos))
-                continue;
 
             GameObject prefab = theme.blockingObstacles[rng.Next(theme.blockingObstacles.Length)];
 
@@ -97,12 +104,156 @@ public class CombatRoomPopulator : IArchetypePopulator
                 continue;
             }
 
+            // Get all grid positions this obstacle will occupy
+            List<Vector3Int> obstaclePositions = GetObstacleFootprint(prefab, pos);
+
+            // Check if any of these positions are already occupied
+            bool canPlace = true;
+            foreach (Vector3Int gridPos in obstaclePositions)
+            {
+                if (occupiedPositions.Contains(gridPos))
+                {
+                    canPlace = false;
+                    break;
+                }
+            }
+
+            if (!canPlace)
+                continue;
+
+            // Place the obstacle
             GameObject obstacle = Object.Instantiate(prefab, pos, Quaternion.identity, parent);
             obstacle.name = $"Obstacle_{roomData.index}_{i}";
 
-            occupiedPositions.Add(gridPos);
+            // Mark all positions as occupied
+            foreach (Vector3Int gridPos in obstaclePositions)
+            {
+                occupiedPositions.Add(gridPos);
+            }
+
             i++;
         }
+    }
+
+    /// <summary>
+    /// Calculates all grid positions an obstacle will occupy based on its collider bounds
+    /// Includes ALL colliders (building + roof/canopy) and adds padding for visual spacing
+    /// </summary>
+    private List<Vector3Int> GetObstacleFootprint(GameObject prefab, Vector3 worldPos)
+    {
+        List<Vector3Int> positions = new List<Vector3Int>();
+        float padding = 0.5f; // Add half-tile padding for visual spacing
+
+        // Get ALL colliders (including children like roof/canopy)
+        Collider2D[] colliders = prefab.GetComponentsInChildren<Collider2D>();
+
+        if (colliders == null || colliders.Length == 0)
+        {
+            // If no colliders, just use the center position with padding
+            Vector3Int center = Vector3Int.FloorToInt(worldPos);
+            for (int x = -1; x <= 1; x++)
+            {
+                for (int y = -1; y <= 1; y++)
+                {
+                    positions.Add(new Vector3Int(center.x + x, center.y + y, 0));
+                }
+            }
+            return positions;
+        }
+
+        // Process each collider and combine all footprints
+        HashSet<Vector3Int> combinedPositions = new HashSet<Vector3Int>();
+
+        foreach (Collider2D collider in colliders)
+        {
+            Vector3 center = worldPos + (Vector3)collider.offset;
+
+            // For different collider types, calculate the footprint
+            if (collider is CircleCollider2D circle)
+            {
+                float radius = circle.radius + padding;
+                int radiusTiles = Mathf.CeilToInt(radius);
+
+                Vector3Int centerTile = Vector3Int.FloorToInt(center);
+
+                // Mark a square around the circle (conservative approach)
+                for (int x = -radiusTiles; x <= radiusTiles; x++)
+                {
+                    for (int y = -radiusTiles; y <= radiusTiles; y++)
+                    {
+                        combinedPositions.Add(new Vector3Int(centerTile.x + x, centerTile.y + y, 0));
+                    }
+                }
+            }
+            else if (collider is BoxCollider2D box)
+            {
+                Vector2 size = box.size + Vector2.one * padding * 2; // Add padding to all sides
+                Vector3 boxCenter = worldPos + (Vector3)box.offset;
+
+                // Calculate min and max bounds
+                Vector3Int minTile = Vector3Int.FloorToInt(boxCenter - (Vector3)size / 2);
+                Vector3Int maxTile = Vector3Int.FloorToInt(boxCenter + (Vector3)size / 2);
+
+                for (int x = minTile.x; x <= maxTile.x; x++)
+                {
+                    for (int y = minTile.y; y <= maxTile.y; y++)
+                    {
+                        combinedPositions.Add(new Vector3Int(x, y, 0));
+                    }
+                }
+            }
+            else if (collider is CapsuleCollider2D capsule)
+            {
+                Vector2 size = capsule.size + Vector2.one * padding * 2;
+                Vector3 capsuleCenter = worldPos + (Vector3)capsule.offset;
+
+                // Treat as box for simplicity
+                Vector3Int minTile = Vector3Int.FloorToInt(capsuleCenter - (Vector3)size / 2);
+                Vector3Int maxTile = Vector3Int.FloorToInt(capsuleCenter + (Vector3)size / 2);
+
+                for (int x = minTile.x; x <= maxTile.x; x++)
+                {
+                    for (int y = minTile.y; y <= maxTile.y; y++)
+                    {
+                        combinedPositions.Add(new Vector3Int(x, y, 0));
+                    }
+                }
+            }
+            else if (collider is PolygonCollider2D poly)
+            {
+                // Get the bounds of the polygon
+                Bounds polyBounds = poly.bounds;
+                Vector3 polyCenter = worldPos + (Vector3)poly.offset;
+                Vector3 paddedExtents = polyBounds.extents + Vector3.one * padding;
+
+                Vector3Int minTile = Vector3Int.FloorToInt(polyCenter - paddedExtents);
+                Vector3Int maxTile = Vector3Int.FloorToInt(polyCenter + paddedExtents);
+
+                for (int x = minTile.x; x <= maxTile.x; x++)
+                {
+                    for (int y = minTile.y; y <= maxTile.y; y++)
+                    {
+                        combinedPositions.Add(new Vector3Int(x, y, 0));
+                    }
+                }
+            }
+            else
+            {
+                // Fallback: use center position with padding
+                Vector3Int centerTile = Vector3Int.FloorToInt(center);
+                for (int x = -1; x <= 1; x++)
+                {
+                    for (int y = -1; y <= 1; y++)
+                    {
+                        combinedPositions.Add(new Vector3Int(centerTile.x + x, centerTile.y + y, 0));
+                    }
+                }
+            }
+        }
+
+        // Convert HashSet to List
+        positions.AddRange(combinedPositions);
+        return positions;
     }
 
     private void PlaceEnemies(

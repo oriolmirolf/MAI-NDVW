@@ -57,7 +57,8 @@ public class AgentProjectile : MonoBehaviour
 
                 if (particleOnHitPrefabVFX != null)
                 {
-                    Instantiate(particleOnHitPrefabVFX, transform.position, transform.rotation);
+                    Transform dropsParent = FindObjectOfType<BSPMSTDungeonGenerator>()?.DropsParent;
+                    Instantiate(particleOnHitPrefabVFX, transform.position, transform.rotation, dropsParent);
                 }
                 Destroy(gameObject);
                 return;
@@ -70,7 +71,8 @@ public class AgentProjectile : MonoBehaviour
         {
             if (particleOnHitPrefabVFX != null)
             {
-                Instantiate(particleOnHitPrefabVFX, transform.position, transform.rotation);
+                Transform dropsParent = FindObjectOfType<BSPMSTDungeonGenerator>()?.DropsParent;
+                Instantiate(particleOnHitPrefabVFX, transform.position, transform.rotation, dropsParent);
             }
             Destroy(gameObject);
         }

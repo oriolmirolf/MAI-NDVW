@@ -20,6 +20,7 @@ public class BossArenaPopulator : IArchetypePopulator
         ChapterTheme theme,
         System.Random rng,
         Tilemap floorTilemap,
+        Tilemap pathTilemap,
         Transform objectsParent,
         Transform enemiesParent)
     {
@@ -27,9 +28,16 @@ public class BossArenaPopulator : IArchetypePopulator
 
         HashSet<Vector3Int> occupiedPositions = new HashSet<Vector3Int>();
 
+        // 1. Floor tiles (base layer)
         PlaceFloorTiles(roomData, theme, rng, floorTilemap);
+
+        // 2. Paths (terrain, non-blocking) - seeded near portals
+        PathGenerator.GeneratePaths(roomData, theme, rng, floorTilemap, pathTilemap, occupiedPositions);
+
+        // 3. Boss placement
         PlaceBoss(roomData, theme, rng, enemiesParent, occupiedPositions);
 
+        // 4. Decorations with optional multiplier
         if (useHeavyDecoration)
         {
             float originalDensity = theme.decorationDensity;
@@ -44,6 +52,7 @@ public class BossArenaPopulator : IArchetypePopulator
             CADecorator.DecorateRoom(roomData, theme, rng, objectsParent, occupiedPositions);
         }
 
+        // 5. Particle effects
         PlaceParticleEffects(roomData, theme, rng, objectsParent);
 
         Debug.Log($"Boss Arena {roomData.index} complete");
@@ -108,6 +117,7 @@ public class BossArenaPopulator : IArchetypePopulator
             Vector2 arenaMax = new Vector2(roomData.rect.xMax - 1f, roomData.rect.yMax - 1f);
             agentSetup.SetArenaBounds(arenaMin, arenaMax);
             agentSetup.SetWaitForPlayer(true, roomData.rect);
+            agentSetup.SetIsBoss(true); // Mark as boss to spawn exit portal on death
             Debug.Log($"Boss arena bounds set: {arenaMin} to {arenaMax}");
         }
 

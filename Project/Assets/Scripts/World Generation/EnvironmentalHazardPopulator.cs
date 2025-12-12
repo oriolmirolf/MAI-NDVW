@@ -24,14 +24,15 @@ public class EnvironmentalHazardPopulator : IArchetypePopulator
     [SerializeField] private Tilemap waterTilemap;
 
     [Header("Enemy Settings")]
-    [SerializeField] private int minEnemies = 1;
-    [SerializeField] private int maxEnemies = 3;
+    [SerializeField] private int minEnemies = 2;
+    [SerializeField] private int maxEnemies = 5;
 
     public void PopulateRoom(
         RoomData roomData,
         ChapterTheme theme,
         System.Random rng,
         Tilemap floorTilemap,
+        Tilemap pathTilemap,
         Transform objectsParent,
         Transform enemiesParent)
     {
@@ -52,10 +53,13 @@ public class EnvironmentalHazardPopulator : IArchetypePopulator
         foreach (var cell in waterCells)
             occupiedPositions.Add(cell);
 
-        // STEP 5: Place enemies on shores (not in water)
+        // STEP 5: Paths (will avoid water by checking occupiedPositions)
+        PathGenerator.GeneratePaths(roomData, theme, rng, floorTilemap, pathTilemap, occupiedPositions);
+
+        // STEP 6: Place enemies on shores (not in water)
         PlaceEnemiesOnShore(roomData, theme, rng, enemiesParent, occupiedPositions, waterCells);
 
-        // STEP 6: CA decorations around lake (shore plants)
+        // STEP 7: CA decorations around lake (shore plants)
         CADecorator.DecorateRoom(roomData, theme, rng, objectsParent, occupiedPositions);
 
         Debug.Log($"Environmental Hazard Room {roomData.index} complete: {waterCells.Count} water tiles");
@@ -134,6 +138,11 @@ public class EnvironmentalHazardPopulator : IArchetypePopulator
             }
         }
 
+        // Step 4: Clean up orphan tiles (same as paths)
+        Debug.Log($"Generated {waterCells.Count} water cells before cleanup");
+        waterCells = CleanupOrphanTiles(waterCells, minNeighborsToKeep: 3, maxIterations: 2);
+        Debug.Log($"Water cells after cleanup: {waterCells.Count}");
+
         return waterCells;
     }
 
@@ -193,23 +202,25 @@ public class EnvironmentalHazardPopulator : IArchetypePopulator
         Tilemap floorTilemap,
         HashSet<Vector3Int> waterCells)
     {
-        if (theme.hazardTiles == null || theme.hazardTiles.Length == 0)
+        if (theme.waterRuleTile == null)
         {
-            Debug.LogWarning("No hazard tiles assigned - skipping water placement");
+            Debug.LogWarning("No water RuleTile assigned - skipping water placement");
             return;
         }
 
         // Use water tilemap if assigned, otherwise fall back to floor tilemap
         Tilemap targetTilemap = waterTilemap != null ? waterTilemap : floorTilemap;
 
-        TileBase waterTile = theme.hazardTiles[0];
-
+        // Place all water tiles using RuleTile
         foreach (var waterPos in waterCells)
         {
-            targetTilemap.SetTile(waterPos, waterTile);
+            targetTilemap.SetTile(waterPos, theme.waterRuleTile);
         }
 
-        Debug.Log($"Placed {waterCells.Count} water tiles on tilemap: {targetTilemap.name}");
+        // Refresh the tilemap to trigger RuleTile border updates
+        targetTilemap.RefreshAllTiles();
+
+        Debug.Log($"Placed {waterCells.Count} water tiles with RuleTile on tilemap: {targetTilemap.name}");
     }
     private void PlaceEnemiesOnShore(
         RoomData roomData,
@@ -251,5 +262,77 @@ public class EnvironmentalHazardPopulator : IArchetypePopulator
                 i++;
             }
         }
+    }
+
+    /// <summary>
+    /// Remove orphan water tiles that don't have enough water neighbors
+    /// This prevents RuleTile border rendering artifacts on isolated tiles
+    /// Runs iteratively until no more tiles are removed (up to maxIterations)
+    /// </summary>
+    private HashSet<Vector3Int> CleanupOrphanTiles(HashSet<Vector3Int> waterCells, int minNeighborsToKeep, int maxIterations = 10)
+    {
+        HashSet<Vector3Int> currentWater = new HashSet<Vector3Int>(waterCells);
+        int totalRemoved = 0;
+        int iteration = 0;
+
+        while (iteration < maxIterations)
+        {
+            HashSet<Vector3Int> cleanedWater = new HashSet<Vector3Int>();
+            iteration++;
+
+            foreach (var cell in currentWater)
+            {
+                // Count how many water neighbors this cell has
+                int waterNeighbors = 0;
+
+                for (int dx = -1; dx <= 1; dx++)
+                {
+                    for (int dy = -1; dy <= 1; dy++)
+                    {
+                        // Skip center cell
+                        if (dx == 0 && dy == 0) continue;
+
+                        Vector3Int neighbor = new Vector3Int(cell.x + dx, cell.y + dy, 0);
+
+                        if (currentWater.Contains(neighbor))
+                        {
+                            waterNeighbors++;
+                        }
+                    }
+                }
+
+                // Only keep tile if it has enough water neighbors
+                if (waterNeighbors >= minNeighborsToKeep)
+                {
+                    cleanedWater.Add(cell);
+                }
+            }
+
+            int removedThisPass = currentWater.Count - cleanedWater.Count;
+
+            // If no tiles were removed, we're done
+            if (removedThisPass == 0)
+            {
+                break;
+            }
+
+            Debug.Log($"  Lake cleanup iteration {iteration}: removed {removedThisPass} tiles, {cleanedWater.Count} remaining");
+
+            totalRemoved += removedThisPass;
+            currentWater = cleanedWater;
+        }
+
+        if (totalRemoved > 0)
+        {
+            Debug.Log($"Lake cleanup complete: removed {totalRemoved} orphan water tiles in {iteration} iteration(s)");
+        }
+
+        // Warning if all water was removed
+        if (currentWater.Count == 0 && waterCells.Count > 0)
+        {
+            Debug.LogWarning($"WARNING: All {waterCells.Count} water tiles were removed by cleanup! Consider adjusting lake CA parameters.");
+        }
+
+        return currentWater;
     }
 }
