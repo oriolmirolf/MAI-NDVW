@@ -15,8 +15,8 @@ public class PlayerHealth : Singleton<PlayerHealth>
 
     [Header("Death Screen Settings")]
     [SerializeField] private TransitionScreenUI transitionUI;
-    [SerializeField] private float deathScreenDuration = 5.0f; // NEW: Customizable duration
-    [SerializeField] private float respawnInvincibilityTime = 2.0f; // NEW: How long you stay immortal after respawn
+    [SerializeField] private float deathScreenDuration = 2.0f;
+    [SerializeField] private float respawnInvincibilityTime = 1.5f;
 
     private Slider healthSlider;
     private int currentHealth;

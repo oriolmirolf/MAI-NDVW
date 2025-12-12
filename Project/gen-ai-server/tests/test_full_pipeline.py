@@ -22,64 +22,68 @@ async def main():
     voice_gen = VoiceGenerator(output_dir=str(OUTPUT_DIR / "voice"))
     narrative_gen = NarrativeGenerator(model="llama2", voice_generator=voice_gen)
 
-    theme = "dark fantasy dungeon"
-    room_index = 0
-    total_rooms = 3
+    theme = "2D pixel art RPG adventure"
+    total_rooms = 9
     seed = 42
 
-    print(f"\nGenerating narrative with voice for room {room_index + 1}...")
-    print(f"Theme: {theme}")
-    print(f"Voice: {voice_gen.description[:60]}...\n")
+    results = []
 
-    narrative = await narrative_gen.generate(
-        room_index=room_index,
-        total_rooms=total_rooms,
-        theme=theme,
-        seed=seed,
-        previous_context=None,
-        generate_voice=True
-    )
+    # Test 3 rooms (one from each chapter)
+    test_rooms = [0, 3, 6]  # Forest, Marsh, Citadel
 
-    print(f"\n{'='*40}")
-    print("RESULTS")
-    print("=" * 40)
-    print(f"\nNPC: {narrative.npc.name}")
-    print(f"Environment: {narrative.environment[:100]}...")
-    print(f"\nDialogue:")
-    for i, line in enumerate(narrative.npc.dialogue):
-        print(f"  [{i+1}] {line[:60]}...")
+    for room_index in test_rooms:
+        print(f"\n{'='*40}")
+        print(f"ROOM {room_index} (Chapter {room_index // 3 + 1})")
+        print("=" * 40)
 
-    if narrative.npc.audio_paths:
-        print(f"\nAudio files:")
-        for path in narrative.npc.audio_paths:
-            print(f"  - {path}")
+        narrative = await narrative_gen.generate(
+            room_index=room_index,
+            total_rooms=total_rooms,
+            theme=theme,
+            seed=seed + room_index,
+            previous_context=None,
+            generate_voice=True
+        )
+
+        print(f"\nNPC: {narrative.npc.name}")
+        print(f"Environment: {narrative.environment[:80]}...")
+        print(f"\nDialogue:")
+        for i, line in enumerate(narrative.npc.dialogue):
+            print(f"  [{i+1}] {line[:60]}...")
+
+        if narrative.npc.audio_paths:
+            print(f"\nAudio files: {len(narrative.npc.audio_paths)}")
+            for path in narrative.npc.audio_paths:
+                print(f"  - {path}")
+
+        results.append({
+            "roomIndex": narrative.roomIndex,
+            "chapter": room_index // 3 + 1,
+            "environment": narrative.environment,
+            "npc": {
+                "name": narrative.npc.name,
+                "dialogue": narrative.npc.dialogue,
+                "audio_paths": narrative.npc.audio_paths
+            },
+            "quest": {
+                "objective": narrative.quest.objective,
+                "type": narrative.quest.type,
+                "count": narrative.quest.count
+            },
+            "lore": {
+                "title": narrative.lore.title,
+                "content": narrative.lore.content
+            }
+        })
 
     # Save results
-    result = {
-        "roomIndex": narrative.roomIndex,
-        "environment": narrative.environment,
-        "npc": {
-            "name": narrative.npc.name,
-            "dialogue": narrative.npc.dialogue,
-            "audio_paths": narrative.npc.audio_paths
-        },
-        "quest": {
-            "objective": narrative.quest.objective,
-            "type": narrative.quest.type,
-            "count": narrative.quest.count
-        },
-        "lore": {
-            "title": narrative.lore.title,
-            "content": narrative.lore.content
-        }
-    }
-
     output_file = OUTPUT_DIR / "result.json"
     with open(output_file, "w") as f:
-        json.dump(result, f, indent=2)
+        json.dump(results, f, indent=2)
 
     print("\n" + "=" * 50)
     print(f"FULL PIPELINE TEST COMPLETE")
+    print(f"Rooms tested: {len(results)}")
     print(f"Result: {output_file}")
     print(f"Audio: {OUTPUT_DIR / 'voice'}/")
     print("=" * 50)

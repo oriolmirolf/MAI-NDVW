@@ -77,15 +77,9 @@ public class ArchetypeRoomPopulator : MonoBehaviour, IRoomPopulator
     private RoomArchetype SelectArchetype(RoomData room, System.Random rng)
     {
         if (IsBossRoom(room.index))
-        {
             return RoomArchetype.BossArena;
-        }
-
         if (IsHazardRoom(room.index))
-        {
             return RoomArchetype.EnvironmentalHazard;
-        }
-
         return RoomArchetype.CombatRoom;
     }
 

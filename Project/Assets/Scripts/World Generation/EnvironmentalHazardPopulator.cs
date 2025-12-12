@@ -22,6 +22,7 @@ public class EnvironmentalHazardPopulator : IArchetypePopulator
     [Header("Tilemaps")]
     [Tooltip("Water tilemap for placing water tiles with collision")]
     [SerializeField] private Tilemap waterTilemap;
+    private bool waterTilemapCreated = false;
 
     [Header("Enemy Settings")]
     [SerializeField] private int minEnemies = 2;
@@ -37,6 +38,13 @@ public class EnvironmentalHazardPopulator : IArchetypePopulator
         Transform enemiesParent)
     {
         Debug.Log($"Populating Environmental Hazard Room: Room {roomData.index}");
+
+        // Create water tilemap dynamically if not assigned
+        if (waterTilemap == null && !waterTilemapCreated)
+        {
+            waterTilemap = CreateWaterTilemap(floorTilemap);
+            waterTilemapCreated = true;
+        }
 
         HashSet<Vector3Int> occupiedPositions = new HashSet<Vector3Int>();
 
@@ -334,5 +342,44 @@ public class EnvironmentalHazardPopulator : IArchetypePopulator
         }
 
         return currentWater;
+    }
+
+    /// <summary>
+    /// Create a water tilemap dynamically as a sibling of the floor tilemap
+    /// </summary>
+    private Tilemap CreateWaterTilemap(Tilemap floorTilemap)
+    {
+        if (floorTilemap == null) return null;
+
+        Transform gridParent = floorTilemap.transform.parent;
+        if (gridParent == null) return null;
+
+        // Create water GameObject
+        GameObject waterObj = new GameObject("Water");
+        waterObj.transform.SetParent(gridParent);
+        waterObj.transform.localPosition = Vector3.zero;
+        waterObj.transform.localRotation = Quaternion.identity;
+        waterObj.transform.localScale = Vector3.one;
+
+        // Add Tilemap component
+        Tilemap tilemap = waterObj.AddComponent<Tilemap>();
+
+        // Add TilemapRenderer with sorting order above floor
+        TilemapRenderer renderer = waterObj.AddComponent<TilemapRenderer>();
+        renderer.sortingOrder = 1; // Above floor (order 0)
+
+        // Add TilemapCollider2D for water collision
+        TilemapCollider2D collider = waterObj.AddComponent<TilemapCollider2D>();
+
+        // Add Rigidbody2D for physics (static)
+        Rigidbody2D rb = waterObj.AddComponent<Rigidbody2D>();
+        rb.bodyType = RigidbodyType2D.Static;
+
+        // Add CompositeCollider2D for efficient collision
+        CompositeCollider2D composite = waterObj.AddComponent<CompositeCollider2D>();
+        collider.usedByComposite = true;
+
+        Debug.Log("[WATER] Created water tilemap dynamically");
+        return tilemap;
     }
 }

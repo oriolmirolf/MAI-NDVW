@@ -12,8 +12,8 @@ dependencies = [
     "gpustat",
     "numpy>=1.26.0",
     "ollama",
-    "parler-tts",
     "pillow",
+    "pydub",
     "pydantic",
     "pydantic-settings",
     "pytest",
@@ -23,6 +23,7 @@ dependencies = [
     "safetensors",
     "soundfile",
     "timm",
+    "coqui-tts",
     "transformers",
     "uvicorn",
 ]

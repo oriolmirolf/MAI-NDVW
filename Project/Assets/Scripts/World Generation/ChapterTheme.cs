@@ -92,4 +92,16 @@ public class ChapterTheme : ScriptableObject
     [Tooltip("Minimum neighbors for path cell to be born")]
     [Range(2, 8)]
     public int pathBirthMin = 2;
+
+    public void ValidateAndLog()
+    {
+        if (mainFloorTile == null)
+            Debug.LogError($"[Theme:{name}] Missing mainFloorTile!");
+        if (blockingObstacles == null || blockingObstacles.Length == 0)
+            Debug.LogError($"[Theme:{name}] No blockingObstacles (trees/rocks)!");
+        if (nonBlockingDecorations == null || nonBlockingDecorations.Length == 0)
+            Debug.LogWarning($"[Theme:{name}] No decorations (grass/flowers)");
+        if (bossPrefab == null)
+            Debug.LogError($"[Theme:{name}] No bossPrefab assigned!");
+    }
 }

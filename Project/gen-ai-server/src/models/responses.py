@@ -21,12 +21,7 @@ class NarrativeResponse(BaseModel):
     npc: NPCResponse
     quest: QuestResponse
     lore: LoreResponse
-
-class VisionResponse(BaseModel):
-    environment_type: str = Field(..., min_length=1, max_length=100)
-    atmosphere: str = Field(..., min_length=10, max_length=500)
-    features: List[str] = Field(..., min_items=3, max_items=10)
-    mood: str = Field(..., min_length=10, max_length=500)
+    victory: Optional[NPCResponse] = None  # Victory dialogue after defeating boss
 
 class MusicResponse(BaseModel):
     path: str

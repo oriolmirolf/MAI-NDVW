@@ -14,6 +14,7 @@ public class RoomNarrative {
     public List<NPCDialogue> npcDialogues = new List<NPCDialogue>();
     public QuestObjective questObjective;
     public List<LoreEntry> loreEntries = new List<LoreEntry>();
+    public NPCDialogue victoryDialogue; // Shown after defeating boss in this room
 }
 
 [Serializable]

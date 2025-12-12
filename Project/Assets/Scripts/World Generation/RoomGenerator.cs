@@ -22,7 +22,7 @@ public class RoomGenerator : MonoBehaviour {
     [Header("Room Settings")]
     [SerializeField] private int roomWidth = 40;
     [SerializeField] private int roomHeight = 40;
-    [SerializeField] private int seed = 12345;
+    private int seed = 54321; // Not serialized - always use this value
 
     private Transform objectParent;
     private Transform enemyParent;

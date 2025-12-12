@@ -1,125 +1,109 @@
 import hashlib
 import asyncio
 import concurrent.futures
+import os
+import re
 from pathlib import Path
 from typing import Optional
 import torch
 
+# Auto-accept Coqui TTS license
+os.environ["COQUI_TOS_AGREED"] = "1"
+
 
 class VoiceGenerator:
-    """Parler-TTS Mini voice generator with parallel batch processing."""
+    """XTTS v2 voice cloning generator."""
 
-    # Deep male narrator voice description
-    DEFAULT_DESCRIPTION = (
-        "Gary's voice is deep and gravelly with slow, deliberate pacing. "
-        "The recording is very clear with no background noise. "
-        "He speaks like a dramatic movie narrator with authority and gravitas."
-    )
-
-    def __init__(self, output_dir: str = "output/voice", device: str = None, description: str = None):
+    def __init__(
+        self,
+        output_dir: str = "output/voice",
+        speaker_wav: str = "tests/data/Nature Documentary Narration.wav",
+        device: str = None
+    ):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+
+        self.speaker_wav = Path(speaker_wav)
+        if not self.speaker_wav.exists():
+            # Try mp3 version
+            mp3_path = self.speaker_wav.with_suffix('.mp3')
+            if mp3_path.exists():
+                self.speaker_wav = mp3_path
+            else:
+                print(f"[VOICE] WARNING: Speaker sample not found: {speaker_wav}")
 
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = device
-        self.description = description or self.DEFAULT_DESCRIPTION
 
-        self.model = None
-        self.tokenizer = None
-        self.sample_rate = 44100  # Parler-TTS outputs 44.1kHz
+        self.tts = None
+        self.sample_rate = 24000
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-        print(f"[VOICE] Parler-TTS Mini initialized (device={device}, lazy loading)")
+        print(f"[VOICE] XTTS v2 initialized (device={device}, lazy loading)")
 
     def _load_model(self):
-        """Lazy load the Parler-TTS model on first use."""
-        if self.model is None:
-            print(f"[VOICE] Loading Parler-TTS Mini on {self.device}...")
-            from parler_tts import ParlerTTSForConditionalGeneration
-            from transformers import AutoTokenizer
+        """Lazy load the XTTS model on first use."""
+        if self.tts is None:
+            print(f"[VOICE] Loading XTTS v2 on {self.device}...")
+            from TTS.api import TTS
 
-            self.model = ParlerTTSForConditionalGeneration.from_pretrained(
-                "parler-tts/parler-tts-mini-v1"
-            ).to(self.device)
+            self.tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(self.device)
+            print(f"[VOICE] XTTS v2 loaded successfully")
 
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                "parler-tts/parler-tts-mini-v1"
-            )
-
-            # Compile model for faster inference (PyTorch 2.0+)
-            if hasattr(torch, 'compile') and self.device == "cuda":
-                try:
-                    self.model = torch.compile(self.model, mode="reduce-overhead")
-                    print("[VOICE] Model compiled with torch.compile")
-                except Exception as e:
-                    print(f"[VOICE] torch.compile failed (non-critical): {e}")
-
-            print(f"[VOICE] Parler-TTS Mini loaded successfully")
-
-    def _get_cache_path(self, text: str, voice_id: str, seed: int) -> Path:
+    def _get_cache_path(self, text: str, seed: int) -> Path:
         """Generate cache path based on content hash."""
-        key = f"{text}_{voice_id}_{seed}_{self.description}"
+        key = f"{text}_{seed}_{self.speaker_wav.name}"
         hash_val = hashlib.sha256(key.encode()).hexdigest()[:16]
         return self.output_dir / f"{hash_val}.wav"
 
     def _clean_text_for_tts(self, text: str) -> str:
         """Clean text to prevent TTS artifacts."""
-        import re
-        # Remove any non-ASCII characters
-        text = text.encode('ascii', 'ignore').decode('ascii')
-        # Remove multiple spaces
-        text = re.sub(r'\s+', ' ', text)
-        # Remove special characters that cause issues
-        text = re.sub(r'[#@~`^*]', '', text)
-        # Remove emotion markers like *cough*, *laugh*
+        # Remove action markers like *cough*, (laughs), [sighs]
         text = re.sub(r'\*[^*]+\*', '', text)
-        # Ensure proper sentence endings
-        text = text.strip()
+        text = re.sub(r'\([^)]+\)', '', text)
+        text = re.sub(r'\[[^\]]+\]', '', text)
+
+        # Remove problematic characters but keep basic punctuation
+        text = re.sub(r'[#@~`^<>{}|\\]', '', text)
+
+        # Normalize quotes and apostrophes
+        text = text.replace('"', "'").replace('"', "'").replace('"', "'")
+        text = text.replace(''', "'").replace(''', "'")
+
+        # Remove repeated punctuation
+        text = re.sub(r'([.!?,])\1+', r'\1', text)
+
+        # Clean up whitespace
+        text = re.sub(r'\s+', ' ', text).strip()
+
+        # Ensure text ends with punctuation
         if text and text[-1] not in '.!?':
             text += '.'
+
         return text
 
-    def _generate_sync(self, text: str, seed: int, cache_path: Path) -> str:
+    def _generate_sync(self, text: str, cache_path: Path) -> str:
         """Synchronous generation for use in thread pool."""
-        import soundfile as sf
-
         self._load_model()
 
         clean_text = self._clean_text_for_tts(text)
-        print(f"[VOICE] Generating: '{clean_text[:50]}...'")
+        if not clean_text or len(clean_text) < 3:
+            clean_text = "Hello there."
 
-        # Tokenize description and text
-        input_ids = self.tokenizer(
-            self.description, return_tensors="pt"
-        ).input_ids.to(self.device)
+        print(f"[VOICE] Generating: '{clean_text[:60]}...'")
 
-        prompt_input_ids = self.tokenizer(
-            clean_text, return_tensors="pt"
-        ).input_ids.to(self.device)
-
-        # Set seed for reproducibility
-        torch.manual_seed(seed)
-        if self.device == "cuda":
-            torch.cuda.manual_seed(seed)
-
-        # Generate audio
-        with torch.inference_mode():
-            generation = self.model.generate(
-                input_ids=input_ids,
-                prompt_input_ids=prompt_input_ids,
+        try:
+            self.tts.tts_to_file(
+                text=clean_text,
+                file_path=str(cache_path),
+                speaker_wav=str(self.speaker_wav),
+                language="en"
             )
-
-        # Convert to numpy and save
-        audio_arr = generation.cpu().numpy().squeeze()
-
-        # Ensure output directory exists
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-
-        sf.write(str(cache_path), audio_arr, self.sample_rate)
-        duration = len(audio_arr) / self.sample_rate
-        print(f"[VOICE] Saved: {cache_path.name} ({duration:.2f}s)")
-
-        return str(cache_path)
+            print(f"[VOICE] Saved: {cache_path.name}")
+            return str(cache_path)
+        except Exception as e:
+            print(f"[VOICE] Generation failed: {e}")
+            raise
 
     async def generate(
         self,
@@ -128,30 +112,17 @@ class VoiceGenerator:
         seed: int = 12345,
         description: str = None,
     ) -> str:
-        """
-        Generate voice audio from text using Parler-TTS Mini.
-
-        Args:
-            text: Text to synthesize
-            voice_id: Voice identifier for caching
-            seed: Random seed for reproducibility
-            description: Optional custom voice description (not used, kept for API compat)
-
-        Returns:
-            Path to generated WAV file
-        """
-        cache_path = self._get_cache_path(text, voice_id, seed)
+        """Generate voice audio using XTTS v2 voice cloning."""
+        cache_path = self._get_cache_path(text, seed)
         if cache_path.exists():
             print(f"[VOICE] Cache hit: {cache_path.name}")
             return str(cache_path)
 
-        # Run generation in thread pool to not block event loop
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(
             self._executor,
             self._generate_sync,
             text,
-            seed,
             cache_path
         )
         return result
@@ -163,21 +134,17 @@ class VoiceGenerator:
         seed: int = 12345,
         description: str = None
     ) -> list[str]:
-        """Generate audio for multiple texts in parallel."""
-        # Create tasks for all texts
-        tasks = [
-            self.generate(
+        """Generate audio for multiple texts sequentially."""
+        results = []
+        for i, text in enumerate(texts):
+            path = await self.generate(
                 text,
                 voice_id=voice_id,
                 seed=seed + i,
                 description=description
             )
-            for i, text in enumerate(texts)
-        ]
-
-        # Run all tasks concurrently
-        results = await asyncio.gather(*tasks)
-        return list(results)
+            results.append(path)
+        return results
 
     def get_relative_path(self, full_path: str) -> str:
         """Convert full path to relative path for serving."""

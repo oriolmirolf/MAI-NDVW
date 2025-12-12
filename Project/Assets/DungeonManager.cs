@@ -10,7 +10,7 @@ public class DungeonRunManager : MonoBehaviour
     [Header("Generator Settings")]
     [SerializeField] private BSPMSTDungeonGenerator worldGenerator;
     [SerializeField] private int totalChapters = 3;
-    [SerializeField] private int runSeed = 12345;
+    private int runSeed = 54321; // Not serialized - always use this value
 
     [Header("Transitions")]
     [SerializeField] private TransitionScreenUI transitionUI;
@@ -97,12 +97,18 @@ public class DungeonRunManager : MonoBehaviour
         {
             playerHealth.ResetHealth();
         }
+
+        // 3. Show chapter introduction dialogue
+        if (IntroductionDialogue.Instance != null)
+        {
+            IntroductionDialogue.Instance.ShowChapterIntroduction(currentChapterIndex);
+        }
     }
 
     public void OnBossDefeated()
     {
         chapters[currentChapterIndex].completed = true;
-        
+
         // Update checkpoint
         checkpointChapterIndex = Mathf.Max(checkpointChapterIndex, currentChapterIndex);
 
@@ -115,7 +121,48 @@ public class DungeonRunManager : MonoBehaviour
         }
         else
         {
-            Debug.Log("Final Boss Defeated. No exit portal needed.");
+            Debug.Log("Final Boss Defeated! Game Complete!");
+        }
+    }
+
+    private IEnumerator ShowGameVictory()
+    {
+        // Wait for victory dialogue to finish
+        yield return new WaitForSeconds(3f);
+
+        // Show final victory message
+        if (DialogueUI.Instance != null)
+        {
+            var victoryDialogue = new NPCDialogue
+            {
+                npcName = "Narrator",
+                dialogueLines = new System.Collections.Generic.List<string>
+                {
+                    "Congratulations, brave adventurer!",
+                    "You have conquered all challenges!",
+                    "The land is safe. You are victorious!"
+                },
+                audioPaths = new System.Collections.Generic.List<string>()
+            };
+            DialogueUI.Instance.ShowDialogue(victoryDialogue);
+        }
+    }
+
+    private void ShowBossVictoryDialogue()
+    {
+        if (LLMNarrativeGenerator.Instance == null || DialogueUI.Instance == null)
+            return;
+
+        // Boss room is the last room of each chapter
+        int roomsPerChapter = Mathf.Max(1, LLMNarrativeGenerator.Instance.totalRooms / 3);
+        int bossRoomIndex = (currentChapterIndex * roomsPerChapter) + roomsPerChapter - 1;
+
+        var narrative = LLMNarrativeGenerator.Instance.GetNarrative(bossRoomIndex);
+        if (narrative?.victoryDialogue != null &&
+            narrative.victoryDialogue.dialogueLines != null &&
+            narrative.victoryDialogue.dialogueLines.Count > 0)
+        {
+            DialogueUI.Instance.ShowDialogue(narrative.victoryDialogue);
         }
     }
 

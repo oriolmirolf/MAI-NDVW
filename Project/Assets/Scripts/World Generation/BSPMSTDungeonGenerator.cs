@@ -65,8 +65,8 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
     public bool manhattanCorridors = true;
     public bool centerMapAtZero = true;
     public bool clearOnStart = true;
-    public bool generateOnStart = false;
-    public int seed = 12345;
+    public bool generateOnStart = true; // Default to true for gameplay
+    private int seed = 54321; // Not serialized - always use this value
 
     [Header("Camera")]
     [SerializeField] private PolygonCollider2D cameraConfiner;
@@ -164,6 +164,8 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
             floorTilemap.ClearAllTiles();
             if (pathTilemap) pathTilemap.ClearAllTiles();
             if (waterTilemap) waterTilemap.ClearAllTiles();
+            // Also clear any dynamically created water tilemap
+            ClearDynamicWaterTilemap();
             if (wallsTilemap) wallsTilemap.ClearAllTiles();
             floorCells.Clear();
             foreach (Transform t in objectsParent) Destroy(t.gameObject);
@@ -196,10 +198,10 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
         var leafList = leaves.Where(l => l.IsLeaf).Take(roomCount).ToList();
         int bossRoomIndex = leafList.Count > 1 ? rng.Next(1, leafList.Count) : -1;
         actualBossRoomIndex = bossRoomIndex; // Store for portal spawning
-        if (bossRoomIndex >= 0)
-        {
-            Debug.Log($"Boss room will be at index: {bossRoomIndex}");
-        }
+        if (currentTheme == null)
+            Debug.LogError("[Dungeon] No theme assigned!");
+        else
+            currentTheme.ValidateAndLog();
 
         rooms = new List<Room>();
         for (int i = 0; i < leafList.Count; i++)
@@ -266,7 +268,11 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
         }
 
         // 6. Walls
-        if (surroundWithWalls && wallsTilemap) PlaceDecoratedWalls();
+        if (surroundWithWalls && wallsTilemap)
+        {
+            PlaceDecoratedWalls();
+            EnsureWallsCollider();
+        }
 
         // 7. Visual Padding
         if (visualFloorPadding > 0) PaintVisualPadding();
@@ -348,33 +354,6 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
         Debug.Log($"Portal spawned at boss room index {actualBossRoomIndex} at position {finalSpawnPos}");
     }
 
-    
-
-
-    public Room GetLikelyBossRoom()
-    {
-        if (rooms == null || rooms.Count == 0) return null;
-
-        // simple heuristic: farthest room from room 0 center
-        var start = rooms[0].Center;
-        Room best = rooms[0];
-        float bestDist = 0f;
-
-        foreach (var r in rooms)
-        {
-            float d = Vector3Int.Distance(start, r.Center);
-            if (d > bestDist)
-            {
-                bestDist = d;
-                best = r;
-            }
-        }
-        return best;
-    }
-
-    /// <summary>
-    /// Set the theme to use for the next dungeon generation
-    /// </summary>
     public void SetThemeForNextGeneration(ChapterTheme theme)
     {
         if (theme == null)
@@ -667,6 +646,7 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
         if (exit)
         {
             exit.sceneTransitionName = id;
+            exit.targetRoomIndex = otherRoomIndex;
             var f = typeof(AreaExit).GetField("transitionName",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             if (f != null) f.SetValue(exit, id);
@@ -722,6 +702,26 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
             wallsTilemap.SetTile(pos, corner);
     }
 
+    /// <summary>
+    /// Clear any dynamically created water tilemap (named "Water" under Grid parent)
+    /// </summary>
+    private void ClearDynamicWaterTilemap()
+    {
+        if (floorTilemap == null) return;
+        Transform gridParent = floorTilemap.transform.parent;
+        if (gridParent == null) return;
+
+        Transform waterTransform = gridParent.Find("Water");
+        if (waterTransform != null)
+        {
+            Tilemap dynamicWater = waterTransform.GetComponent<Tilemap>();
+            if (dynamicWater != null)
+            {
+                dynamicWater.ClearAllTiles();
+            }
+        }
+    }
+
     // --- Helpers ---
     private TileBase PickGroundTile() =>
         (groundTileVariations != null && groundTileVariations.Length > 0 && rng.NextDouble() < 0.3)
@@ -772,6 +772,125 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
                 tm.SetTile(p, PickGroundTile());
                 floorCells.Add(p);
             }
+    }
+
+    private void EnsureWallsCollider()
+    {
+        if (wallsTilemap == null) return;
+
+        var collider = wallsTilemap.GetComponent<TilemapCollider2D>();
+        if (collider == null)
+            collider = wallsTilemap.gameObject.AddComponent<TilemapCollider2D>();
+
+        var rb = wallsTilemap.GetComponent<Rigidbody2D>();
+        if (rb == null)
+        {
+            rb = wallsTilemap.gameObject.AddComponent<Rigidbody2D>();
+            rb.bodyType = RigidbodyType2D.Static;
+        }
+
+        var composite = wallsTilemap.GetComponent<CompositeCollider2D>();
+        if (composite == null)
+        {
+            composite = wallsTilemap.gameObject.AddComponent<CompositeCollider2D>();
+            collider.usedByComposite = true;
+        }
+
+        // Create separate colliders for top walls (offset 1 tile down for perspective)
+        CreateTopWallColliders();
+    }
+
+    private void CreateTopWallColliders()
+    {
+        // Find or create the top wall collider container
+        string containerName = "TopWallColliders";
+        Transform existing = wallsTilemap.transform.Find(containerName);
+        if (existing != null)
+            DestroyImmediate(existing.gameObject);
+
+        GameObject container = new GameObject(containerName);
+        container.transform.SetParent(wallsTilemap.transform);
+        container.transform.localPosition = Vector3.zero;
+        container.layer = wallsTilemap.gameObject.layer;
+
+        // Add rigidbody for the colliders
+        var rb = container.AddComponent<Rigidbody2D>();
+        rb.bodyType = RigidbodyType2D.Static;
+
+        Vector3Int UP = new Vector3Int(0, 1, 0);
+        Vector3Int DN = new Vector3Int(0, -1, 0);
+
+        // Find all top wall positions (floor tiles that have no floor above them)
+        List<Vector3Int> topWallPositions = new List<Vector3Int>();
+
+        foreach (var p in floorCells)
+        {
+            bool hasFloorAbove = floorCells.Contains(p + UP);
+            bool hasFloorBelow = floorCells.Contains(p + DN);
+
+            // This is a top wall position: no floor above, has floor below (or is floor itself)
+            if (!hasFloorAbove && hasFloorBelow)
+            {
+                topWallPositions.Add(p);
+            }
+        }
+
+        // Create box colliders for top walls, positioned at the floor tile (1 tile below the visual wall)
+        // Group consecutive horizontal positions into single colliders for efficiency
+        if (topWallPositions.Count == 0) return;
+
+        // Sort by Y then X for grouping
+        topWallPositions.Sort((a, b) => {
+            int cmp = b.y.CompareTo(a.y); // Descending Y
+            return cmp != 0 ? cmp : a.x.CompareTo(b.x); // Ascending X
+        });
+
+        // Create colliders - group horizontal runs
+        int startX = topWallPositions[0].x;
+        int currentY = topWallPositions[0].y;
+        int runLength = 1;
+
+        for (int i = 1; i <= topWallPositions.Count; i++)
+        {
+            bool endRun = i == topWallPositions.Count;
+
+            if (!endRun)
+            {
+                var pos = topWallPositions[i];
+                // Check if this continues the current run
+                if (pos.y == currentY && pos.x == startX + runLength)
+                {
+                    runLength++;
+                    continue;
+                }
+                endRun = true;
+            }
+
+            if (endRun)
+            {
+                // Create collider for this run
+                var colliderObj = new GameObject($"TopWall_{currentY}_{startX}");
+                colliderObj.transform.SetParent(container.transform);
+                colliderObj.layer = wallsTilemap.gameObject.layer;
+
+                var box = colliderObj.AddComponent<BoxCollider2D>();
+
+                // Position at the top edge of the floor tiles (bottom of wall visual)
+                float centerX = startX + runLength / 2f;
+                float centerY = currentY + 0.9f; // Slightly into the wall for better collision
+
+                colliderObj.transform.position = new Vector3(centerX, centerY, 0);
+                box.size = new Vector2(runLength, 0.3f); // Thin horizontal collider
+
+                // Start new run if not at end
+                if (i < topWallPositions.Count)
+                {
+                    startX = topWallPositions[i].x;
+                    currentY = topWallPositions[i].y;
+                    runLength = 1;
+                }
+            }
+        }
     }
 
     private void PlaceDecoratedWalls()
@@ -995,6 +1114,4 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
         public Room(RectInt r) { rect = r; }
     }
 
-    private bool HasSplittable(List<Leaf> l) =>
-        l.Any(x => x.IsLeaf && (x.bounds.width >= minLeafSize * 2 || x.bounds.height >= minLeafSize * 2));
 }

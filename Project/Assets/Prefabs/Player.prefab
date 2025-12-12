@@ -579,6 +579,9 @@ MonoBehaviour:
   maxHealth: 3
   knockBackThrustAmount: 10
   damageRecoveryTime: 1
+  transitionUI: {fileID: 0}
+  deathScreenDuration: 2
+  respawnInvincibilityTime: 1.5
 --- !u!114 &2687577504509315224
 MonoBehaviour:
   m_ObjectHideFlags: 0

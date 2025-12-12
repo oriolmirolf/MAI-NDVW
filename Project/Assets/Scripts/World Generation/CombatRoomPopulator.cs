@@ -299,10 +299,13 @@ public class CombatRoomPopulator : IArchetypePopulator
 
     private Vector3 GetRandomRoomPosition(RoomData roomData, System.Random rng, float margin)
     {
-        float minX = roomData.rect.xMin + margin;
-        float maxX = roomData.rect.xMax - margin;
-        float minY = roomData.rect.yMin + margin;
-        float maxY = roomData.rect.yMax - margin;
+        // Use larger margin to keep objects away from walls (especially for large obstacles like houses)
+        float wallMargin = Mathf.Max(margin, 3f);
+
+        float minX = roomData.rect.xMin + wallMargin;
+        float maxX = roomData.rect.xMax - wallMargin;
+        float minY = roomData.rect.yMin + wallMargin;
+        float maxY = roomData.rect.yMax - wallMargin;
 
         if (maxX <= minX) maxX = minX + 1;
         if (maxY <= minY) maxY = minY + 1;
@@ -311,5 +314,16 @@ public class CombatRoomPopulator : IArchetypePopulator
         float y = Mathf.Lerp(minY, maxY, (float)rng.NextDouble());
 
         return new Vector3(x + 0.5f, y + 0.5f, 0);
+    }
+
+    /// <summary>
+    /// Check if a position is too close to room borders
+    /// </summary>
+    private bool IsNearBorder(Vector3 pos, RoomData roomData, float minDistance)
+    {
+        return pos.x < roomData.rect.xMin + minDistance ||
+               pos.x > roomData.rect.xMax - minDistance ||
+               pos.y < roomData.rect.yMin + minDistance ||
+               pos.y > roomData.rect.yMax - minDistance;
     }
 }

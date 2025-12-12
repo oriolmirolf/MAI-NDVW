@@ -1190,6 +1190,60 @@ Tilemap:
     e31: 0
     e32: 0
     e33: 1
+--- !u!1 &566267326
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 566267328}
+  - component: {fileID: 566267327}
+  m_Layer: 0
+  m_Name: ChapterMusicManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &566267327
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 566267326}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73dbda175d2c7e44e907188cef98d887, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enableAIMusic: 1
+  musicDuration: 30
+  seed: 12345
+  crossfadeDuration: 2
+  fallbackChapterMusic:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  musicSourceA: {fileID: 0}
+  musicSourceB: {fileID: 0}
+--- !u!4 &566267328
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 566267326}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 21.834911, y: -21.536087, z: -0.19543558}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 11
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &636195000
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1278,6 +1332,7 @@ GameObject:
   - component: {fileID: 657501560}
   - component: {fileID: 657501559}
   - component: {fileID: 657501561}
+  - component: {fileID: 657501562}
   m_Layer: 0
   m_Name: NarrativeManager
   m_TagString: Untagged
@@ -1297,9 +1352,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b291916a6879c7c4d80ddbfea59350f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  totalRooms: 3
-  storyTheme: dark fantasy dungeon
+  totalRooms: 9
+  storyTheme: '2D pixel art RPG adventure '
   seed: 12345
+  enableLLMGeneration: 1
   useCache: 1
   cacheFileName: narrative_cache.json
 --- !u!4 &657501560
@@ -1338,6 +1394,22 @@ MonoBehaviour:
   - Be careful on your journey.
   roomIndex: 0
   npcIndex: 0
+--- !u!114 &657501562
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 657501558}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 887ef425a9c7724409bd28e1dc5afea1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  introRoomIndex: 0
+  introNPCIndex: 0
+  delayBeforeShow: 1
+  startMusicOnIntro: 1
 --- !u!1 &673782711
 GameObject:
   m_ObjectHideFlags: 0
@@ -1351,6 +1423,7 @@ GameObject:
   - component: {fileID: 673782716}
   - component: {fileID: 673782718}
   - component: {fileID: 673782719}
+  - component: {fileID: 673782720}
   m_Layer: 0
   m_Name: WorldGenerator
   m_TagString: Untagged
@@ -1431,6 +1504,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   floorTilemap: {fileID: 543301664}
   pathTilemap: {fileID: 289110990}
+  waterTilemap: {fileID: 0}
   usePathForCorridors: 1
   wallsTilemap: {fileID: 328214145}
   fillOutside: 0
@@ -1466,17 +1540,19 @@ MonoBehaviour:
   surroundWithWalls: 1
   mapWidth: 140
   mapHeight: 140
-  roomCount: 2
-  extraConnections: 3
+  roomCount: 9
+  extraConnections: 2
   minLeafSize: 36
   minRoomSize: 25
   maxRoomSize: 30
+  minBossRoomSize: 15
+  maxBossRoomSize: 30
   roomMargin: 2
   corridorWidth: 4
   manhattanCorridors: 0
   centerMapAtZero: 1
   clearOnStart: 1
-  generateOnStart: 0
+  generateOnStart: 1
   seed: 1235123
   cameraConfiner: {fileID: 146163400}
   backgroundSortingOrder: -10
@@ -1512,6 +1588,42 @@ MonoBehaviour:
   minEnemies: 2
   maxEnemies: 5
   margin: 1
+--- !u!114 &673782720
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 673782711}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6bd19d86e1355dc4d8bfb94ed48e56af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentTheme: {fileID: 11400000, guid: e3cfdd19c975ffd4d8aac0e9cf98a656, type: 2}
+  combatRoomPopulator:
+    minEnemies: 2
+    maxEnemies: 5
+    minObstacles: 2
+    maxObstacles: 6
+    obstaclePlacementMargin: 2
+    enemyPlacementMargin: 1.5
+  bossArenaPopulator:
+    bossCenterOffset: 0
+    useHeavyDecoration: 1
+    decorationMultiplier: 1.5
+  hazardPopulator:
+    lakeDensity: 0.4
+    lakeIterations: 6
+    lakeSurviveMin: 5
+    lakeBirthMin: 4
+    waterTilemap: {fileID: 0}
+    minEnemies: 2
+    maxEnemies: 5
+  bossRoomIndex: 8
+  additionalBossRooms: 2,5
+  hazardRoomIndices: 1,4,7 
+  randomHazardChance: 0.25
 --- !u!1 &762011422
 GameObject:
   m_ObjectHideFlags: 0
@@ -1879,6 +1991,10 @@ MonoBehaviour:
   dialogueText: {fileID: 1334871951}
   nextButton: {fileID: 1381165752}
   buttonText: {fileID: 214838416}
+  enableVoice: 1
+  autoAdvanceAfterVoice: 1
+  autoAdvanceDelay: 0.5
+  voiceVolume: 1
   hideWhileDialogueActive:
   - {fileID: 309986124}
 --- !u!1001 &918265971
@@ -2621,8 +2737,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8f700e8853449bf4e80f387d7333385c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  canvasGroup: {fileID: 0}
+  deathCanvasGroup: {fileID: 1220303989}
   rewritingText: {fileID: 1700412997}
+  victoryCanvasGroup: {fileID: 0}
+  victorySubText: {fileID: 0}
   fadeDuration: 2
 --- !u!224 &1220303988
 RectTransform:
@@ -2654,7 +2772,7 @@ CanvasGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1220303986}
   m_Enabled: 1
-  m_Alpha: 1
+  m_Alpha: 0
   m_Interactable: 0
   m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0
@@ -2793,6 +2911,51 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e42e1faac716aa145874fe7bd4db348c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &1264069202
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1264069204}
+  - component: {fileID: 1264069203}
+  m_Layer: 0
+  m_Name: GenAIClient
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1264069203
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1264069202}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8bc6567701f92ba4091d3193ec272ee7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  serverUrl: http://localhost:8000
+--- !u!4 &1264069204
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1264069202}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 21.834911, y: -21.536087, z: -0.19543558}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 10
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1316552194
 GameObject:
   m_ObjectHideFlags: 0
@@ -2908,6 +3071,12 @@ MonoBehaviour:
   worldGenerator: {fileID: 673782718}
   totalChapters: 3
   runSeed: 12345
+  transitionUI: {fileID: 0}
+  victoryWaitDuration: 4
+  chapterThemes:
+  - {fileID: 11400000, guid: e3cfdd19c975ffd4d8aac0e9cf98a656, type: 2}
+  - {fileID: 11400000, guid: b7309d67ae9bbc148b021b61dc9a48df, type: 2}
+  - {fileID: 11400000, guid: 79c32c28eefd481419bc17199932c8d6, type: 2}
 --- !u!1 &1334871949
 GameObject:
   m_ObjectHideFlags: 0

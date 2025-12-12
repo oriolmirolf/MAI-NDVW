@@ -93,11 +93,8 @@ public class BossArenaPopulator : IArchetypePopulator
         Transform parent,
         HashSet<Vector3Int> occupiedPositions)
     {
-        if (theme.bossPrefab == null)
-        {
-            Debug.LogWarning("No boss prefab assigned in theme - skipping boss placement");
+        if (theme?.bossPrefab == null)
             return;
-        }
 
         Vector3 centerPos = new Vector3(
             roomData.center.x + 0.5f + bossCenterOffset,

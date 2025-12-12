@@ -8,6 +8,13 @@ from transformers import AutoProcessor, MusicgenForConditionalGeneration
 from pathlib import Path
 
 class MusicGenerator:
+    # Chapter-specific music - Fast arcade action style
+    CHAPTER_MUSIC = {
+        0: "energetic chiptune music, fast 8-bit synth melody, driving beat, upbeat and action-packed, 140 bpm, retro arcade game soundtrack",
+        1: "intense electronic music, pulsing synth bass, rapid arpeggios, mysterious and urgent, 150 bpm, action video game soundtrack",
+        2: "epic fast-paced orchestral, intense percussion, heroic brass fanfare, triumphant and exciting, 160 bpm, boss battle soundtrack"
+    }
+
     def __init__(self, model: str = "facebook/musicgen-medium", output_dir: str = "output"):
         self.model_name = model
         self.output_dir = Path(output_dir)
@@ -24,10 +31,17 @@ class MusicGenerator:
         self.model = MusicgenForConditionalGeneration.from_pretrained(model).to(device, dtype=dtype)
         print("Music generator ready")
 
-    async def generate(self, description: str, seed: int = None, duration: float = 30.0) -> str:
+    async def generate(self, description: str = None, chapter: int = None, seed: int = None, duration: float = 30.0) -> str:
         if seed is None:
             seed = random.randint(0, 2**31 - 1)
         self.last_seed = seed
+
+        # Use chapter-specific description if chapter is provided
+        if chapter is not None and chapter in self.CHAPTER_MUSIC:
+            description = self.CHAPTER_MUSIC[chapter]
+            print(f"[MUSIC] Using chapter {chapter} theme")
+        elif description is None:
+            description = "whimsical fantasy MIDI music, playful melody, cheerful, 90 bpm, video game soundtrack"
 
         generator = torch.Generator(device=self.device).manual_seed(seed)
         prompt = self._make_prompt(description)
@@ -62,7 +76,7 @@ class MusicGenerator:
         return str(output_path)
 
     def _make_prompt(self, description: str) -> str:
-        return f"Atmospheric ambient music for {description}, slow tempo, immersive, loopable background music"
+        return f"{description}, loopable, no vocals"
 
     def _normalize(self, audio: np.ndarray) -> np.ndarray:
         peak = np.max(np.abs(audio)) + 1e-6

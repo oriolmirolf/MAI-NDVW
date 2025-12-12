@@ -3,6 +3,7 @@
 
 import asyncio
 import json
+import re
 import sys
 from pathlib import Path
 sys.path.insert(0, '.')
@@ -10,6 +11,14 @@ sys.path.insert(0, '.')
 from src.generators.narrative import NarrativeGenerator
 
 OUTPUT_DIR = Path("tests/output/narrative")
+
+def clean_for_tts(text: str) -> str:
+    """Clean dialogue text for TTS (remove action markers)."""
+    text = re.sub(r'\*[^*]+\*', '', text)  # *action*
+    text = re.sub(r'\([^)]+\)', '', text)  # (action)
+    text = re.sub(r'\[[^\]]+\]', '', text)  # [action]
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
 
 async def main():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -20,7 +29,7 @@ async def main():
 
     narrative_gen = NarrativeGenerator(model="llama2", voice_generator=None)
 
-    theme = "dark fantasy dungeon"
+    theme = "2D pixel art RPG adventure"
     total_rooms = 3
     seed = 42
 
@@ -46,9 +55,12 @@ async def main():
 
         print(f"\nNPC: {narrative.npc.name}")
         print(f"Environment: {narrative.environment[:100]}...")
-        print(f"\nDialogue:")
+        print(f"\nDialogue (raw → cleaned for TTS):")
         for i, line in enumerate(narrative.npc.dialogue):
-            print(f"  [{i+1}] {line[:80]}...")
+            cleaned = clean_for_tts(line)
+            print(f"  [{i+1}] {line[:60]}...")
+            if cleaned != line:
+                print(f"      → {cleaned[:60]}...")
         print(f"\nQuest: {narrative.quest.objective}")
         print(f"Lore: {narrative.lore.title}")
 
@@ -57,7 +69,8 @@ async def main():
             "environment": narrative.environment,
             "npc": {
                 "name": narrative.npc.name,
-                "dialogue": narrative.npc.dialogue
+                "dialogue_raw": narrative.npc.dialogue,
+                "dialogue_tts": [clean_for_tts(line) for line in narrative.npc.dialogue]
             },
             "quest": {
                 "objective": narrative.quest.objective,

@@ -8,14 +8,15 @@ public class LLMNarrativeGenerator : Singleton<LLMNarrativeGenerator>
 {
     [Header("Story Settings")]
     public int totalRooms = 9;
-    [SerializeField] private string storyTheme = "dark fantasy dungeon";
-    [SerializeField] private int seed = 12345;
+    public int totalChapters = 3;
+    private int seed = 54321; // Not serialized - always use this value
+    private bool enableLLMGeneration = true;
 
     [Header("Cache Settings")]
     [SerializeField] private bool useCache = true;
-    [SerializeField] private string cacheFileName = "narrative_cache.json";
+    [SerializeField] private string cacheFileName = "chapter_cache.json";
 
-    private Dictionary<int, RoomNarrative> narrativeCache = new Dictionary<int, RoomNarrative>();
+    private Dictionary<int, RoomNarrative> chapterCache = new Dictionary<int, RoomNarrative>();
     private bool isGenerating = false;
     private bool generationComplete = false;
     private System.Random random;
@@ -29,33 +30,32 @@ public class LLMNarrativeGenerator : Singleton<LLMNarrativeGenerator>
 
     private void Start()
     {
-        // Sync totalRooms with DungeonGraph if available
-        if (DungeonGraph.Instance != null)
+        Debug.Log($"[GEN-AI] LLMNarrativeGenerator: Starting (LLM={enableLLMGeneration}, chapters={totalChapters})");
+
+        if (!enableLLMGeneration)
         {
-            totalRooms = DungeonGraph.Instance.RoomCount;
-            seed = DungeonGraph.Instance.Seed;
+            Debug.Log("[GEN-AI] Using FALLBACK narratives");
+            for (int i = 0; i < totalChapters; i++)
+                chapterCache[i] = CreateFallbackNarrative(i);
+            generationComplete = true;
+            return;
         }
 
-        // Check cache validity (must match room count and seed)
-        if (useCache && LoadFromCache() && narrativeCache.Count == totalRooms)
+        if (useCache && LoadFromCache() && chapterCache.Count == totalChapters)
         {
-            Debug.Log($"[Narrative] Loaded {narrativeCache.Count} narratives from cache");
+            Debug.Log($"[GEN-AI] Loaded {chapterCache.Count} chapter narratives from cache");
             generationComplete = true;
         }
         else
         {
-            if (narrativeCache.Count > 0 && narrativeCache.Count != totalRooms)
-            {
-                Debug.Log($"[Narrative] Cache mismatch ({narrativeCache.Count} vs {totalRooms} rooms), regenerating...");
+            if (chapterCache.Count > 0 && chapterCache.Count != totalChapters)
                 ClearCache();
-            }
-            Debug.Log($"[Narrative] Pre-generating all {totalRooms} narratives with voice...");
-            Time.timeScale = 0f; // Pause game during generation
+            Debug.Log("[GEN-AI] Generating chapter narratives from server...");
+            Time.timeScale = 0f;
             GenerateAllNarratives(() =>
             {
-                Debug.Log($"[Narrative] All {totalRooms} narratives ready with voice!");
                 SaveToCache();
-                Time.timeScale = 1f; // Resume game
+                Debug.Log("[GEN-AI] All chapter narratives generated");
             });
         }
     }
@@ -63,43 +63,40 @@ public class LLMNarrativeGenerator : Singleton<LLMNarrativeGenerator>
     public void GenerateAllNarratives(Action onComplete)
     {
         if (isGenerating) return;
-        StartCoroutine(GenerateNarrativesCoroutine(onComplete));
+        StartCoroutine(GenerateChaptersCoroutine(onComplete));
     }
 
-    private IEnumerator GenerateNarrativesCoroutine(Action onComplete)
+    private IEnumerator GenerateChaptersCoroutine(Action onComplete)
     {
         isGenerating = true;
-
-        for (int i = 0; i < totalRooms; i++)
+        for (int chapter = 0; chapter < totalChapters; chapter++)
         {
-            Debug.Log($"[Narrative] Generating room {i + 1}/{totalRooms}...");
-            yield return GenerateRoomNarrative(i);
-            yield return new WaitForSecondsRealtime(0.1f); // Use realtime since game may be paused
+            yield return GenerateChapterNarrative(chapter);
+            yield return new WaitForSecondsRealtime(0.1f);
         }
-
         isGenerating = false;
         generationComplete = true;
-        Debug.Log($"[Narrative] Generation complete: {narrativeCache.Count}/{totalRooms} rooms succeeded");
         onComplete?.Invoke();
     }
 
-    private IEnumerator GenerateRoomNarrative(int roomIndex)
+    private IEnumerator GenerateChapterNarrative(int chapter)
     {
+        if (GenAIClient.Instance == null)
+        {
+            Debug.LogWarning($"[GEN-AI] GenAIClient not available, using fallback for chapter {chapter}");
+            chapterCache[chapter] = CreateFallbackNarrative(chapter);
+            yield break;
+        }
+
         bool completed = false;
         string errorMsg = null;
 
-        string previousContext = BuildStoryContext(roomIndex);
-
+        // Use chapter as roomIndex for the API call
         yield return GenAIClient.Instance.GenerateNarrative(
-            roomIndex,
-            totalRooms,
-            storyTheme,
-            seed,
+            chapter, totalChapters, "chapter", seed,
             (response) =>
             {
-                RoomNarrative narrative = ConvertResponse(response);
-                narrativeCache[roomIndex] = narrative;
-                Debug.Log($"Room {roomIndex} generated: {response.npc.name}");
+                chapterCache[chapter] = ConvertResponse(response);
                 completed = true;
             },
             (error) =>
@@ -107,118 +104,87 @@ public class LLMNarrativeGenerator : Singleton<LLMNarrativeGenerator>
                 errorMsg = error;
                 completed = true;
             },
-            useCache,
-            previousContext
+            useCache, null
         );
 
         yield return new WaitUntil(() => completed);
 
         if (errorMsg != null)
         {
-            Debug.LogError($"Room {roomIndex} failed: {errorMsg}");
-            // Create fallback narrative so game can still run
-            narrativeCache[roomIndex] = CreateFallbackNarrative(roomIndex);
-            Debug.Log($"[Narrative] Created fallback narrative for room {roomIndex}");
+            Debug.LogError($"Chapter {chapter} generation failed: {errorMsg}");
+            chapterCache[chapter] = CreateFallbackNarrative(chapter);
         }
     }
 
-    private RoomNarrative CreateFallbackNarrative(int roomIndex)
+    private RoomNarrative CreateFallbackNarrative(int chapter)
     {
-        string[] fallbackNames = { "Mysterious Stranger", "Ancient Spirit", "Wandering Soul", "Silent Guardian" };
-        string[] fallbackDialogue = {
-            "Welcome traveler. This dungeon holds many secrets.",
-            "Be careful as you venture deeper. Danger lurks in every shadow.",
-            "May fortune favor the bold. Good luck on your journey."
+        string[] chapterNames = { "The Verdant Woods", "The Twilight Marsh", "The Ember Wastes" };
+        string[] environments = {
+            "A sunlit forest clearing with ancient oaks.",
+            "A misty swamp under eternal dusk.",
+            "A scorched volcanic landscape."
+        };
+        string[][] dialogues = {
+            new[] { "Darkness spreads through these woods.", "Thornback corrupts all he touches.", "Stay alert." },
+            new[] { "The marsh hides many horrors.", "Fog conceals the Wraith.", "Tread carefully." },
+            new[] { "Fire consumes everything here.", "Cinderax awaits at the end.", "This is the final test." }
         };
 
         return new RoomNarrative
         {
-            roomIndex = roomIndex,
-            environmentDescription = "A dark chamber filled with mystery.",
+            roomIndex = chapter,
+            environmentDescription = environments[chapter],
             npcDialogues = new List<NPCDialogue>
             {
                 new NPCDialogue
                 {
-                    npcName = fallbackNames[roomIndex % fallbackNames.Length],
-                    dialogueLines = new List<string>(fallbackDialogue),
+                    npcName = "The Wanderer",
+                    dialogueLines = new List<string>(dialogues[chapter]),
                     audioPaths = new List<string>(),
-                    spawnPosition = GetRandomSafePosition()
+                    spawnPosition = Vector2.zero
                 }
             },
             questObjective = new QuestObjective
             {
-                objectiveText = "Clear the room of enemies",
+                objectiveText = "Explore",
                 type = QuestType.DefeatEnemies,
-                targetCount = 3
+                targetCount = 1
             },
             loreEntries = new List<LoreEntry>
             {
-                new LoreEntry
-                {
-                    title = "Ancient Ruins",
-                    content = "These ruins hold secrets from ages past.",
-                    spawnPosition = GetRandomSafePosition()
-                }
+                new LoreEntry { title = chapterNames[chapter], content = environments[chapter], spawnPosition = Vector2.zero }
             }
         };
-    }
-
-    private string BuildStoryContext(int currentRoomIndex)
-    {
-        if (currentRoomIndex == 0) return null;
-
-        System.Text.StringBuilder context = new System.Text.StringBuilder();
-
-        for (int i = 0; i < currentRoomIndex; i++)
-        {
-            if (narrativeCache.TryGetValue(i, out RoomNarrative room))
-            {
-                if (room.npcDialogues.Count > 0)
-                {
-                    NPCDialogue npc = room.npcDialogues[0];
-                    string firstDialogue = npc.dialogueLines.Count > 0 ? npc.dialogueLines[0] : "";
-                    context.AppendLine($"Room {i + 1}: Met {npc.npcName} who said: \"{firstDialogue}\"");
-                }
-
-                if (room.questObjective != null)
-                {
-                    context.AppendLine($"Quest: {room.questObjective.objectiveText}");
-                }
-            }
-        }
-
-        return context.Length > 0 ? context.ToString() : null;
     }
 
     private RoomNarrative ConvertResponse(NarrativeResponse response)
     {
-        var npcDialogue = new NPCDialogue
-        {
-            npcName = response.npc.name,
-            dialogueLines = new List<string>(response.npc.dialogue),
-            audioPaths = response.npc.audio_paths != null ? new List<string>(response.npc.audio_paths) : new List<string>(),
-            spawnPosition = GetRandomSafePosition()
-        };
+        int audioPathCount = response.npc.audio_paths?.Length ?? 0;
+        Debug.Log($"[GEN-AI] Chapter {response.roomIndex}: {audioPathCount} audio paths");
 
         return new RoomNarrative
         {
             roomIndex = response.roomIndex,
             environmentDescription = response.environment,
-            npcDialogues = new List<NPCDialogue> { npcDialogue },
+            npcDialogues = new List<NPCDialogue>
+            {
+                new NPCDialogue
+                {
+                    npcName = response.npc.name,
+                    dialogueLines = new List<string>(response.npc.dialogue),
+                    audioPaths = response.npc.audio_paths != null ? new List<string>(response.npc.audio_paths) : new List<string>(),
+                    spawnPosition = Vector2.zero
+                }
+            },
             questObjective = new QuestObjective
             {
-                objectiveText = response.quest.objective,
-                type = ParseQuestType(response.quest.type),
-                targetCount = response.quest.count
+                objectiveText = "Explore",
+                type = QuestType.DefeatEnemies,
+                targetCount = 1
             },
             loreEntries = new List<LoreEntry>
             {
-                new LoreEntry
-                {
-                    title = response.lore.title,
-                    content = response.lore.content,
-                    spawnPosition = GetRandomSafePosition()
-                }
+                new LoreEntry { title = response.lore.title, content = response.lore.content, spawnPosition = Vector2.zero }
             }
         };
     }
@@ -226,23 +192,19 @@ public class LLMNarrativeGenerator : Singleton<LLMNarrativeGenerator>
     private bool LoadFromCache()
     {
         if (!File.Exists(CachePath)) return false;
-
         try
         {
             string json = File.ReadAllText(CachePath);
-            NarrativeCacheData cacheData = JsonUtility.FromJson<NarrativeCacheData>(json);
-
-            narrativeCache.Clear();
-            foreach (RoomNarrative room in cacheData.rooms)
-            {
-                narrativeCache[room.roomIndex] = room;
-            }
-
-            return narrativeCache.Count > 0;
+            var cacheData = JsonUtility.FromJson<NarrativeCacheData>(json);
+            chapterCache.Clear();
+            foreach (var room in cacheData.rooms)
+                chapterCache[room.roomIndex] = room;
+            Debug.Log($"[GEN-AI] Loaded {chapterCache.Count} chapters from cache");
+            return chapterCache.Count > 0;
         }
         catch (Exception e)
         {
-            Debug.LogError($"Cache load failed: {e.Message}");
+            Debug.LogError($"[GEN-AI] Cache load failed: {e.Message}");
             return false;
         }
     }
@@ -251,28 +213,20 @@ public class LLMNarrativeGenerator : Singleton<LLMNarrativeGenerator>
     {
         try
         {
-            NarrativeCacheData cacheData = new NarrativeCacheData();
-            foreach (var kvp in narrativeCache)
-            {
+            var cacheData = new NarrativeCacheData();
+            foreach (var kvp in chapterCache)
                 if (kvp.Value != null)
-                {
                     cacheData.rooms.Add(kvp.Value);
-                }
-            }
 
-            if (cacheData.rooms.Count == 0)
+            if (cacheData.rooms.Count > 0)
             {
-                Debug.LogError("No narratives to save");
-                return;
+                File.WriteAllText(CachePath, JsonUtility.ToJson(cacheData, true));
+                Debug.Log($"[GEN-AI] Saved {cacheData.rooms.Count} chapters to cache");
             }
-
-            string json = JsonUtility.ToJson(cacheData, true);
-            File.WriteAllText(CachePath, json);
-            Debug.Log($"Saved {cacheData.rooms.Count} narratives to cache");
         }
         catch (Exception e)
         {
-            Debug.LogError($"Cache save failed: {e.Message}");
+            Debug.LogError($"[GEN-AI] Cache save failed: {e.Message}");
         }
     }
 
@@ -280,54 +234,22 @@ public class LLMNarrativeGenerator : Singleton<LLMNarrativeGenerator>
     public void ClearCache()
     {
         if (File.Exists(CachePath))
-        {
             File.Delete(CachePath);
-            Debug.Log("Cache cleared");
-        }
-        narrativeCache.Clear();
-    }
-
-    [ContextMenu("Force Regenerate")]
-    public void ForceRegenerate()
-    {
-        ClearCache();
-        GenerateAllNarratives(() =>
-        {
-            Debug.Log($"Regenerated {totalRooms} narratives");
-            SaveToCache();
-        });
-    }
-
-    private Vector2 GetRandomSafePosition()
-    {
-        float x = (float)(random.NextDouble() * 30 - 15);
-        float y = (float)(random.NextDouble() * 30 - 15);
-        return new Vector2(x, y);
-    }
-
-    private QuestType ParseQuestType(string typeStr)
-    {
-        if (Enum.TryParse(typeStr, out QuestType type))
-        {
-            return type;
-        }
-        return QuestType.DefeatEnemies;
+        chapterCache.Clear();
     }
 
     public RoomNarrative GetNarrative(int roomIndex)
     {
-        Debug.Log($"[Narrative] GetNarrative({roomIndex}): cache has {narrativeCache.Count} entries, isGenerating={isGenerating}");
-        if (narrativeCache.TryGetValue(roomIndex, out RoomNarrative narrative))
-        {
-            Debug.Log($"[Narrative] Found narrative for room {roomIndex}: {narrative.npcDialogues[0]?.npcName ?? "no NPC"}");
-            return narrative;
-        }
-        Debug.LogWarning($"[Narrative] No narrative for room {roomIndex} - keys in cache: [{string.Join(", ", narrativeCache.Keys)}]");
-        return null;
+        // Convert room index to chapter
+        int roomsPerChapter = Mathf.Max(1, totalRooms / totalChapters);
+        int chapter = Mathf.Min(roomIndex / roomsPerChapter, totalChapters - 1);
+        return chapterCache.TryGetValue(chapter, out RoomNarrative narrative) ? narrative : null;
     }
 
-    public bool IsReady()
+    public RoomNarrative GetChapterNarrative(int chapter)
     {
-        return generationComplete;
+        return chapterCache.TryGetValue(chapter, out RoomNarrative narrative) ? narrative : null;
     }
+
+    public bool IsReady() => generationComplete;
 }

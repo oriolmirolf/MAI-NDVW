@@ -14,29 +14,22 @@ public static class CADecorator
         HashSet<Vector3Int> occupiedPositions = null)
     {
         if (theme.nonBlockingDecorations == null || theme.nonBlockingDecorations.Length == 0)
-        {
-            Debug.Log($"No non-blocking decorations defined in theme for room {roomData.index}");
             return;
-        }
 
         occupiedPositions = occupiedPositions ?? new HashSet<Vector3Int>();
 
         int width = roomData.rect.width;
         int height = roomData.rect.height;
 
-        Debug.Log($"CA Decorator: Decorating room {roomData.index} ({width}x{height}) with {theme.nonBlockingDecorations.Length} decoration types");
-
         bool[,] grid = CreateInitialGrid(width, height, theme.decorationDensity, rng);
 
         for (int i = 0; i < theme.caIterations; i++)
-        {
             grid = ApplyCARules(grid, theme.caSurviveMin, theme.caBirthMin);
-        }
 
-        int decorationsPlaced = PlaceDecorations(grid, roomData, theme, rng, decorationsParent, occupiedPositions);
-
-        Debug.Log($"CA Decorator: Placed {decorationsPlaced} decorations in room {roomData.index}");
+        PlaceDecorations(grid, roomData, theme, rng, decorationsParent, occupiedPositions);
     }
+
+    private const int BORDER_MARGIN = 2; // Keep decorations away from walls
 
     private static bool[,] CreateInitialGrid(int width, int height, float density, System.Random rng)
     {
@@ -46,7 +39,16 @@ public static class CADecorator
         {
             for (int y = 0; y < height; y++)
             {
-                grid[x, y] = rng.NextDouble() < density;
+                // Don't place decorations near borders
+                if (x < BORDER_MARGIN || x >= width - BORDER_MARGIN ||
+                    y < BORDER_MARGIN || y >= height - BORDER_MARGIN)
+                {
+                    grid[x, y] = false;
+                }
+                else
+                {
+                    grid[x, y] = rng.NextDouble() < density;
+                }
             }
         }
 
@@ -104,7 +106,7 @@ public static class CADecorator
         return count;
     }
 
-    private static int PlaceDecorations(
+    private static void PlaceDecorations(
         bool[,] grid,
         RoomData roomData,
         ChapterTheme theme,
@@ -114,7 +116,6 @@ public static class CADecorator
     {
         int width = grid.GetLength(0);
         int height = grid.GetLength(1);
-        int placedCount = 0;
 
         for (int x = 0; x < width; x++)
         {
@@ -122,30 +123,18 @@ public static class CADecorator
             {
                 if (!grid[x, y]) continue;
 
-                Vector3Int worldPos = new Vector3Int(
-                    roomData.rect.xMin + x,
-                    roomData.rect.yMin + y,
-                    0
-                );
+                Vector3Int worldPos = new Vector3Int(roomData.rect.xMin + x, roomData.rect.yMin + y, 0);
 
-                if (occupiedPositions.Contains(worldPos))
-                    continue;
+                if (occupiedPositions.Contains(worldPos)) continue;
 
                 if (rng.NextDouble() > 0.6f)
                 {
-                    GameObject prefab = theme.nonBlockingDecorations[rng.Next(theme.nonBlockingDecorations.Length)];
-                    Vector3 spawnPos = new Vector3(worldPos.x + 0.5f, worldPos.y + 0.5f, 0);
-                    Quaternion rotation = Quaternion.identity;
-
-                    GameObject decoration = Object.Instantiate(prefab, spawnPos, rotation, parent);
-                    decoration.name = $"Decoration_{x}_{y}";
-
+                    var prefab = theme.nonBlockingDecorations[rng.Next(theme.nonBlockingDecorations.Length)];
+                    var spawnPos = new Vector3(worldPos.x + 0.5f, worldPos.y + 0.5f, 0);
+                    Object.Instantiate(prefab, spawnPos, Quaternion.identity, parent);
                     occupiedPositions.Add(worldPos);
-                    placedCount++;
                 }
             }
         }
-
-        return placedCount;
     }
 }

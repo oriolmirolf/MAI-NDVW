@@ -9,13 +9,7 @@ public class CameraController : Singleton<CameraController>
 
     private void Start() {
         cinemachineVirtualCamera = FindObjectOfType<CinemachineVirtualCamera>();
-
-        // For dungeon scenes with room system, camera is controlled by RoomInstance.SnapCameraToRoom()
-        // Only set player follow if there's no DungeonGraph (non-dungeon scenes)
-        if (DungeonGraph.Instance == null)
-        {
-            SetPlayerCameraFollow();
-        }
+        SetPlayerCameraFollow();
     }
 
     public void SetPlayerCameraFollow() {

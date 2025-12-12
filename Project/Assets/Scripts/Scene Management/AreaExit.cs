@@ -4,6 +4,7 @@ public class AreaExit : MonoBehaviour
 {
     [Header("Generator Settings")]
     public string sceneTransitionName;
+    public int targetRoomIndex = -1;
 
     [Header("Manual Settings")]
     [SerializeField] private string sceneToLoad;
@@ -37,23 +38,20 @@ public class AreaExit : MonoBehaviour
                 if (targetPortal != null)
                 {
                     targetPos += -targetPortal.transform.right * 2f;
+
+                    // Trigger chapter intro and music when entering a new room
+                    if (targetPortal.targetRoomIndex >= 0 && IntroductionDialogue.Instance != null)
+                        IntroductionDialogue.Instance.OnRoomEntered(targetPortal.targetRoomIndex);
                 }
 
                 Vector3 delta = targetPos - other.transform.position;
                 other.transform.position = targetPos;
 
-                var roomInstance = ent.GetComponentInParent<RoomInstance>();
-                if (roomInstance != null)
-                {
-                    roomInstance.SnapCameraToRoom();
-                }
-                else
-                {
-                    var vcam = FindObjectOfType<Cinemachine.CinemachineVirtualCamera>();
-                    if (vcam) vcam.OnTargetObjectWarped(other.transform, delta);
-                }
+                var vcam = FindObjectOfType<Cinemachine.CinemachineVirtualCamera>();
+                if (vcam) vcam.OnTargetObjectWarped(other.transform, delta);
                 return;
             }
         }
     }
+
 }
