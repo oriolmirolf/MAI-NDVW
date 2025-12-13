@@ -1,0 +1,21 @@
+{
+  "roomIndex": 0,
+  "environment": "sunlit forest with ancient trees and overgrown ruins",
+  "npc": {
+    "name": "The Narrator",
+    "dialogue": [
+      "In the heart of the Verdant Prison, where whispers of ancient sorcery linger in the moss-kissed air...",
+      "...the echoes of desperate pleas bounce off the living walls, swallowed by the relentless hum of unseen horrors.",
+      "Beware, brave soul, for Thornback's shadows grow long, and his thorns are not the only teeth that hunger here."
+    ]
+  },
+  "quest": {
+    "objective": "Defeat Thornback to proceed",
+    "type": "Boss",
+    "count": 1
+  },
+  "lore": {
+    "title": "The Verdant Prison",
+    "content": "You have been pulled into the Shattered Realm, a prison dimension that feeds on lost souls. Three powerful guardians bind you here. Only by defeating all three can you shatter the barrier and return home.\n\nThe first layer of your prison appears peaceful - a quiet forest bathed in golden light. But this beauty is a lie. Thornback, the Guardian of Growth, has twisted nature itself into a weapon. The trees whisper warnings. The creatures serve him. To proceed deeper into the realm and find your way home, Thornback must fall."
+  }
+}

@@ -98,10 +98,10 @@ public class DungeonRunManager : MonoBehaviour
             playerHealth.ResetHealth();
         }
 
-        // 3. Show chapter introduction dialogue
-        if (IntroductionDialogue.Instance != null)
+        // 3. Notify chapter change (IntroductionDialogue.Start() handles chapter 0 with proper waiting)
+        if (currentChapterIndex > 0 && IntroductionDialogue.Instance != null)
         {
-            IntroductionDialogue.Instance.ShowChapterIntroduction(currentChapterIndex);
+            IntroductionDialogue.Instance.OnChapterEntered(currentChapterIndex);
         }
     }
 
@@ -112,16 +112,17 @@ public class DungeonRunManager : MonoBehaviour
         // Update checkpoint
         checkpointChapterIndex = Mathf.Max(checkpointChapterIndex, currentChapterIndex);
 
-        Debug.Log($"[DungeonRunManager] Boss Defeated. Chapter {currentChapterIndex} Complete.");
+        Debug.Log($"<color=green>[DungeonRunManager] BOSS DEFEATED! Chapter {currentChapterIndex} Complete.</color>");
 
         // Spawn the portal IF there is a next chapter
         if (currentChapterIndex < totalChapters - 1)
         {
+            Debug.Log($"<color=cyan>[DungeonRunManager] Spawning exit portal...</color>");
             worldGenerator.SpawnChapterExitPortalAtBossRoom();
         }
         else
         {
-            Debug.Log("Final Boss Defeated! Game Complete!");
+            Debug.Log("<color=yellow>[DungeonRunManager] Final Boss Defeated! Game Complete!</color>");
         }
     }
 
@@ -153,11 +154,7 @@ public class DungeonRunManager : MonoBehaviour
         if (LLMNarrativeGenerator.Instance == null || DialogueUI.Instance == null)
             return;
 
-        // Boss room is the last room of each chapter
-        int roomsPerChapter = Mathf.Max(1, LLMNarrativeGenerator.Instance.totalRooms / 3);
-        int bossRoomIndex = (currentChapterIndex * roomsPerChapter) + roomsPerChapter - 1;
-
-        var narrative = LLMNarrativeGenerator.Instance.GetNarrative(bossRoomIndex);
+        var narrative = LLMNarrativeGenerator.Instance.GetNarrative(currentChapterIndex);
         if (narrative?.victoryDialogue != null &&
             narrative.victoryDialogue.dialogueLines != null &&
             narrative.victoryDialogue.dialogueLines.Count > 0)

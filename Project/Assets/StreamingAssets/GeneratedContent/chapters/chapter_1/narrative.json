@@ -1,0 +1,21 @@
+{
+  "roomIndex": 1,
+  "environment": "the same forest now shrouded in cold blue moonlight and shadow",
+  "npc": {
+    "name": "The Narrator",
+    "dialogue": [
+      "As you delve deeper into The Eternal Night, even the shadows tremble at your approach.",
+      "The Shade whispers your name, its icy breath echoing through the cavernous darkness, beckoning you to your final challenge.",
+      "Two guardians remain, their eyes ablaze with vengeance for their fallen comrade. They will not falter until The Shade's will is done."
+    ]
+  },
+  "quest": {
+    "objective": "Defeat The Shade to proceed",
+    "type": "Boss",
+    "count": 1
+  },
+  "lore": {
+    "title": "The Eternal Night",
+    "content": "Thornback's death has weakened the realm, but the prison still holds. Night descends - not natural darkness, but the domain of The Shade, Guardian of Shadows. This spirit was once a prisoner like you, consumed by despair and transformed into a jailer. It knows your fear. Two guardians remain between you and freedom."
+  }
+}

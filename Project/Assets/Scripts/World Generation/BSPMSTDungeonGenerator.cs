@@ -65,7 +65,7 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
     public bool manhattanCorridors = true;
     public bool centerMapAtZero = true;
     public bool clearOnStart = true;
-    public bool generateOnStart = true; // Default to true for gameplay
+    public bool generateOnStart = false; // DungeonRunManager handles generation
     private int seed = 54321; // Not serialized - always use this value
 
     [Header("Camera")]
@@ -125,7 +125,13 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
 
     private void Start()
     {
-        // DO NOT recreate parents here anymore
+        // Warn if generateOnStart is enabled while DungeonRunManager exists (causes double generation)
+        if (generateOnStart && FindObjectOfType<DungeonRunManager>() != null)
+        {
+            Debug.LogWarning("[BSPMSTDungeonGenerator] generateOnStart is enabled but DungeonRunManager exists! This causes double generation. Skipping self-generation.");
+            return;
+        }
+
         if (generateOnStart)
         {
             GenerateDungeon();
@@ -332,26 +338,32 @@ public class BSPMSTDungeonGenerator : MonoBehaviour
 
     public void SpawnChapterExitPortalAtBossRoom()
     {
-        if (chapterExitPortalPrefab == null) return;
-        if (rooms == null || rooms.Count == 0) return;
+        Debug.Log($"[PORTAL] SpawnChapterExitPortalAtBossRoom called");
+
+        if (chapterExitPortalPrefab == null)
+        {
+            Debug.LogError("[PORTAL] chapterExitPortalPrefab is NULL!");
+            return;
+        }
+        if (rooms == null || rooms.Count == 0)
+        {
+            Debug.LogError("[PORTAL] rooms list is null or empty!");
+            return;
+        }
         if (actualBossRoomIndex < 0 || actualBossRoomIndex >= rooms.Count)
         {
-            Debug.LogWarning($"Invalid boss room index: {actualBossRoomIndex}");
+            Debug.LogError($"[PORTAL] Invalid boss room index: {actualBossRoomIndex}, rooms.Count: {rooms.Count}");
             return;
         }
 
         var bossRoom = rooms[actualBossRoomIndex];
         Vector3 cellWorldPos = floorTilemap.CellToWorld(bossRoom.Center);
+        Vector3 finalSpawnPos = new Vector3(cellWorldPos.x + 0.5f, cellWorldPos.y + 0.5f, 0f);
 
-        // Keep the Z -5 offset so it stays visible!
-        Vector3 finalSpawnPos = new Vector3(cellWorldPos.x + 0.5f, cellWorldPos.y + 0.5f, -5.0f);
-
-        // FIX: Change 'null' back to 'objectsParent'
-        // This ensures the generator deletes the old portal when rewriting the chapter.
         GameObject portal = Instantiate(chapterExitPortalPrefab, finalSpawnPos, Quaternion.identity, objectsParent);
-
         portal.name = ">>> EXIT PORTAL <<<";
-        Debug.Log($"Portal spawned at boss room index {actualBossRoomIndex} at position {finalSpawnPos}");
+
+        Debug.Log($"[PORTAL] Spawned at boss room {actualBossRoomIndex}, position {finalSpawnPos}");
     }
 
     public void SetThemeForNextGeneration(ChapterTheme theme)

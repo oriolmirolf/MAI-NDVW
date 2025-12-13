@@ -269,6 +269,20 @@ public class CombatRoomPopulator : IArchetypePopulator
             return;
         }
 
+        // Filter out boss prefab from common enemies to prevent accidental spawning
+        var validEnemies = new System.Collections.Generic.List<GameObject>();
+        foreach (var enemy in theme.commonEnemies)
+        {
+            if (enemy != null && enemy != theme.bossPrefab)
+                validEnemies.Add(enemy);
+        }
+
+        if (validEnemies.Count == 0)
+        {
+            Debug.LogWarning("No valid common enemies after filtering out boss!");
+            return;
+        }
+
         int count = rng.Next(minEnemies, maxEnemies + 1);
         int attempts = 0;
         int maxAttempts = count * 3;
@@ -281,14 +295,7 @@ public class CombatRoomPopulator : IArchetypePopulator
             if (occupiedPositions.Contains(gridPos))
                 continue;
 
-            GameObject prefab = theme.commonEnemies[rng.Next(theme.commonEnemies.Length)];
-
-            if (prefab == null)
-            {
-                Debug.LogWarning("Null enemy prefab in theme!");
-                continue;
-            }
-
+            GameObject prefab = validEnemies[rng.Next(validEnemies.Count)];
             GameObject enemy = Object.Instantiate(prefab, pos, Quaternion.identity, parent);
             enemy.name = $"Enemy_{roomData.index}_{i}";
 

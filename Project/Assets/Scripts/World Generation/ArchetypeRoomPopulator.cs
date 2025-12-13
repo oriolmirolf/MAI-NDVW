@@ -77,7 +77,10 @@ public class ArchetypeRoomPopulator : MonoBehaviour, IRoomPopulator
     private RoomArchetype SelectArchetype(RoomData room, System.Random rng)
     {
         if (IsBossRoom(room.index))
+        {
+            Debug.Log($"<color=red>[ARCHETYPE] Room {room.index} → BOSS ARENA (bossRoomIndex={bossRoomIndex}, additionalBossRooms='{additionalBossRooms}')</color>");
             return RoomArchetype.BossArena;
+        }
         if (IsHazardRoom(room.index))
             return RoomArchetype.EnvironmentalHazard;
         return RoomArchetype.CombatRoom;
@@ -149,6 +152,8 @@ public class ArchetypeRoomPopulator : MonoBehaviour, IRoomPopulator
     public void SetBossRoomIndex(int index)
     {
         bossRoomIndex = index;
+        // Clear any stale additional boss rooms to prevent multiple bosses
+        additionalBossRooms = "";
         Debug.Log($"Boss room set to index: {index}");
     }
 }

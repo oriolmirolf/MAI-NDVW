@@ -13,35 +13,33 @@ public class IntroductionDialogue : Singleton<IntroductionDialogue>
 
     private void Start()
     {
+        Debug.Log("[AI] IntroductionDialogue starting...");
         StartCoroutine(ShowChapterIntroDelayed());
     }
 
     private System.Collections.IEnumerator ShowChapterIntroDelayed()
     {
-        // Wait for narrative generation to complete (uses unscaled time to work during pause)
+        Debug.Log("[AI] Waiting for systems to be ready...");
         yield return new WaitForSecondsRealtime(delayBeforeShow);
 
-        // Wait until LLMNarrativeGenerator is ready
         while (LLMNarrativeGenerator.Instance == null || !LLMNarrativeGenerator.Instance.IsReady())
         {
+            Debug.Log($"[AI] Waiting for LLMNarrativeGenerator... Instance={LLMNarrativeGenerator.Instance != null}, Ready={LLMNarrativeGenerator.Instance?.IsReady() ?? false}");
             yield return new WaitForSecondsRealtime(0.5f);
         }
-        Debug.Log("[INTRO] Narratives ready");
 
-        // Wait until ChapterMusicManager is ready (music generated)
         while (ChapterMusicManager.Instance != null && !ChapterMusicManager.Instance.IsReady())
         {
+            Debug.Log("[AI] Waiting for ChapterMusicManager...");
             yield return new WaitForSecondsRealtime(0.5f);
         }
-        Debug.Log("[INTRO] Music ready, showing chapter 0 intro");
 
+        Debug.Log("[AI] All systems ready, showing chapter 0 introduction");
         ShowChapterIntroduction(0);
     }
 
-    public void OnRoomEntered(int roomIndex)
+    public void OnChapterEntered(int chapter)
     {
-        int chapter = GetChapterForRoom(roomIndex);
-
         if (chapter != currentChapter)
         {
             currentChapter = chapter;
@@ -55,47 +53,52 @@ public class IntroductionDialogue : Singleton<IntroductionDialogue>
 
     public void ShowChapterIntroduction(int chapter)
     {
+        Debug.Log($"[AI] ShowChapterIntroduction called for chapter {chapter}");
+
         if (shownChapters.Contains(chapter))
         {
+            Debug.Log($"[AI] Chapter {chapter} already shown, playing music only");
             if (ChapterMusicManager.Instance != null)
                 ChapterMusicManager.Instance.PlayChapterMusic(chapter);
             return;
         }
 
-        if (LLMNarrativeGenerator.Instance == null)
+        if (LLMNarrativeGenerator.Instance == null || DialogueUI.Instance == null)
         {
+            Debug.Log($"[AI] Missing instances - NarrativeGen={LLMNarrativeGenerator.Instance != null}, DialogueUI={DialogueUI.Instance != null}");
             StartCoroutine(RetryShowIntroDelayed(1f));
             return;
         }
 
-        if (DialogueUI.Instance == null)
-            return;
+        RoomNarrative narrative = LLMNarrativeGenerator.Instance.GetNarrative(chapter);
 
-        int firstRoomOfChapter = GetFirstRoomOfChapter(chapter);
-        RoomNarrative narrative = LLMNarrativeGenerator.Instance.GetNarrative(firstRoomOfChapter);
-
-        // If narrative not ready yet, retry later
         if (narrative == null)
         {
-            Debug.Log($"[INTRO] Room {firstRoomOfChapter} narrative not ready, retrying...");
+            Debug.LogError($"[AI] Chapter {chapter} narrative not found!");
             StartCoroutine(RetryShowIntroDelayed(2f));
             return;
         }
 
-        if (narrative.npcDialogues.Count > 0)
+        Debug.Log($"[AI] Found narrative for chapter {chapter}, dialogues count: {narrative.npcDialogues?.Count ?? 0}");
+
+        if (narrative.npcDialogues != null && narrative.npcDialogues.Count > 0)
         {
-            pendingMusicChapter = startMusicAfterDialogue ? chapter : -1;
-            DialogueUI.Instance.ShowDialogue(narrative.npcDialogues[0], OnDialogueComplete);
-            shownChapters.Add(chapter);
-            currentChapter = chapter;
-            Debug.Log($"[INTRO] Showing dialogue for chapter {chapter}");
+            var npcDialogue = narrative.npcDialogues[0];
+            Debug.Log($"[AI] NPC: {npcDialogue.npcName}, lines: {npcDialogue.dialogueLines?.Count ?? 0}");
+            if (npcDialogue.dialogueLines != null && npcDialogue.dialogueLines.Count > 0)
+            {
+                pendingMusicChapter = startMusicAfterDialogue ? chapter : -1;
+                DialogueUI.Instance.ShowDialogue(npcDialogue, OnDialogueComplete, chapter);
+                shownChapters.Add(chapter);
+                currentChapter = chapter;
+                Debug.Log($"[AI] Chapter {chapter} dialogue started");
+                return;
+            }
         }
-        else
-        {
-            Debug.Log($"[INTRO] No dialogues for chapter {chapter}, playing music");
-            if (ChapterMusicManager.Instance != null)
-                ChapterMusicManager.Instance.PlayChapterMusic(chapter);
-        }
+
+        Debug.Log($"[AI] No dialogue for chapter {chapter}, playing music only");
+        if (ChapterMusicManager.Instance != null)
+            ChapterMusicManager.Instance.PlayChapterMusic(chapter);
     }
 
     private void OnDialogueComplete()
@@ -113,24 +116,6 @@ public class IntroductionDialogue : Singleton<IntroductionDialogue>
         int chapter = currentChapter >= 0 ? currentChapter : 0;
         if (!shownChapters.Contains(chapter))
             ShowChapterIntroduction(chapter);
-    }
-
-    private int GetChapterForRoom(int roomIndex)
-    {
-        int totalRooms = LLMNarrativeGenerator.Instance != null
-            ? LLMNarrativeGenerator.Instance.totalRooms
-            : 9;
-        int roomsPerChapter = Mathf.Max(1, totalRooms / 3);
-        return Mathf.Min(roomIndex / roomsPerChapter, 2);
-    }
-
-    private int GetFirstRoomOfChapter(int chapter)
-    {
-        int totalRooms = LLMNarrativeGenerator.Instance != null
-            ? LLMNarrativeGenerator.Instance.totalRooms
-            : 9;
-        int roomsPerChapter = Mathf.Max(1, totalRooms / 3);
-        return chapter * roomsPerChapter;
     }
 
     public void ResetChapterIntros()

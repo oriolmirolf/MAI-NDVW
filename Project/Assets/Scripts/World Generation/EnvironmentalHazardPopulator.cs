@@ -1,10 +1,6 @@
 using System.Collections.Generic;
-using Unity.VisualScripting;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
-using UnityEngine.InputSystem.EnhancedTouch;
 using UnityEngine.Tilemaps;
-using static UnityEngine.Rendering.DebugUI.Table;
 
 /// <summary>
 /// Populates rooms with environmental hazards like lakes
@@ -22,7 +18,6 @@ public class EnvironmentalHazardPopulator : IArchetypePopulator
     [Header("Tilemaps")]
     [Tooltip("Water tilemap for placing water tiles with collision")]
     [SerializeField] private Tilemap waterTilemap;
-    private bool waterTilemapCreated = false;
 
     [Header("Enemy Settings")]
     [SerializeField] private int minEnemies = 2;
@@ -39,12 +34,8 @@ public class EnvironmentalHazardPopulator : IArchetypePopulator
     {
         Debug.Log($"Populating Environmental Hazard Room: Room {roomData.index}");
 
-        // Create water tilemap dynamically if not assigned
-        if (waterTilemap == null && !waterTilemapCreated)
-        {
-            waterTilemap = CreateWaterTilemap(floorTilemap);
-            waterTilemapCreated = true;
-        }
+        // Ensure we have a valid water tilemap
+        waterTilemap = GetOrCreateWaterTilemap(floorTilemap);
 
         HashSet<Vector3Int> occupiedPositions = new HashSet<Vector3Int>();
 
@@ -244,31 +235,37 @@ public class EnvironmentalHazardPopulator : IArchetypePopulator
             return;
         }
 
+        // Filter out boss prefab from common enemies
+        var validEnemies = new List<GameObject>();
+        foreach (var enemy in theme.commonEnemies)
+        {
+            if (enemy != null && enemy != theme.bossPrefab)
+                validEnemies.Add(enemy);
+        }
+
+        if (validEnemies.Count == 0)
+            return;
+
         int count = rng.Next(minEnemies, maxEnemies + 1);
         int attempts = 0;
         int maxAttempts = count * 5;
 
         for (int i = 0; i < count && attempts < maxAttempts; attempts++)
         {
-            // Random position in room
             int x = rng.Next(roomData.rect.xMin + 2, roomData.rect.xMax - 2);
             int y = rng.Next(roomData.rect.yMin + 2, roomData.rect.yMax - 2);
             Vector3Int gridPos = new Vector3Int(x, y, 0);
 
-            // Skip if in water or already occupied
             if (waterCells.Contains(gridPos) || occupiedPositions.Contains(gridPos))
                 continue;
 
             Vector3 spawnPos = new Vector3(x + 0.5f, y + 0.5f, 0);
-            GameObject prefab = theme.commonEnemies[rng.Next(theme.commonEnemies.Length)];
+            GameObject prefab = validEnemies[rng.Next(validEnemies.Count)];
 
-            if (prefab != null)
-            {
-                GameObject enemy = Object.Instantiate(prefab, spawnPos, Quaternion.identity, parent);
-                enemy.name = $"ShoreEnemy_{i}";
-                occupiedPositions.Add(gridPos);
-                i++;
-            }
+            GameObject enemy = Object.Instantiate(prefab, spawnPos, Quaternion.identity, parent);
+            enemy.name = $"ShoreEnemy_{i}";
+            occupiedPositions.Add(gridPos);
+            i++;
         }
     }
 
@@ -345,41 +342,55 @@ public class EnvironmentalHazardPopulator : IArchetypePopulator
     }
 
     /// <summary>
-    /// Create a water tilemap dynamically as a sibling of the floor tilemap
+    /// Get existing water tilemap or create a new one as sibling of floor tilemap
     /// </summary>
-    private Tilemap CreateWaterTilemap(Tilemap floorTilemap)
+    private Tilemap GetOrCreateWaterTilemap(Tilemap floorTilemap)
     {
-        if (floorTilemap == null) return null;
+        // If we already have a valid reference, use it
+        if (waterTilemap != null)
+            return waterTilemap;
+
+        if (floorTilemap == null)
+        {
+            Debug.LogError("[WATER] Cannot create water tilemap: floorTilemap is null");
+            return null;
+        }
 
         Transform gridParent = floorTilemap.transform.parent;
-        if (gridParent == null) return null;
+        if (gridParent == null)
+        {
+            Debug.LogError("[WATER] Cannot create water tilemap: floor has no parent Grid");
+            return null;
+        }
 
-        // Create water GameObject
+        // Try to find existing Water tilemap under the grid
+        Transform existingWater = gridParent.Find("Water");
+        if (existingWater != null)
+        {
+            Tilemap existing = existingWater.GetComponent<Tilemap>();
+            if (existing != null)
+            {
+                Debug.Log("[WATER] Found existing water tilemap");
+                return existing;
+            }
+        }
+
+        // Create new water tilemap
         GameObject waterObj = new GameObject("Water");
         waterObj.transform.SetParent(gridParent);
         waterObj.transform.localPosition = Vector3.zero;
         waterObj.transform.localRotation = Quaternion.identity;
         waterObj.transform.localScale = Vector3.one;
 
-        // Add Tilemap component
         Tilemap tilemap = waterObj.AddComponent<Tilemap>();
 
-        // Add TilemapRenderer with sorting order above floor
         TilemapRenderer renderer = waterObj.AddComponent<TilemapRenderer>();
-        renderer.sortingOrder = 1; // Above floor (order 0)
+        renderer.sortingOrder = -1; // Render below entities
 
-        // Add TilemapCollider2D for water collision
         TilemapCollider2D collider = waterObj.AddComponent<TilemapCollider2D>();
+        collider.isTrigger = true;
 
-        // Add Rigidbody2D for physics (static)
-        Rigidbody2D rb = waterObj.AddComponent<Rigidbody2D>();
-        rb.bodyType = RigidbodyType2D.Static;
-
-        // Add CompositeCollider2D for efficient collision
-        CompositeCollider2D composite = waterObj.AddComponent<CompositeCollider2D>();
-        collider.usedByComposite = true;
-
-        Debug.Log("[WATER] Created water tilemap dynamically");
+        Debug.Log("[WATER] Created new water tilemap");
         return tilemap;
     }
 }

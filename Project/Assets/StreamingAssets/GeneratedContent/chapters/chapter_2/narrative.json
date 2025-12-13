@@ -1,0 +1,21 @@
+{
+  "roomIndex": 2,
+  "environment": "the land scorched by relentless heat and orange flame-light",
+  "npc": {
+    "name": "The Narrator",
+    "dialogue": [
+      "In the heart of The Burning End, The Scorcher awaits, his flames licking the very air you breathe.",
+      "Two guardians have fallen, their echoes whispering warnings from the ashes.",
+      "This is your final stand for freedom, hero. Prepare to face the inferno that seeks to consume all."
+    ]
+  },
+  "quest": {
+    "objective": "Defeat The Scorcher to proceed",
+    "type": "Boss",
+    "count": 1
+  },
+  "lore": {
+    "title": "The Burning End",
+    "content": "The Shade is gone. The realm trembles. In desperation, it unleashes its final guardian: The Scorcher, a being of pure destruction. The prison would rather burn than release you. This is the last trial. Defeat The Scorcher, and the barrier shatters. You will finally be free."
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "seed": 54321,
+  "chapters": [
+    {
+      "chapter": 0,
+      "files": {
+        "narrative": "narrative.json",
+        "music": "music.wav",
+        "voice": [
+          "voice_0.wav",
+          "voice_1.wav",
+          "voice_2.wav"
+        ]
+      }
+    },
+    {
+      "chapter": 1,
+      "files": {
+        "narrative": "narrative.json",
+        "music": "music.wav",
+        "voice": [
+          "voice_0.wav",
+          "voice_1.wav",
+          "voice_2.wav"
+        ]
+      }
+    },
+    {
+      "chapter": 2,
+      "files": {
+        "narrative": "narrative.json",
+        "music": "music.wav",
+        "voice": [
+          "voice_0.wav",
+          "voice_1.wav",
+          "voice_2.wav"
+        ]
+      }
+    }
+  ]
+}

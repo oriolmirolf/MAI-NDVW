@@ -103,5 +103,32 @@ public class ChapterTheme : ScriptableObject
             Debug.LogWarning($"[Theme:{name}] No decorations (grass/flowers)");
         if (bossPrefab == null)
             Debug.LogError($"[Theme:{name}] No bossPrefab assigned!");
+
+        // Check if boss is accidentally in commonEnemies
+        if (bossPrefab != null && commonEnemies != null)
+        {
+            foreach (var enemy in commonEnemies)
+            {
+                if (enemy == bossPrefab)
+                {
+                    Debug.LogError($"[Theme:{name}] CRITICAL: bossPrefab is in commonEnemies array! Remove it to prevent multiple bosses!");
+                }
+            }
+        }
+    }
+
+    private void OnValidate()
+    {
+        // Auto-check in editor when values change
+        if (bossPrefab != null && commonEnemies != null)
+        {
+            foreach (var enemy in commonEnemies)
+            {
+                if (enemy == bossPrefab)
+                {
+                    Debug.LogError($"[Theme:{name}] Boss prefab detected in commonEnemies! This will cause multiple bosses to spawn.");
+                }
+            }
+        }
     }
 }

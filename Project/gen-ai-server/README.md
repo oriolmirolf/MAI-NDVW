@@ -1,217 +1,154 @@
-# Gen AI Server
+# Gen AI - Asset Pre-Generation
 
-FastAPI server for generative AI features (narrative + music generation).
+Pre-generates narrative, music, and voice assets for the game. Assets are saved to Unity's StreamingAssets folder and loaded at runtime.
 
 ## Project Structure
 
 ```
 gen-ai-server/
-├── src/
-│   ├── generators/
-│   │   ├── narrative.py    # LLM narrative generation with retry logic
-│   │   ├── vision.py       # Vision analysis (moondream2)
-│   │   └── music.py        # MusicGen audio generation
-│   ├── models/
-│   │   ├── requests.py     # Request schemas (Pydantic)
-│   │   └── responses.py    # Response schemas (Pydantic)
-│   └── utils/
-│       ├── config.py       # Configuration management
-│       ├── cache.py        # Caching system
-│       └── health.py       # Ollama health checks
-├── tests/
-│   ├── test_narrative.py   # Narrative generation tests
-│   ├── test_music.py       # Music generation tests
-│   ├── test_vision_rooms.py # Vision analysis tests
-│   └── test_server.py      # Full pipeline integration test
-├── scripts/
-│   └── clean.sh            # Cleanup cache and test outputs
-├── main.py                 # Production server
-└── .env.example            # Environment config template
+├── generate.py      # Main generation script
+├── config.json      # All prompts and settings
+├── samples/         # Voice reference samples
+├── scripts/         # Helper scripts
+└── .env             # Environment config
 ```
 
-## Setup
+## Requirements
 
+### 1. Ollama (narrative generation)
+```bash
+# Install from https://ollama.ai
+ollama serve
+ollama pull mistral-nemo
+```
+
+### 2. Python 3.12
 ```bash
 uv sync
 ```
 
-## Run
-
-```bash
-uv run python main.py
-```
-
-Server runs on `http://localhost:8000`
+### 3. CUDA GPU (recommended)
+- Required for music generation (MusicGen)
+- Required for voice synthesis (XTTS v2)
+- CPU works but is much slower
 
 ## Configuration
 
-Copy `.env.example` to `.env` and customize:
-
-```bash
-HOST=0.0.0.0
-PORT=8000
-NARRATIVE_MODEL=llama2
-MUSIC_MODEL=facebook/musicgen-medium
-OUTPUT_DIR=output
-```
-
-## API Endpoints
-
-### `POST /generate/narrative`
-Generate story narrative for a room with retry logic and story continuity.
+Edit `config.json` to customize:
 
 ```json
 {
-  "roomIndex": 0,
-  "totalRooms": 9,
-  "theme": "dark fantasy dungeon",
-  "seed": 12345,
-  "use_cache": true,
-  "previous_context": "Room 0: Met Elder Sage..."
+  "seed": 54321,
+  "generate": {
+    "narrative": true,
+    "music": true,
+    "voice": true
+  }
 }
 ```
 
-**Features:**
-- Retry logic: 3 attempts with seed variation on failure
-- Pydantic validation ensures proper JSON structure
-- Story continuity via `previous_context`
-- Server-side caching for faster regeneration
+### Key Settings
 
-### `POST /generate/music`
-Generate ambient music from description.
+| Setting | Description |
+|---------|-------------|
+| `seed` | Random seed for reproducible generation |
+| `generate.narrative` | Enable/disable narrative generation |
+| `generate.music` | Enable/disable music generation |
+| `generate.voice` | Enable/disable voice synthesis |
+| `models.narrative` | Ollama model for narratives |
+| `models.music` | HuggingFace model for music |
+| `music.duration` | Music length in seconds |
+| `chapters` | Chapter definitions (story, prompts, etc.) |
 
-```json
-{
-  "description": "dark crypt with echoing water drops",
-  "seed": 42,
-  "duration": 30.0,
-  "use_cache": true
-}
-```
+## Usage
 
-### `POST /analyze/vision`
-Analyze game screenshot and generate room description.
+### Step 1: Generate Assets
 
-**Form data:**
-- `file`: Image file (PNG/JPEG)
-- `use_cache`: "true" or "false"
-
-**Returns:**
-```json
-{
-  "environment_type": "cave",
-  "atmosphere": "Dark underground cavern with glowing crystals...",
-  "features": ["stalagmites", "underground river", "crystal formations"],
-  "mood": "mysterious and slightly eerie ambience"
-}
-```
-
-### `GET /cache/stats`
-Get cache statistics (narrative, music, vision counts).
-
-### `POST /cache/clear`
-Clear all cached data.
-
-### `GET /audio/{filename}`
-Retrieve generated audio file.
-
-## Requirements
-
-### 1. Ollama (for narrative generation)
 ```bash
-# Install Ollama from https://ollama.ai
-ollama serve
-
-# In another terminal, pull the model
-ollama pull llama2
+cd Project/gen-ai-server
+uv run python generate.py
 ```
 
-The server will automatically check if Ollama is running and has the required model.
+This generates:
+- `chapters/chapter_X/narrative.json` - Dialogue and lore
+- `chapters/chapter_X/music.wav` - Background music
+- `chapters/chapter_X/voice_0.wav`, `voice_1.wav`, `voice_2.wav` - Voice lines
 
-### 2. CUDA GPU (recommended for music generation)
-- CPU will work but will be slower
-- Music generation uses MusicGen which benefits from GPU acceleration
+Output: `Project/Assets/StreamingAssets/GeneratedContent/`
 
-## Testing
+### Step 2: Run Unity
 
-Run individual tests:
-```bash
-# Test narrative generation (requires Ollama)
-uv run python tests/test_narrative.py
+1. Open Unity project
+2. Press Play
 
-# Test music generation (requires GPU/CPU, takes 30-60s)
-uv run python tests/test_music.py
+The game automatically loads generated content from StreamingAssets. If no generated content exists, fallback narratives are used (no music/voice).
 
-# Test full pipeline (requires server running)
-# In terminal 1: uv run python main.py
-# In terminal 2:
-uv run python tests/test_server.py
+## Generation Output
+
+Files are saved to **two locations**:
+
+1. **Unity StreamingAssets** (for the game):
+   ```
+   Assets/StreamingAssets/GeneratedContent/
+   ```
+
+2. **Local copy** (for reference/backup):
+   ```
+   gen-ai-server/output/
+   ```
+
+Structure:
+```
+chapters/
+├── chapter_0/
+│   ├── narrative.json
+│   ├── music.wav
+│   ├── voice_0.wav
+│   ├── voice_1.wav
+│   └── voice_2.wav
+├── chapter_1/
+│   └── ...
+└── chapter_2/
+    └── ...
 ```
 
-Run all tests:
-```bash
-uv run pytest tests/
-```
+## Chapters
 
-## Cleanup
+The game has 3 chapters defined in `config.json`:
 
-Remove cache, test outputs, and generated files:
-```bash
-./scripts/clean.sh
-```
+| Chapter | Name | Boss |
+|---------|------|------|
+| 0 | The Verdant Prison | Thornback |
+| 1 | The Eternal Night | The Shade |
+| 2 | The Burning End | The Scorcher |
 
-This will remove:
-- `cache/` - Cached generation results
-- `tests/output/` - Test output files
-- `output/*.wav` - Generated music files
-- `temp_uploads/` - Temporary image uploads
-
-## Future Improvements
-
-### Batch Narrative Generation
-**Current approach:** Generates narratives one room at a time with incremental context
-**Proposed improvement:** Generate all room narratives in a single LLM prompt
-
-**Benefits:**
-- Better story coherence across entire dungeon
-- More consistent narrative arc (beginning → middle → end)
-- Reduced API calls and latency
-- Stronger thematic connections between rooms
-
-**Implementation:**
-1. New endpoint: `POST /generate/narrative/batch`
-2. Input: Array of room descriptions with spatial relationships
-3. Output: Complete narrative structure for all rooms
-4. LLM receives full dungeon layout to plan story progression
-
-**Example prompt structure:**
-```
-Generate a cohesive story for a 9-room dungeon with the following layout:
-Room 0 (entrance): [vision description]
-Room 1 (north corridor): [vision description]
-...
-Room 8 (boss chamber): [vision description]
-
-Create a unified narrative where:
-- Story begins in room 0 and builds to climax in room 8
-- NPCs and quests flow logically between connected rooms
-- Lore entries reveal backstory progressively
-- Theme and tone remain consistent
-```
+Each chapter has its own narrative context, music prompt, and environment description.
 
 ## Troubleshooting
 
-### Server fails to start with MusicGen error
-- Ensure Python 3.12 (not 3.14)
-- Check `.python-version` file contains `3.12`
-- Reinstall: `rm -rf .venv && uv sync`
+### Ollama not found
+```bash
+ollama serve          # Start Ollama
+ollama pull mistral-nemo  # Pull model
+```
 
-### Ollama connection failed
-- Start Ollama: `ollama serve`
-- Pull model: `ollama pull llama2`
-- Check running: `ollama list`
+### CUDA out of memory
+- Close other GPU applications
+- Use `facebook/musicgen-small` instead of medium
+- Reduce `music.duration` in config
 
-### Out of memory errors
-- Use smaller models (MusicGen Small)
-- Reduce audio duration
-- Close other applications
+### Generation fails
+- Check Ollama is running: `ollama list`
+- Verify model exists: `ollama show mistral-nemo`
+- Check Python version: `python --version` (needs 3.12)
+
+## Cleanup
+
+Remove generated content:
+```bash
+# Remove Unity content
+rm -rf ../Assets/StreamingAssets/GeneratedContent
+
+# Remove local copy
+rm -rf output
+```

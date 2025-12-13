@@ -8,10 +8,12 @@ public class PlayerController : Singleton<PlayerController>, ICombatTarget
 
     [SerializeField] private float moveSpeed = 1f;
     [SerializeField] private float dashSpeed = 4f;
+    [SerializeField] private float waterSpeedMultiplier = 0.5f;
     [SerializeField] private TrailRenderer myTrailRenderer;
     [SerializeField] private Transform weaponCollider;
 
     private PlayerControls playerControls;
+    private bool isInWater = false;
     private Vector2 movement;
     private Rigidbody2D rb;
     private Animator myAnimator;
@@ -147,9 +149,27 @@ public class PlayerController : Singleton<PlayerController>, ICombatTarget
         float dashTime = .2f;
         float dashCD = .25f;
         yield return new WaitForSeconds(dashTime);
-        moveSpeed = startingMoveSpeed;
+        moveSpeed = isInWater ? startingMoveSpeed * waterSpeedMultiplier : startingMoveSpeed;
         myTrailRenderer.emitting = false;
         yield return new WaitForSeconds(dashCD);
         isDashing = false;
+    }
+
+    private void OnTriggerEnter2D(Collider2D other) {
+        if (other.gameObject.name == "Water") {
+            isInWater = true;
+            if (!isDashing) {
+                moveSpeed = startingMoveSpeed * waterSpeedMultiplier;
+            }
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D other) {
+        if (other.gameObject.name == "Water") {
+            isInWater = false;
+            if (!isDashing) {
+                moveSpeed = startingMoveSpeed;
+            }
+        }
     }
 }

@@ -36,13 +36,7 @@ public class AreaExit : MonoBehaviour
                 Vector3 targetPos = ent.transform.position;
                 var targetPortal = ent.GetComponentInParent<AreaExit>();
                 if (targetPortal != null)
-                {
                     targetPos += -targetPortal.transform.right * 2f;
-
-                    // Trigger chapter intro and music when entering a new room
-                    if (targetPortal.targetRoomIndex >= 0 && IntroductionDialogue.Instance != null)
-                        IntroductionDialogue.Instance.OnRoomEntered(targetPortal.targetRoomIndex);
-                }
 
                 Vector3 delta = targetPos - other.transform.position;
                 other.transform.position = targetPos;

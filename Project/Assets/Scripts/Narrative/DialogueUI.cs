@@ -27,9 +27,9 @@ public class DialogueUI : MonoBehaviour
     [SerializeField] private GameObject[] hideWhileDialogueActive;
 
     private List<string> dialogueLines = new List<string>();
-    private List<string> audioPaths = new List<string>();
     private Dictionary<int, AudioClip> voiceClipCache = new Dictionary<int, AudioClip>();
     private int currentLineIndex = 0;
+    private int currentChapter = 0;
     private AudioSource voiceSource;
     private Coroutine autoAdvanceCoroutine;
     private Action onDialogueComplete;
@@ -60,9 +60,10 @@ public class DialogueUI : MonoBehaviour
         voiceSource.volume = voiceVolume;
     }
 
-    public void ShowDialogue(NPCDialogue dialogue, Action onComplete = null)
+    public void ShowDialogue(NPCDialogue dialogue, Action onComplete = null, int chapter = 0)
     {
         onDialogueComplete = onComplete;
+        currentChapter = chapter;
 
         if (dialoguePanel == null)
             return;
@@ -73,84 +74,58 @@ public class DialogueUI : MonoBehaviour
         dialogueLines.Clear();
         dialogueLines.AddRange(dialogue.dialogueLines);
 
-        audioPaths.Clear();
-        if (dialogue.audioPaths != null && dialogue.audioPaths.Count > 0)
-        {
-            audioPaths.AddRange(dialogue.audioPaths);
-            Debug.Log($"[DIALOGUE] Voice enabled: {audioPaths.Count} audio paths loaded");
-            for (int i = 0; i < audioPaths.Count; i++)
-                Debug.Log($"[DIALOGUE] Audio path {i}: '{audioPaths[i]}'");
-        }
-        else
-        {
-            Debug.Log($"[DIALOGUE] No audio paths provided for {dialogue.npcName}");
-        }
-
         voiceClipCache.Clear();
         currentLineIndex = 0;
 
         foreach (var obj in hideWhileDialogueActive)
             if (obj != null) obj.SetActive(false);
 
-        // Fade out music during dialogue
         if (ChapterMusicManager.Instance != null)
             ChapterMusicManager.Instance.FadeOutForDialogue();
 
         isShowingDialogue = true;
         dialoguePanel.SetActive(true);
-
-        // Pause game during dialogue
         Time.timeScale = 0f;
 
-        if (enableVoice && audioPaths.Count > 0 && GenAIClient.Instance != null)
-            StartCoroutine(PreloadVoiceClips());
-        else if (!enableVoice)
-            Debug.Log("[DIALOGUE] Voice disabled in settings");
-        else if (GenAIClient.Instance == null)
-            Debug.LogWarning("[DIALOGUE] GenAIClient not available for voice download");
+        if (enableVoice && GeneratedContentLoader.Instance != null && GeneratedContentLoader.Instance.HasContent)
+            StartCoroutine(PreloadAndDisplay());
+        else
+            DisplayCurrentLine();
+    }
+
+    private IEnumerator PreloadAndDisplay()
+    {
+        // Load first voice clip before displaying
+        bool firstDone = false;
+        yield return GeneratedContentLoader.Instance.LoadChapterVoice(
+            currentChapter, 0,
+            clip => { if (clip != null) voiceClipCache[0] = clip; firstDone = true; },
+            error => { firstDone = true; }
+        );
+        yield return new WaitUntil(() => firstDone);
 
         DisplayCurrentLine();
+
+        // Continue loading remaining clips in background
+        StartCoroutine(PreloadVoiceClips());
     }
 
     private IEnumerator PreloadVoiceClips()
     {
-        Debug.Log($"[DIALOGUE] Starting to preload {audioPaths.Count} voice clips");
-        for (int i = 0; i < audioPaths.Count; i++)
+        // Start from 1 since index 0 is loaded in PreloadAndDisplay
+        for (int i = 1; i < dialogueLines.Count; i++)
         {
-            if (string.IsNullOrEmpty(audioPaths[i]))
-            {
-                Debug.LogWarning($"[DIALOGUE] Skipping empty audio path at index {i}");
-                continue;
-            }
-
             int index = i;
             bool done = false;
-            string path = audioPaths[i];
 
-            Debug.Log($"[DIALOGUE] Downloading voice clip {i}: {path}");
-            yield return GenAIClient.Instance.DownloadVoice(
-                path,
-                (clip) => {
-                    if (clip != null)
-                    {
-                        voiceClipCache[index] = clip;
-                        Debug.Log($"[DIALOGUE] Voice clip {index} loaded: {clip.length:F2}s, {clip.frequency}Hz");
-                    }
-                    else
-                    {
-                        Debug.LogError($"[DIALOGUE] Voice clip {index} is null despite successful download");
-                    }
-                    done = true;
-                },
-                (error) => {
-                    Debug.LogError($"[DIALOGUE] Failed to download voice clip {index} ({path}): {error}");
-                    done = true;
-                }
+            yield return GeneratedContentLoader.Instance.LoadChapterVoice(
+                currentChapter, i,
+                clip => { if (clip != null) voiceClipCache[index] = clip; done = true; },
+                error => { done = true; }
             );
 
             yield return new WaitUntil(() => done);
         }
-        Debug.Log($"[DIALOGUE] Preload complete. Cached {voiceClipCache.Count}/{audioPaths.Count} clips");
     }
 
     private void AdvanceDialogue()
@@ -178,8 +153,6 @@ public class DialogueUI : MonoBehaviour
     {
         if (!enableVoice)
         {
-            Debug.Log("[DIALOGUE] Voice playback disabled");
-            // No voice - unpause immediately so player can move
             UnpauseGame();
             return;
         }
@@ -191,23 +164,13 @@ public class DialogueUI : MonoBehaviour
             voiceSource.clip = clip;
             voiceSource.volume = voiceVolume;
             voiceSource.Play();
-            Debug.Log($"[DIALOGUE] Playing voice clip {currentLineIndex} ({clip.length:F2}s)");
-
-            // Unpause game when voice starts - player can move while listening
             UnpauseGame();
 
             if (autoAdvanceAfterVoice)
                 autoAdvanceCoroutine = StartCoroutine(AutoAdvanceAfterClip(clip.length));
         }
-        else if (currentLineIndex < audioPaths.Count && !string.IsNullOrEmpty(audioPaths[currentLineIndex]))
-        {
-            Debug.Log($"[DIALOGUE] Voice clip {currentLineIndex} not ready, waiting...");
-            StartCoroutine(PlayVoiceWhenReady(currentLineIndex));
-        }
         else
         {
-            Debug.Log($"[DIALOGUE] No voice for line {currentLineIndex} (paths={audioPaths.Count}, cached={voiceClipCache.Count})");
-            // No voice - unpause immediately so player can move
             UnpauseGame();
         }
     }
@@ -215,40 +178,7 @@ public class DialogueUI : MonoBehaviour
     private void UnpauseGame()
     {
         if (Time.timeScale == 0f)
-        {
             Time.timeScale = 1f;
-            Debug.Log("[DIALOGUE] Game unpaused - player can move");
-        }
-    }
-
-    private IEnumerator PlayVoiceWhenReady(int lineIndex)
-    {
-        float timeout = 5f;
-        float elapsed = 0f;
-
-        while (!voiceClipCache.ContainsKey(lineIndex) && elapsed < timeout)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            yield return null;
-        }
-
-        if (currentLineIndex == lineIndex && voiceClipCache.TryGetValue(lineIndex, out AudioClip clip))
-        {
-            voiceSource.clip = clip;
-            voiceSource.volume = voiceVolume;
-            voiceSource.Play();
-
-            // Unpause game when voice starts - player can move while listening
-            UnpauseGame();
-
-            if (autoAdvanceAfterVoice)
-                autoAdvanceCoroutine = StartCoroutine(AutoAdvanceAfterClip(clip.length));
-        }
-        else
-        {
-            // Voice didn't load in time - unpause anyway so player can move
-            UnpauseGame();
-        }
     }
 
     private IEnumerator AutoAdvanceAfterClip(float clipLength)
@@ -290,17 +220,14 @@ public class DialogueUI : MonoBehaviour
         isShowingDialogue = false;
         dialoguePanel?.SetActive(false);
         dialogueLines.Clear();
-        audioPaths.Clear();
         voiceClipCache.Clear();
         currentLineIndex = 0;
 
         foreach (var obj in hideWhileDialogueActive)
             if (obj != null) obj.SetActive(true);
 
-        // Unpause game when dialogue ends
         Time.timeScale = 1f;
 
-        // Fade in music after dialogue
         if (ChapterMusicManager.Instance != null)
             ChapterMusicManager.Instance.FadeInAfterDialogue();
 
