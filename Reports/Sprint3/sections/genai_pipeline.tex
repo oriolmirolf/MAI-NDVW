@@ -29,9 +29,9 @@ Testing revealed a fundamental issue with the runtime HTTP server approach: \tex
 Additionally, we encountered secondary issues:
 
 \begin{itemize}
-    \item \textbf{Vision Model Limitations}: The moondream2 vision model struggled with our pixel art aesthetic, often misidentifying dungeon elements or producing generic descriptions that didn't meaningfully differentiate between rooms.
+    \item \textbf{Vision Model Limitations}: Our game assets were too limited for vision-based analysis to add meaningful value. The moondream2 model produced descriptions that were not discriminant enough from each other---with insufficient visual diversity in the procedurally generated rooms, the vision outputs were too similar to drive differentiated content. This approach could be valuable in a more complex game with richer procedural generation and greater asset variety.
 
-    \item \textbf{Room-Level Granularity Mismatch}: Generating unique content for each room (potentially 5--10 per run) created inconsistency. NPCs in adjacent rooms might have contradictory dialogue, and the overall narrative felt fragmented.
+    \item \textbf{Room-Level Granularity Mismatch}: Since room layouts were fully randomized, creating a structured narrative over them proved complex. The lack of semantic meaning in room placement made it difficult to generate coherent story progression tied to spatial structure.
 \end{itemize}
 
 \paragraph{The Pivot: Chapter-Based Pre-Generation}
@@ -81,60 +81,8 @@ Figure~\ref{fig:genai_pipeline} illustrates the complete pre-generation and runt
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[
-    node distance=1cm and 1.8cm,
-    box/.style={rectangle, draw, rounded corners, minimum width=2.2cm, minimum height=0.7cm, align=center, font=\footnotesize},
-    model/.style={rectangle, draw, fill=blue!15, rounded corners, minimum width=2cm, minimum height=0.7cm, align=center, font=\footnotesize},
-    file/.style={rectangle, draw, fill=green!15, minimum width=1.8cm, minimum height=0.6cm, align=center, font=\scriptsize},
-    arrow/.style={->, >=stealth, thick},
-    section/.style={rectangle, draw, rounded corners, fill=gray!10, inner sep=0.4cm}
-]
-
-% Pre-generation section title
-\node[font=\small\bfseries] (pregentitle) {Pre-Generation (Python)};
-
-% Config input
-\node[box, below=0.6cm of pregentitle] (config) {config.json};
-
-% Models column
-\node[model, right=1.2cm of config] (ollama) {Ollama\\mistral-nemo};
-\node[model, below=0.6cm of ollama] (musicgen) {MusicGen};
-\node[model, below=0.6cm of musicgen] (tts) {XTTS v2};
-
-% Output files column
-\node[file, right=1.2cm of ollama] (narrative) {narrative.json};
-\node[file, right=1.2cm of musicgen] (music) {music.wav};
-\node[file, right=1.2cm of tts] (voice) {voice\_*.wav};
-
-% Arrows for pre-generation
-\draw[arrow] (config) -- (ollama);
-\draw[arrow] (config.south) -- ++(0,-0.3) -| (musicgen.west);
-\draw[arrow] (config.south) -- ++(0,-0.3) -| (tts.west);
-\draw[arrow] (ollama) -- (narrative);
-\draw[arrow] (musicgen) -- (music);
-\draw[arrow] (tts) -- (voice);
-
-% StreamingAssets box around output files
-\node[rectangle, draw, dashed, fit=(narrative)(music)(voice), inner sep=0.25cm, label={[font=\scriptsize]below:StreamingAssets/}] (assets) {};
-
-% Separator line
-\draw[thick, gray, dashed] ([yshift=-1.2cm]config.south west) -- ++(10.5cm,0);
-
-% Runtime section title - more space below pre-generation
-\node[font=\small\bfseries, below=2.8cm of config.south west, anchor=west, xshift=-0.5cm] (runtimetitle) {Runtime (Unity C\#)};
-
-% Runtime components
-\node[box, right=1.5cm of runtimetitle] (loader) {ContentLoader};
-\node[box, right=1.2cm of loader] (managers) {Managers};
-\node[box, right=1.2cm of managers] (ui) {DialogueUI};
-
-% Arrows for runtime
-\draw[arrow, dashed] (assets.south) -- ++(0,-0.6) -| (loader.north);
-\draw[arrow] (loader) -- (managers);
-\draw[arrow] (managers) -- (ui);
-
-\end{tikzpicture}
-\caption{Generative AI pipeline architecture. The pre-generation phase runs offline using Python and GPU-accelerated models. Generated assets are saved to StreamingAssets and loaded at runtime by Unity.}
+\includegraphics[width=0.65\textwidth]{figures/genai_pipeline.png}
+\caption{Generative AI pipeline architecture. Pre-generation runs offline using Python and GPU-accelerated models. Assets are saved to StreamingAssets and loaded at runtime by Unity.}
 \label{fig:genai_pipeline}
 \end{figure}
 
@@ -146,32 +94,26 @@ Table~\ref{tab:ai_models_final} summarizes the AI models used in the final imple
 \centering
 \caption{AI models used in the generative pipeline}
 \label{tab:ai_models_final}
-\begin{tabular}{lccp{5cm}}
+\begin{tabular}{lccp{4cm}}
 \hline
-\textbf{Component} & \textbf{Model} & \textbf{Parameters} & \textbf{Selection Rationale} \\
+\textbf{Component} & \textbf{Model} & \textbf{Params} & \textbf{Selection Rationale} \\
 \hline
-Narrative & mistral-nemo & 12B & Fast inference, excellent instruction following for structured JSON output \\
-Music & MusicGen Small~\cite{copet2023musicgen} & 300M & Best quality-to-speed ratio for ambient game music \\
-Voice & XTTS v2~\cite{casanova2024xtts} & 467M & Multilingual voice cloning with natural prosody \\
+Narrative & mistral-nemo & 12B & Fast inference, good instruction following \\
+Music & MusicGen Medium~\cite{copet2023musicgen} & 1.5B & Good quality for ambient game music \\
+Voice & XTTS v2~\cite{casanova2024xtts} & 467M & Voice cloning from reference sample \\
 \hline
 \end{tabular}
 \end{table}
 
 We chose \textbf{mistral-nemo}~\cite{mistralnemo} over llama2 (used in Sprint 2) because llama2 struggled significantly with instruction following. Despite explicit prompts requesting structured JSON output, llama2 frequently produced malformed responses: missing required fields, adding unsolicited commentary, or ignoring the specified format entirely. This resulted in retry rates of approximately 40\%, wasting generation time and requiring complex parsing logic to handle edge cases. Mistral-nemo, in contrast, follows structured output instructions reliably, reducing retry rates to under 10\%. The model runs locally via Ollama~\cite{ollama}, eliminating API costs and ensuring data privacy.
 
-\textbf{MusicGen Small} was selected after testing multiple configurations. While the Medium (1.5B) variant produces slightly higher quality output, the Small variant (300M parameters) generates acceptable quality at 4x the speed, which is important when generating music for multiple chapters. The guidance scale of 3.5 balances prompt adherence with musical coherence.
+\textbf{MusicGen Medium} (1.5B parameters) was selected after testing multiple configurations. The Small variant (300M) generates faster but with noticeably lower quality, while the Large variant (3.3B) offered marginal improvements that did not justify the increased generation time. The guidance scale of 3.5 balances prompt adherence with musical coherence.
 
-\textbf{XTTS v2} was chosen for voice generation because it produces reasonably natural multilingual speech from a single reference audio sample. The model supports voice cloning with as little as 6 seconds of reference audio, making it practical for our use case. However, XTTS v2 is not without limitations: the generated speech occasionally exhibits unnatural pacing, and the overall voice quality remains noticeably synthetic compared to professional recordings.
+\textbf{XTTS v2} was chosen for voice generation because it can clone a voice from a single reference audio sample. The model requires as little as 6 seconds of reference audio, making it practical for our use case. However, XTTS v2 is not without limitations: the generated speech occasionally exhibits unnatural pacing, and the overall voice quality remains noticeably synthetic compared to professional recordings.
 
 \paragraph{Model Selection Challenges}
 
-Selecting appropriate generative models required extensive experimentation, as the quality gap between state-of-the-art cloud APIs and locally-runnable open-source models remains significant.
-
-For text-to-speech, we initially tested \textbf{Parler-TTS}, which promised controllable voice generation through natural language descriptions. However, the model produced noticeable audio artifacts---particularly unwanted noises at the end of sentences and occasional ``robotic'' prosody that broke immersion. The voices often sounded unnatural, with inconsistent pacing and awkward pauses that would be distracting during gameplay. After testing multiple Parler-TTS configurations, we switched to XTTS v2, which produces more natural-sounding speech through voice cloning rather than description-based generation.
-
-For music generation, we experimented with MusicGen's larger variants (Medium at 1.5B and Large at 3.3B parameters) but found that the quality improvement did not justify the 4--8x increase in generation time. The Small variant produces audio that is sufficiently atmospheric for background game music, where players focus primarily on gameplay rather than musical nuance.
-
-For narrative generation, commercial APIs (OpenAI, Anthropic) produce superior text quality but introduce ongoing costs, latency dependencies, and privacy concerns. Running models locally via Ollama eliminates these issues at the cost of slightly lower output quality, which we mitigated through careful prompt engineering and retry logic.
+Selecting appropriate generative models required extensive experimentation. For text-to-speech, we initially tested \textbf{Parler-TTS}, but it produced noticeable audio artifacts and robotic prosody. XTTS v2 produces more natural speech through voice cloning. For narrative generation, commercial APIs (OpenAI, Anthropic) produce superior quality but introduce costs and latency; running models locally via Ollama eliminates these issues.
 
 \subsubsection{Chapter-Based Content Structure}
 \label{subsubsec:chapter_content}
@@ -271,50 +213,25 @@ All prompts include the suffix ``loopable, no vocals'' to ensure the generated m
 \subsubsection{Voice Generation}
 \label{subsubsec:voice_gen}
 
-Voice generation converts the narrative dialogue lines into spoken audio, creating an immersive narrator experience. We use XTTS v2~\cite{casanova2024xtts}, a multilingual text-to-speech model that can clone a voice from a single reference sample.
+Voice generation converts narrative dialogue into spoken audio using XTTS v2. Adding voiced narration enhances immersion compared to text-only dialogue, and AI-generated voice provides a practical solution where recording every possible line is infeasible.
 
-\paragraph{Why Voice Generation?}
+We use a 15-second reference sample of documentary-style narration to establish the narrator's voice. For testing, we extracted a sample from a BBC wildlife documentary\footnote{\url{https://www.youtube.com/watch?v=ErrcHBlxOBs}}. XTTS v2 clones the prosody and speaking style from this reference, ensuring consistency across all generated lines.
 
-Adding voiced narration significantly enhances immersion compared to text-only dialogue. The narrator's voice reinforces the game's atmospheric tone and provides consistent delivery across all chapters. While professional voice acting would be ideal, AI-generated voice provides a practical solution for procedurally generated content where recording every possible line is infeasible.
+\paragraph{Ethical Considerations}
 
-\paragraph{Reference Voice Selection}
-
-We use a single 15-second reference audio sample of documentary-style narration to establish the narrator's voice characteristics. For testing purposes, we extracted a voice sample from a BBC wildlife documentary\footnote{\url{https://www.youtube.com/watch?v=ErrcHBlxOBs}}. XTTS v2 clones the prosody, pitch, and speaking style from this reference while generating the actual game dialogue. This ensures consistency across all generated voice lines while matching the dramatic, atmospheric tone we wanted for the narrator.
-
-\paragraph{Ethical Considerations: Voice Ownership}
-
-The ease with which modern TTS models can clone voices raises significant ethical and legal questions. With only a few seconds of audio, it is now trivial to replicate someone's voice without their consent. In our case, we used a BBC narrator's voice for development and testing, but this practice highlights broader concerns about voice property and ownership in the age of generative AI. Professional voice actors face potential displacement as their distinctive voices can be copied and used indefinitely without compensation. For a production release, original voice recordings with proper licensing would be essential to avoid intellectual property issues.
-
-\paragraph{Generation Process}
-
-For each dialogue line, the voice generator:
-\begin{enumerate}
-    \item Loads the reference audio sample
-    \item Synthesizes speech for the dialogue text
-    \item Saves the output as a WAV file
-\end{enumerate}
-
-Voice files are named by chapter and line index (\texttt{voice\_0.wav}, \texttt{voice\_1.wav}, etc.) and loaded by the \texttt{DialogueUI} component during gameplay.
+Modern TTS models can clone voices with only seconds of audio, raising concerns about voice ownership. For a production release, original recordings with proper licensing would be essential. Professional voice actors face potential displacement as their voices can be copied without compensation.
 
 \subsubsection{Runtime Integration}
 \label{subsubsec:runtime_integration}
 
-The Unity side of the pipeline consists of several components that load and play the pre-generated content:
+The Unity side loads and plays pre-generated content through several components: \texttt{GeneratedContentLoader} handles asynchronous file loading from \texttt{StreamingAssets}, \texttt{ChapterMusicManager} manages background music with crossfading between chapters, and \texttt{DialogueUI} displays narrator dialogue with synchronized voice playback. Figure~\ref{fig:narrator_dialogue} shows the narrator dialogue UI as it appears in-game.
 
-\paragraph{GeneratedContentLoader}
-This singleton loads the content manifest and provides asynchronous methods for loading narrative JSON, music WAV files, and voice clips. It uses Unity's \texttt{UnityWebRequest} API to load files from \texttt{StreamingAssets}, which works consistently across all platforms.
-
-\paragraph{LLMNarrativeGenerator}
-Despite its name (retained for compatibility), this component no longer calls an LLM at runtime. Instead, it loads pre-generated narratives from JSON files and caches them for retrieval by other systems.
-
-\paragraph{ChapterMusicManager}
-Manages background music playback with crossfading support. When the player enters a new chapter, this component fades out the current track and fades in the new chapter's music. During dialogue sequences, the music volume is reduced to ensure voice clarity.
-
-\paragraph{DialogueUI}
-Displays the narrator dialogue with synchronized voice playback. The component preloads voice clips for the current chapter to minimize playback latency. Voice clips are played sequentially as the player advances through dialogue lines, with an option to skip.
-
-\paragraph{AIManagerBootstrap}
-A utility component that automatically creates all AI-related managers at runtime using \texttt{RuntimeInitializeOnLoadMethod}. This ensures the managers exist before any scene-specific code attempts to access them, solving initialization order issues.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{figures/rpg.png}
+    \caption{In-game narrator dialogue UI. At the beginning of each chapter, the narrator introduces the environment with voice synthesis and atmospheric background music.}
+    \label{fig:narrator_dialogue}
+\end{figure}
 
 \subsubsection{Generation Performance}
 \label{subsubsec:generation_performance}
@@ -340,16 +257,3 @@ Model loading (first run) & $\sim$50 seconds & -- \\
 \end{table}
 
 Narrative generation is parallelized across chapters using Python's \texttt{ThreadPoolExecutor}, as the Ollama server can handle concurrent requests. Music and voice generation are executed sequentially since they compete for GPU memory.
-
-\subsubsection{Removed Components}
-\label{subsubsec:removed_components}
-
-The following Sprint 2 components were removed in the final implementation:
-
-\begin{itemize}
-    \item \textbf{Vision Analysis (moondream2)}: Originally used to analyze room screenshots and generate semantic descriptions. Removed because our limited asset set does not provide enough visual variety to benefit from vision-based analysis---chapter themes suffice.
-    \item \textbf{FastAPI HTTP Server}: Replaced by the pre-generation script. The server architecture made development iteration extremely slow, as every code change required restarting and reloading all models.
-    \item \textbf{Room-by-room Generation}: Replaced by chapter-based generation to align with the game's three-act checkpoint structure.
-\end{itemize}
-
-These simplifications reduced system complexity while improving the player experience through faster load times and more consistent content quality.
