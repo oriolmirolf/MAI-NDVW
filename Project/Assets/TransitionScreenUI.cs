@@ -2,75 +2,76 @@ using System.Collections;
 using UnityEngine;
 using TMPro;
 
-// RENAMED SCRIPT
 public class TransitionScreenUI : MonoBehaviour
 {
-    [Header("Death Screen Settings")]
+    [Header("Death Screen (Black Panel)")]
     [SerializeField] private CanvasGroup deathCanvasGroup;
     [SerializeField] private TMP_Text rewritingText;
     
-    [Header("Victory Screen Settings")]
-    [SerializeField] private CanvasGroup victoryCanvasGroup;
+    [Header("Final Victory (Gold Panel)")]
+    [SerializeField] private CanvasGroup finalVictoryCanvasGroup;
+    [SerializeField] private TMP_Text victoryHeader;
     [SerializeField] private TMP_Text victorySubText;
 
-    [Header("General Settings")]
-    [SerializeField] private float fadeDuration = 1.5f;
+    // --- THIS IS THE MISSING PART THAT MAKES THE SLOT APPEAR ---
+    [Header("Normal Boss (Text Popup)")]
+    [SerializeField] private CanvasGroup bossDefeatedTextGroup; 
+    // -----------------------------------------------------------
 
-    private Coroutine currentFadeRoutine;
+    [Header("Settings")]
+    [SerializeField] private float fadeDuration = 1.0f;
 
     private void Awake()
     {
-        // Ensure everything is hidden on start
+        // Hide everything on start
         if (deathCanvasGroup) { deathCanvasGroup.alpha = 0f; deathCanvasGroup.blocksRaycasts = false; }
-        if (victoryCanvasGroup) { victoryCanvasGroup.alpha = 0f; victoryCanvasGroup.blocksRaycasts = false; }
+        if (finalVictoryCanvasGroup) { finalVictoryCanvasGroup.alpha = 0f; finalVictoryCanvasGroup.blocksRaycasts = false; }
+        if (bossDefeatedTextGroup) { bossDefeatedTextGroup.alpha = 0f; bossDefeatedTextGroup.blocksRaycasts = false; }
     }
 
-    // --- PUBLIC TRIGGER METHODS ---
-
+    // --- DEATH ---
     public void ShowDeathScreen(int chapterIndex)
     {
-        if (rewritingText != null)
-            rewritingText.text = $"Rewriting Chapter {chapterIndex + 1}...";
-
-        // Ensure victory screen is hidden just in case
-        if (victoryCanvasGroup) victoryCanvasGroup.alpha = 0f;
-        
-        StartFade(deathCanvasGroup, 1f);
+        if (rewritingText) rewritingText.text = $"Rewriting Chapter {chapterIndex + 1}...";
+        StartCoroutine(FadeRoutine(deathCanvasGroup, 1f));
     }
 
-    public void ShowVictoryScreen(int nextChapterIndex)
+    // --- NORMAL BOSS (Just Text, No Gold) ---
+    public IEnumerator ShowBossDefeatedText()
     {
-        if (victorySubText != null)
-            victorySubText.text = $"Entering Chapter {nextChapterIndex + 1}...";
+        // Fade Text In
+        yield return StartCoroutine(FadeRoutine(bossDefeatedTextGroup, 1f));
+        
+        // Wait 3 seconds
+        yield return new WaitForSeconds(3.0f);
+        
+        // Fade Text Out
+        yield return StartCoroutine(FadeRoutine(bossDefeatedTextGroup, 0f));
+    }
 
-        // Ensure death screen is hidden just in case
-        if (deathCanvasGroup) deathCanvasGroup.alpha = 0f;
-
-        StartFade(victoryCanvasGroup, 1f);
+    // --- FINAL BOSS (Gold Screen Forever) ---
+    public void ShowFinalVictory()
+    {
+        if (victoryHeader) victoryHeader.text = "VICTORY";
+        if (victorySubText) victorySubText.text = "The loop is broken.";
+        
+        StartCoroutine(FadeRoutine(finalVictoryCanvasGroup, 1f));
     }
 
     public void HideAllScreens()
     {
-        // Hide whichever one is currently visible
-        if (deathCanvasGroup && deathCanvasGroup.alpha > 0) StartFade(deathCanvasGroup, 0f);
-        if (victoryCanvasGroup && victoryCanvasGroup.alpha > 0) StartFade(victoryCanvasGroup, 0f);
-    }
-
-    // --- INTERNAL FADE LOGIC ---
-
-    private void StartFade(CanvasGroup targetGroup, float targetAlpha)
-    {
-        if (targetGroup == null) return;
-        if (currentFadeRoutine != null) StopCoroutine(currentFadeRoutine);
-        currentFadeRoutine = StartCoroutine(FadeRoutine(targetGroup, targetAlpha));
+        if (deathCanvasGroup && deathCanvasGroup.alpha > 0) StartCoroutine(FadeRoutine(deathCanvasGroup, 0f));
+        if (finalVictoryCanvasGroup && finalVictoryCanvasGroup.alpha > 0) StartCoroutine(FadeRoutine(finalVictoryCanvasGroup, 0f));
     }
 
     private IEnumerator FadeRoutine(CanvasGroup cg, float endAlpha)
     {
+        if (cg == null) yield break;
+
         float startAlpha = cg.alpha;
         float elapsed = 0f;
         
-        if (endAlpha > 0) cg.blocksRaycasts = true; // Block clicks when fading in
+        if (endAlpha > 0) cg.blocksRaycasts = true;
 
         while (elapsed < fadeDuration)
         {
@@ -80,8 +81,6 @@ public class TransitionScreenUI : MonoBehaviour
         }
 
         cg.alpha = endAlpha;
-        
-        if (endAlpha == 0) cg.blocksRaycasts = false; // Allow clicks when hidden
-        currentFadeRoutine = null;
+        if (endAlpha == 0) cg.blocksRaycasts = false;
     }
 }
