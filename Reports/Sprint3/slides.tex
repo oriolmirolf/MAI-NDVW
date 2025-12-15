@@ -101,7 +101,7 @@
 
     \begin{block}{Three CA Applications}
         \begin{itemize}
-            \item \textbf{Lakes:} Natural water bodies with smooth borders (high survival threshold $\rightarrow$ larger bodies)
+            \item \textbf{Lakes:} Natural water bodies with higher survival thresholds 
             \item \textbf{Paths:} Portal-seeded CA where paths emerge from room entrances
             \item \textbf{Decorations:} Clustered small bushes for visual variety
         \end{itemize}
@@ -113,31 +113,17 @@
 \end{frame}
 
 \begin{frame}{CA Algorithm: Core Idea}
-    \begin{columns}
-    \begin{column}{0.55\textwidth}
-        \textbf{How it works:}
-        \begin{enumerate}
-            \item Randomly seed cells with initial density
-            \item For each iteration:
-            \begin{itemize}
-                \item Count neighbors (Moore neighborhood: 8 cells)
-                \item Cells with $\geq$ surviveMin neighbors stay alive
-                \item Dead cells with $\geq$ birthMin neighbors become alive
-            \end{itemize}
-            \item Remove orphan tiles (cleanup)
-        \end{enumerate}
-
-        \vspace{0.5cm}
-        \textbf{Result:} Isolated cells die off, clusters stabilize into organic blob-like shapes.
-    \end{column}
-    \begin{column}{0.45\textwidth}
-        % TODO: Add CA visualization/diagram
-        \begin{figure}
-            \fbox{\parbox{0.9\linewidth}{\centering \vspace{2cm} [CA iterations visualization] \vspace{2cm}}}
-            \caption*{\small Placeholder: CA evolution over iterations}
-        \end{figure}
-    \end{column}
-    \end{columns}
+    \textbf{How it works:}
+    \begin{enumerate}
+        \item Randomly seed cells with initial density
+        \item For each iteration:
+        \begin{itemize}
+            \item Count neighbors (Moore neighborhood: 8 cells)
+            \item Cells with $\geq$ surviveMin neighbors stay alive
+            \item Dead cells with $\geq$ birthMin neighbors become alive
+        \end{itemize}
+        \item Remove orphan tiles (cleanup)
+    \end{enumerate}
 \end{frame}
 
 \begin{frame}{Chapter Theme System}
@@ -152,22 +138,22 @@
 
     \begin{columns}
     \begin{column}{0.33\textwidth}
-        \begin{figure}
-            \includegraphics[width=\linewidth]{figures/ca_screenshots/forest_theme.png}
-            \caption*{\small Forest (Chapter 1)}
-        \end{figure}
+        \centering
+        \includegraphics[width=\linewidth,height=4cm,keepaspectratio]{figures/ca_screenshots/forest_theme.png}
+
+        {\small Forest (Chapter 1)}
     \end{column}
     \begin{column}{0.33\textwidth}
-        \begin{figure}
-            \includegraphics[width=\linewidth]{figures/ca_screenshots/night_theme.png}
-            \caption*{\small Night (Chapter 2)}
-        \end{figure}
+        \centering
+        \includegraphics[width=\linewidth,height=4cm,keepaspectratio]{figures/ca_screenshots/night_theme.png}
+
+        {\small Night (Chapter 2)}
     \end{column}
     \begin{column}{0.33\textwidth}
-        \begin{figure}
-            \includegraphics[width=\linewidth]{figures/ca_screenshots/hell_theme.png}
-            \caption*{\small Hell (Chapter 3)}
-        \end{figure}
+        \centering
+        \includegraphics[width=\linewidth,height=4cm,keepaspectratio]{figures/ca_screenshots/hell_theme.png}
+
+        {\small Hell (Chapter 3)}
     \end{column}
     \end{columns}
 \end{frame}
@@ -175,25 +161,22 @@
 \begin{frame}{CA Applications: Examples}
     \begin{columns}
     \begin{column}{0.5\textwidth}
+        \centering
         \textbf{Lakes with Borders}
-        \begin{figure}
-            \includegraphics[width=\linewidth]{figures/ca_screenshots/lake_example.png}
-            \caption*{\small density=0.4, surviveMin=5, birthMin=4}
-        \end{figure}
+
+        \includegraphics[width=\linewidth,height=5cm,keepaspectratio]{figures/ca_screenshots/lake_example.png}
+
+        {Higher survival threshold}
     \end{column}
     \begin{column}{0.5\textwidth}
+        \centering
         \textbf{Portal-Seeded Paths}
-        \begin{figure}
-            \includegraphics[width=\linewidth]{figures/ca_screenshots/paths_example.png}
-            \caption*{\small High density near portals, low elsewhere}
-        \end{figure}
+
+        \includegraphics[width=\linewidth,height=5cm,keepaspectratio]{figures/ca_screenshots/paths_example.png}
+
+        {\small High density near portals}
     \end{column}
     \end{columns}
-
-    \vspace{0.5cm}
-    \begin{center}
-        RuleTile system automatically generates appropriate borders based on neighboring tiles.
-    \end{center}
 \end{frame}
 
 \subsection{Generative AI}
@@ -328,7 +311,7 @@
         \begin{itemize}
             \item Core game mechanics established based on the tutorial.
             \item FSM-based AI for basic enemies is functional.
-            \item Procedural dungeon generator (BSP) is implemented.
+            \item Procedural dungeon generator (BSP) and room population (CA) are implemented.
             \item The three-stage GenAI pipeline (Vision, Narrative, Music) is designed and components have been tested individually.
             \item The RL training successfully achieves human-like behavior for dynamic boss encounters.
         \end{itemize}

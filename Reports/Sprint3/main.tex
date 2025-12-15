@@ -459,7 +459,7 @@ Future work would focus on tighter integration between these distinct systems, s
 The following is a breakdown of the main contributions made by each team member throughout the project:
 \begin{itemize}
   \item \textbf{Oriol Miró}: Procedural dungeon generation (BSP implementation)
-  \item \textbf{Dániel Mácsai}: Procedural room population, chapter theming (CA implementation)
+  \item \textbf{Dániel Mácsai}: Procedural room population (CA implementation), chapter theming 
   \item \textbf{Jean Dié}: Initial project setup, open-world prototype with basic procedural generation, and generative AI pipeline (narrative, music, and voice synthesis)
   \item \textbf{Bruno Sánchez}: Boss agents (Reinforcement Learning design and training)
 \end{itemize}
@@ -516,6 +516,52 @@ Algorithm GenerateWithSeedAndPlacePlayer(seed):
 
   PlacePlayer(StartRoom(rooms))
   PlaceBoss(BossRoom(rooms))                // boss room stored for portal spawn
+\end{lstlisting}
+
+\section{Cellular Automata Pseudocode}
+\label{app:ca_pseudocode}
+
+This appendix provides the complete pseudocode for the Cellular Automata algorithm used for room population (lakes, paths, and decorations).
+
+\begin{lstlisting}[basicstyle=\ttfamily\small, frame=single]
+function GenerateCA(width, height, density, iterations,
+                    surviveMin, birthMin):
+    // Step 1: Initialize grid with random seeds
+    grid = CreateGrid(width, height)
+    for x in 0 to width-1:
+        for y in 0 to height-1:
+            grid[x, y] = (RandomFloat() < density)
+
+    // Step 2: Apply CA rules for specified iterations
+    for i in 0 to iterations-1:
+        newGrid = CreateGrid(width, height)
+        for x in 0 to width-1:
+            for y in 0 to height-1:
+                neighbors = CountNeighbors(grid, x, y)
+                if grid[x, y] == true:
+                    // Cell is alive: survive if enough neighbors
+                    newGrid[x, y] = (neighbors >= surviveMin)
+                else:
+                    // Cell is dead: be born if enough neighbors
+                    newGrid[x, y] = (neighbors >= birthMin)
+        grid = newGrid
+
+    // Step 3: Clean up orphan tiles (tiles with too few neighbors)
+    grid = RemoveOrphans(grid, minNeighbors=3, maxCleanupIterations=2)
+
+    return grid
+
+function CountNeighbors(grid, x, y):
+    // Moore neighborhood: count alive cells in 8 surrounding cells
+    count = 0
+    for dx in -1 to 1:
+        for dy in -1 to 1:
+            if (dx == 0 and dy == 0): continue
+            nx = x + dx
+            ny = y + dy
+            if IsInBounds(nx, ny) and grid[nx, ny] == true:
+                count = count + 1
+    return count
 \end{lstlisting}
 
 \section{Generative AI Pipeline Details}

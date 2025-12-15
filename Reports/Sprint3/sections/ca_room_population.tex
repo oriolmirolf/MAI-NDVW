@@ -32,20 +32,20 @@ By changing the theme, the entire visual atmosphere of the dungeon transforms wh
     \centering
     \begin{minipage}[t]{0.32\linewidth}
         \centering
-        \includegraphics[width=\linewidth]{figures/ca_screenshots/forest_theme.png}
-        \caption*{Forest Theme}
+        \includegraphics[width=\linewidth,height=4cm,keepaspectratio]{figures/ca_screenshots/forest_theme.png}
+        \caption{Forest Theme}
     \end{minipage}
     \hfill
     \begin{minipage}[t]{0.32\linewidth}
         \centering
-        \includegraphics[width=\linewidth]{figures/ca_screenshots/night_theme.png}
-        \caption*{Night Theme}
+        \includegraphics[width=\linewidth,height=4cm,keepaspectratio]{figures/ca_screenshots/night_theme.png}
+        \caption{Night Theme}
     \end{minipage}
     \hfill
     \begin{minipage}[t]{0.32\linewidth}
         \centering
-        \includegraphics[width=\linewidth]{figures/ca_screenshots/hell_theme.png}
-        \caption*{Hell Theme}
+        \includegraphics[width=\linewidth,height=4cm,keepaspectratio]{figures/ca_screenshots/hell_theme.png}
+        \caption{Hell Theme}
     \end{minipage}
     \caption{The three chapter themes. Same CA algorithms, different visual assets and atmosphere.}
     \label{fig:chapter_themes}
@@ -53,48 +53,7 @@ By changing the theme, the entire visual atmosphere of the dungeon transforms wh
 
 \paragraph{Cellular Automata Algorithm}
 
-In the core CA algorithm we followed a standard approach: each cell in a 2D grid evolves over multiple iterations based on the state of its neighbors. The algorithm takes as input the room's dimensions, an initial density parameter, and CA rules (survival and birth thresholds).
-
-\begin{lstlisting}[basicstyle=\ttfamily\small, frame=single, caption={Pseudocode for Cellular Automata generation}, captionpos=b]
-function GenerateCA(width, height, density, iterations,
-                    surviveMin, birthMin):
-    // Step 1: Initialize grid with random seeds
-    grid = CreateGrid(width, height)
-    for x in 0 to width-1:
-        for y in 0 to height-1:
-            grid[x, y] = (RandomFloat() < density)
-
-    // Step 2: Apply CA rules for specified iterations
-    for i in 0 to iterations-1:
-        newGrid = CreateGrid(width, height)
-        for x in 0 to width-1:
-            for y in 0 to height-1:
-                neighbors = CountNeighbors(grid, x, y)
-                if grid[x, y] == true:
-                    // Cell is alive: survive if enough neighbors
-                    newGrid[x, y] = (neighbors >= surviveMin)
-                else:
-                    // Cell is dead: be born if enough neighbors
-                    newGrid[x, y] = (neighbors >= birthMin)
-        grid = newGrid
-
-    // Step 3: Clean up orphan tiles (tiles with too few neighbors)
-    grid = RemoveOrphans(grid, minNeighbors=3, maxCleanupIterations=2)
-
-    return grid
-
-function CountNeighbors(grid, x, y):
-    // Moore neighborhood: count alive cells in 8 surrounding cells
-    count = 0
-    for dx in -1 to 1:
-        for dy in -1 to 1:
-            if (dx == 0 and dy == 0): continue
-            nx = x + dx
-            ny = y + dy
-            if IsInBounds(nx, ny) and grid[nx, ny] == true:
-                count = count + 1
-    return count
-\end{lstlisting}
+In the core CA algorithm we followed a standard approach: each cell in a 2D grid evolves over multiple iterations based on the state of its neighbors. The algorithm takes as input the room's dimensions, an initial density parameter, and CA rules (survival and birth thresholds). See ~\ref{app:ca_pseudocode} for the complete pseudocode.
 
 The algorithm uses a \textbf{Moore neighborhood} (the 8 cells surrounding each cell) to count neighbors. Cells with at least \texttt{surviveMin} neighbors remain alive, and dead cells with at least \texttt{birthMin} neighbors become alive. This produces natural clustering: isolated cells die off, while groups of cells stabilize into blob-like shapes.
 
@@ -110,7 +69,7 @@ Water cells are marked as occupied so that enemies and obstacles don't spawn in 
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\linewidth]{figures/ca_screenshots/lake_example.png}
+    \includegraphics[width=0.35\linewidth]{figures/ca_screenshots/lake_example.png}
     \caption{Example of CA-generated lake with automatic RuleTile borders. The high survival threshold creates cohesive water bodies.}
     \label{fig:ca_lake}
 \end{figure}
@@ -125,7 +84,7 @@ Paths use the chapter's \texttt{pathRuleTile}, which renders dirt paths with gra
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\linewidth]{figures/ca_screenshots/paths_example.png}
+    \includegraphics[width=0.35\linewidth]{figures/ca_screenshots/paths_example.png}
     \caption{Portal-seeded paths emerging from room entrances. High density near portals creates natural-looking navigation guides.}
     \label{fig:ca_paths}
 \end{figure}
