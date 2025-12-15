@@ -1507,7 +1507,7 @@ MonoBehaviour:
   surroundWithWalls: 1
   mapWidth: 140
   mapHeight: 140
-  roomCount: 9
+  roomCount: 2
   extraConnections: 2
   minLeafSize: 36
   minRoomSize: 25
