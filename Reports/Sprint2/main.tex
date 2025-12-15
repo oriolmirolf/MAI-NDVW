@@ -156,7 +156,7 @@ The main challenge will be to make all this generated content consistent, which 
 Moreover, we would like the story itself to explain \emph{why} so many things change across runs.
 There will be three parts to the story, each with a boss at the end. 
 Defeating each boss will also serve as a checkpoint, and the generated story and dungeon will be frozen on that point. 
-See Figure~\ref{fig:game_flow} for a schematic representation of this.
+See Figure~\ref{fig:game_flow} for a schematic representation of this structure.
 
 \begin{figure}[H]
     \centering
@@ -164,6 +164,21 @@ See Figure~\ref{fig:game_flow} for a schematic representation of this.
     \caption{The player's journey through three procedurally generated dungeon sections, each culminating in a boss fight that serves as a checkpoint. Death sends the player back to their last checkpoint, where both the dungeon and narrative regenerate.}
     \label{fig:game_flow}
 \end{figure}
+
+\paragraph{Where is the AI in this game?} 
+Of course, the aim of this course is not to build games, but to explore the use of AI techniques in virtual worlds.
+The main AI components of our game are:
+\begin{itemize}
+    \item \textbf{Procedural Content Generation (PCG):} We will implement a BSP-based dungeon generator to create unique layouts for each run. 
+      This will involve algorithmic generation of rooms, corridors, and enemy placements.
+      We will also explore cellular automata techniques for room interior design.
+    \item \textbf{Generative AI for Narrative and Music:} 
+      We will use vision-language models to analyze room screenshots and generate contextually relevant narrative elements (NPCs, quests, lore) using large language models (LLMs). 
+      Additionally, we will employ generative music models to create adaptive soundtracks that reflect the mood of each room.
+    \item \textbf{Reinforcement Learning (RL) for Boss Behavior:} 
+      The three main bosses will be controlled by RL agents trained through self-play. 
+      These agents will learn to adapt their strategies based on player actions, resulting in challenging encounters.
+\end{itemize}
 
 \subsection{Tutorial we start from}\label{sec:tutorial}
 
