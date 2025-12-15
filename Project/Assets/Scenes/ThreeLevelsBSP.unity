@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.12731749, g: 0.13414757, b: 0.1210787, a: 1}
+  m_IndirectSpecularColor: {r: 0.12731704, g: 0.13414727, b: 0.121078536, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -568,7 +568,7 @@ TilemapRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: -10
+  m_SortingOrder: -9
   m_ChunkSize: {x: 32, y: 32, z: 32}
   m_ChunkCullingBounds: {x: 0, y: 0, z: 0}
   m_MaxChunkCount: 16
@@ -1507,7 +1507,7 @@ MonoBehaviour:
   surroundWithWalls: 1
   mapWidth: 140
   mapHeight: 140
-  roomCount: 2
+  roomCount: 8
   extraConnections: 2
   minLeafSize: 36
   minRoomSize: 25
@@ -1558,7 +1558,7 @@ MonoBehaviour:
   currentTheme: {fileID: 11400000, guid: e3cfdd19c975ffd4d8aac0e9cf98a656, type: 2}
   combatRoomPopulator:
     minEnemies: 12
-    maxEnemies: 18
+    maxEnemies: 16
     minObstacles: 2
     maxObstacles: 6
     obstaclePlacementMargin: 2
