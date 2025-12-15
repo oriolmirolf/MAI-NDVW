@@ -5,14 +5,15 @@
 
 The generative AI pipeline creates dynamic narrative, music, and voice content for each chapter of the game. Rather than hand-crafting dialogue and audio assets, we leverage three specialized AI models to automatically generate coherent, chapter-themed content that enhances immersion while keeping development effort manageable.
 
-Figure~\ref{fig:genai_pipeline_overview} illustrates the complete pipeline architecture. The system operates in two distinct phases: a \textbf{pre-generation phase} (shown in orange) where Python scripts orchestrate AI models to produce all assets offline, and a \textbf{runtime phase} (shown in pink) where Unity loads and plays the pre-generated content. This separation eliminates runtime latency entirely---players experience instant content delivery while the computationally expensive generation happens once during development.
 
 \begin{figure}[H]
-\centering
-\includegraphics[width=0.65\textwidth]{figures/genai_pipeline_diagram.png}
-\caption{Generative AI pipeline architecture. Configuration (blue) defines chapter themes and prompts. The pre-generation phase (orange) runs three AI models: narrative generation feeds into voice synthesis, while music generation runs in parallel. Outputs are stored in StreamingAssets (green) and loaded at runtime by Unity (pink).}
-\label{fig:genai_pipeline_overview}
+    \centering
+    \includegraphics[width=0.65\textwidth]{figures/genai_pipeline_diagram.png}
+    \caption{Generative AI pipeline architecture. Configuration (blue) defines chapter themes and prompts. The pre-generation phase (orange) runs three AI models: narrative generation feeds into voice synthesis, while music generation runs in parallel. Outputs are stored in StreamingAssets (green) and loaded at runtime by Unity (pink).}
+    \label{fig:genai_pipeline_overview}
 \end{figure}
+
+Figure~\ref{fig:genai_pipeline_overview} illustrates the complete pipeline architecture. The system operates in two distinct phases: a \textbf{pre-generation phase} (shown in orange) where Python scripts orchestrate AI models to produce all assets offline, and a \textbf{runtime phase} (shown in pink) where Unity loads and plays the pre-generated content. This separation eliminates runtime latency entirely---players experience instant content delivery while the computationally expensive generation happens once during development.
 
 The pipeline processes content at the \textbf{chapter level} rather than per-room, aligning with the game's three-act structure. For each chapter, the system generates: (1) three narrator dialogue lines via an LLM, (2) a 30-second ambient music track via a text-to-music model, and (3) voice clips for each dialogue line via text-to-speech.
 

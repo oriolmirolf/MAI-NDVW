@@ -433,7 +433,21 @@ Finally, we place walls by inspecting neighbours around floor cells, fill a bord
 \input{sections/rl_proposal.tex}
 
 \section{Conclusion}
-Conclusion here.
+In this project, we aimed to build a 2D RPG where as much as possible is \emph{non-scripted} across runs. 
+To that end, we combined three AI-driven components that replace hand-authored content at different levels: procedural generation for level structure and gameplay spaces (PCG), generative models for audio and narrative content (GenAI), and reinforcement learning for boss behaviour (RL). 
+The key design requirement was not just variety, but \emph{playable} variety: regeneration must preserve navigation readability and prevent content clashes.
+
+Our main system-level contribution is a chapter-based run structure with boss-gated checkpoints. Chapters act as the unit of persistence: after a boss is defeated, everything the player has cleared so far (layout, encounters, and generated content for that chapter) remains fixed for the rest of the run, while failures only trigger regeneration of the current, unfinished chapter. This preserves a sense of forward progress and stable pacing, while still delivering high replayability through controlled, localized randomness.
+
+On the PCG side, we generate chapter layouts and then populate rooms with a theme-conditioned pipeline. 
+Cellular automata is used to create organic clustering for features such as lakes, paths, and decorations, avoiding the artificial look of uniform random placement, while larger obstacles are placed with collision-aware sampling to preserve traversability. 
+
+On the GenAI side, we use generative models to replace manually authored narrative and audio while keeping outputs consistent with the current chapter theme. Rather than generating content per room (which is brittle under frequent regeneration), we generate chapter-scoped narrator lines, ambient music, and voice that remain stable within a chapter instance and therefore do not contradict what the player is seeing. This design makes the generated content feel intentional instead of noisy, and it avoids runtime latency or mid-run tone shifts that would hurt playability.
+
+Finally, the Reinforcement Learning component demonstrated that boss agents can learn complex combat behaviors without explicit scripting. Our experiments showed that a two-phase training strategy (pre-training against a heuristic opponent followed by self-play refinement) was superior to pure self-play. This methodology prevented the agents from converging on passive strategies and produced bosses that actively pursue the player and utilize their full movement and attack capabilities.
+
+Future work would focus on tighter integration between these distinct systems, such as allowing the RL agents' difficulty to influence the GenAI narrative, or using the PCG layout to constrain agent training environments dynamically. Nevertheless, this project successfully demonstrates that modern AI techniques can be orchestrated to build a game loop that is both structurally sound and creatively varied.
+
 
 \bibliographystyle{model1-num-names}
 \bibliography{references}
