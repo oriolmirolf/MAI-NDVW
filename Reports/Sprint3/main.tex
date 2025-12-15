@@ -180,28 +180,30 @@ On top of that baseline, our project contributions are the AI-driven systems:
       Bosses are controlled by policies trained in a simplified combat environment, then deployed in-game to produce reactive, non-scripted encounters.
 \end{itemize}
 
-\paragraph{Contributions.}
+\paragraph{Contributions}
 A detailed task allocation (who implemented what) is provided in Appendix~\ref{app:contrib}.
 
 \subsection{Scenario}
 \label{sec:scenario}
 
-We now present the story of our game.
-We tried to create a story that is coherent and consistent with the game mechanics.
+We now present the story of our game. The goal is to keep the lore tightly aligned with the mechanics: death regenerates content, and boss victories make what happened so far persistent.
 
-Sir Cael is trapped in a magic book that rewrites the dungeon every time he dies.
-The dungeon has three chapters, each ending with a boss.
+Sir Cael is trapped inside a magic book that rewrites the dungeon every time he dies. 
+The dungeon is split into three chapters, each one ending in a boss fight. 
+When Cael dies, the book rewrites only the chapter he is currently in: rooms and encounters are rearranged into a new version of the same chapter, which explains the procedural regeneration across runs.
 
-If Cael beats boss 1 or boss 2, that chapter becomes fixed and will not change anymore.
-If Cael dies later, only the current chapter is regenerated.
+Defeating the bosses of Chapter 1 and Chapter 2 \emph{seals} those chapters. 
+Once sealed, their layouts and narrative elements stop changing. 
+If Cael dies later, the sealed chapters remain intact and only the current, unsealed chapter regenerates -- this justifies the checkpoint logic
 
-In the last chapter, Cael fights the Chronicler, the one causing the loop.
-If Cael wins, the rewriting stops and the story ends.
+In the final chapter, Cael confronts the Chronicler, the force behind the loop. If he wins, the rewriting stops and the story ends.
 
 \subsubsection{Spoilers!}
-Cael is the Chronicler. He created the book long ago to rewrite history until it was ``perfect'', and got stuck in his own loop.
-Boss 1 and boss 2 are obstacles created by his fear and denial.
-The final boss is Cael confronting the part of himself that refuses to stop rewriting.
+Cael is the Chronicler. 
+Long ago, he created the Chronicle to rewrite history until it was ``perfect'', but he ended up trapped in his own loop.
+ Boss 1 and boss 2 are manifestations of what keeps him stuck (fear and denial), and sealing the first two chapters represents accepting those parts instead of rewriting them. 
+ The final boss is Cael facing the part of himself that refuses to stop revising the story.
+
 
 \subsection{Tutorial we start from}\label{sec:tutorial}
 
@@ -386,7 +388,7 @@ This step yields a BSP tree of rectangular leaves that partition the dungeon spa
 For each terminal leaf, we optionally instantiate a room whose size and position are sampled inside the leaf:
 
 \begin{itemize}
-  \item We first compute candidate maximum room sizes
+  \item We first compute candidate maximum room sizes 
   \texttt{maxW} and \texttt{maxH} as
   \texttt{bounds.width - 2} and \texttt{bounds.height - 2}, and clamp them into the interval
   $[\texttt{minRoomSize},\,\texttt{maxRoomSize}]$ using \texttt{Mathf.Clamp}. If after clamping either
@@ -439,7 +441,8 @@ Conclusion here.
 \newpage
 \appendix
 \section{Tasks Allocation}
-
+\label{app:contrib}
+The following is a breakdown of the main contributions made by each team member throughout the project:
 \begin{itemize}
   \item \textbf{Oriol Miró}: Procedural dungeon generation (BSP implementation)
   \item \textbf{Dániel Mácsai}: Procedural room population, chapter theming (CA implementation)
