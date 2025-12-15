@@ -7,6 +7,8 @@
 % Package inclusion
 \usepackage{graphicx}
 \usepackage{tikz}
+\usepackage{attachfile2}
+\usepackage{hyperref}
 \usetikzlibrary{shapes,arrows,positioning}
 
 % Title page information
@@ -94,38 +96,66 @@
 
 \subsection{Generative AI}
 
-\begin{frame}[fragile]{Generative AI Pipeline Architecture}
-    \begin{columns}
-    \begin{column}{0.6\textwidth}
+\begin{frame}{Generative AI -- Pre-Generation Phase}
     \begin{figure}
-        \includegraphics[width=\linewidth]{figures/genai_pipeline.png}
+        \centering
+        \includegraphics[width=0.95\linewidth]{figures/genai_pregen.png}
     \end{figure}
-    \end{column}
-    \begin{column}{0.4\textwidth}
+    \vspace{0.2cm}
+    \small
+    \textbf{Models:} mistral-nemo (narrative), MusicGen Small (music), XTTS v2 (voice cloning)
+\end{frame}
+
+\begin{frame}{Generative AI -- Runtime Phase (Unity)}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.95\linewidth]{figures/genai_runtime.png}
+    \end{figure}
+    \vspace{0.2cm}
+    \small
+    Pre-generated content loaded at runtime -- \textbf{zero latency} for players
+\end{frame}
+
+\begin{frame}{Generated Content Samples}
+    \begin{block}{Voice Cloning with XTTS v2}
+        \textbf{Reference sample (15s):} \href{https://www.youtube.com/watch?v=ErrcHBlxOBs}{\textcolor{blue}{\underline{BBC Documentary Narration}}} \\[0.2cm]
+        \textbf{Generated voice:} \textattachfile[color=0 0 1, icon=Speaker]{audio/chapter0_voice.wav}{\textcolor{blue}{Play Audio}}
+    \end{block}
+
+    \begin{block}{Generated Narrator Dialogue}
+        \small\textit{``In the heart of the Verdant Prison, where whispers of ancient sorcery linger in the moss-kissed air...''}
+    \end{block}
+
+    \begin{block}{Music Generation (MusicGen Small)}
+        \textbf{Chapter 0 -- Forest theme:} calm fantasy ambient, flute and strings, 90 bpm \\[0.2cm]
+        \textattachfile[color=0 0 1, icon=Speaker]{audio/chapter0_music.wav}{\textcolor{blue}{Play Audio}}
+    \end{block}
+\end{frame}
+
+\begin{frame}{GenAI: Future Perspectives}
+    \begin{block}{Proof of Concept}
+        This pipeline demonstrates how generative AI can create game content that would traditionally require manual creation.
+    \end{block}
+
+    \begin{columns}[t]
+    \begin{column}{0.5\textwidth}
+    \textbf{Near-term: Asset Generation}
     \begin{itemize}
-        \item A \textbf{Python FastAPI backend} handles all AI inference (vision, language, music).
-        \item The \textbf{Unity game client} communicates with the backend via HTTP requests.
-        \item A two-layer cache (server-side and client-side) is used to reduce latency.
+        \item Indie developers generating voice/music
+        \item Reduces production costs
+        \item Democratizes game development
+    \end{itemize}
+    \end{column}
+
+    \begin{column}{0.5\textwidth}
+    \textbf{Long-term: AI-Native Engine}
+    \begin{itemize}
+        \item Game engine built around GenAI
+        \item Fully customizable experiences
+        \item Agent-based NPCs with emergent behavior
     \end{itemize}
     \end{column}
     \end{columns}
-\end{frame}
-
-\begin{frame}{Generative AI Pipeline: The 3 Steps}
-    \begin{block}{1. Vision-Based Room Analysis}
-        \textbf{Model:} \texttt{moondream2} \\
-        Takes a screenshot of the generated room and outputs a JSON describing its environment, atmosphere, and key features. This text seeds the next two steps.
-    \end{block}
-    
-    \begin{block}{2. Narrative Generation}
-        \textbf{Model:} \texttt{llama2} \\
-        Uses the vision analysis to generate context-aware story elements: NPC names, dialogue, quest objectives, and lore entries, all formatted in JSON.
-    \end{block}
-
-    \begin{block}{3. Music Generation}
-        \textbf{Model:} \texttt{MusicGen Medium} \\
-        Generates loopable, ambient background music based on simple keywords (e.g., "mysterious", "tense boss fight") derived from the vision analysis.
-    \end{block}
 \end{frame}
 
 \subsection{Reinforcement Learning}
