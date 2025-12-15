@@ -181,6 +181,15 @@ On top of that baseline, our project contributions are the AI-driven systems:
       Bosses are controlled by policies trained in a simplified combat environment, then deployed in-game to produce reactive, non-scripted encounters.
 \end{itemize}
 
+Figure~\ref{fig:software_architecture} shows the overall software architecture of our system, illustrating how these AI-driven components interact with the Unity game engine and with each other.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/SoftwareArchitectureDiagram.png}
+    \caption{Software architecture diagram showing the integration of PCG, GenAI, and RL components within the Unity game engine. The DungeonRunManager orchestrates chapter progression, while the BSP generator and CA-based room populator create the dungeon structure. The GenAI pipeline generates narrative and music content, and RL-trained agents control boss behaviors.}
+    \label{fig:software_architecture}
+\end{figure}
+
 \paragraph{Contributions}
 A detailed task allocation (who implemented what) is provided in Appendix~\ref{app:contrib}.
 
