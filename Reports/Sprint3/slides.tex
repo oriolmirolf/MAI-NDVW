@@ -10,11 +10,11 @@
 \usetikzlibrary{shapes,arrows,positioning}
 
 % Title page information
-\title[Sprint 2]{Sprint 2: Project Progress}
+\title[Sprint 3]{Sprint 3: Final Report}
 \subtitle{Procedurally Generated 2D RPG with AI-Driven Narrative}
 \author[Oriol, Jean, Bruno, Dániel]{Oriol Miró \and Jean Dié \and Bruno Sánchez \and Dániel Mácsai}
 \institute[NDVW]{Master in Artificial Intelligence \\ Normative and Dynamic Virtual Worlds}
-\date{November 18, 2025}
+\date{December 16, 2025}
 
 \begin{document}
 
@@ -64,92 +64,10 @@
     \end{block}
 \end{frame}
 
-% --- GAME AGENTS SECTION ---
-\section{Game Agents}
-
-\begin{frame}{Player Agent}
-    \begin{columns}
-        \begin{column}{0.5\textwidth}
-            \textbf{Movement \& Abilities}
-            \begin{itemize}
-                \item WASD for movement, mouse for 360° aiming.
-                \item A dash ability for invulnerability, consuming a regenerating stamina bar.
-            \end{itemize}
-            
-            \vspace{1cm}
-            
-            \textbf{Health \& Resources}
-            \begin{itemize}
-                \item Health replenished by collecting hearts.
-                \item Enemies drop coins (for a potential future shop system).
-            \end{itemize}
-        \end{column}
-        \begin{column}{0.5\textwidth}
-            \textbf{Weapons}
-            \begin{itemize}
-                \item \textbf{Sword:} Melee sweep attack.
-                \item \textbf{Bow:} Long-range single-target arrow.
-                \item \textbf{Magic Staff:} Medium-range piercing beam.
-            \end{itemize}
-            \begin{center}
-            \includegraphics[width=\linewidth]{figures/example_from_tutorial.png}
-            \end{center}
-        \end{column}
-    \end{columns}
-\end{frame}
-
-\begin{frame}{Basic Monster Agents}
-    \begin{columns}
-        \begin{column}{0.5\textwidth}
-            \textbf{Behavior: Finite State Machine}
-            \begin{itemize}
-                \item \textbf{Roaming State:} Moves to random points.
-                \item \textbf{Attacking State:} Engages the player when they enter a defined range.
-            \end{itemize}
-            \begin{figure}
-                \includegraphics[width=\linewidth]{figures/EnemyAI FSM.png}
-            \end{figure}
-        \end{column}
-        \begin{column}{0.5\textwidth}
-            \textbf{Enemy Types}
-            \begin{itemize}
-                \item \textbf{Slimes:} Simple melee enemies that deal damage on contact.
-                \item \textbf{Ghosts:} Ranged shooters that fire projectiles in various patterns.
-            \end{itemize}
-            \begin{figure}
-                \includegraphics[height=1.5cm]{figures/Slime_Sheet.png}
-                \includegraphics[height=1.5cm]{figures/Ghost.png}
-            \end{figure}
-        \end{column}
-    \end{columns}
-\end{frame}
-
-\begin{frame}{Boss Agents}
-    \begin{itemize}
-        \item Behaviors are controlled by agents trained via RL $\rightarrow$  dynamic, non-scripted encounters.
-        \item Bosses use the same abilities as the player but are controlled by a trained RL agent.
-        \item  Different training checkpoints of the same agent to create the three bosses.
-    \end{itemize}
-    \begin{figure}
-        \centering
-        \includegraphics[width=0.6\linewidth]{figures/rl_training_arena.png}
-    \end{figure}
-\end{frame}
-
-% --- NARRATIVE SECTION ---
-\section{Narrative}
-
-\begin{frame}{The Scenario: The Chronicle of Light}
-    \begin{itemize}
-        \item \textbf{Protagonist:} Sir Cael, a knight trapped within a living book, the \textit{Chronicle of Light}.
-        \item \textbf{The Curse:} Every time Sir Cael dies, the world (dungeon, characters, etc.) is rewritten by the Chronicler.
-        \item \textbf{The Goal:} To find and defeat the three anchors of the story: the Sentinel, the Herald, and the Chronicler himself.
-        \item \textbf{Narrative-Mechanic Link:} When a boss is defeated, its chapter is "fixed in ink." The dungeon layout and story for that section no longer change upon death, creating a permanent checkpoint.
-    \end{itemize}
-\end{frame}
-
 % --- TECHNICAL PROPOSAL SECTION ---
 \section{AI Systems \& Proposal}
+
+\subsection{Procedural Content Generation}
 
 \begin{frame}{Procedural Dungeon Generation}
     \begin{block}{Binary Space Partitioning (BSP) Algorithm}
@@ -173,6 +91,8 @@
     \end{column}
     \end{columns}
 \end{frame}
+
+\subsection{Generative AI}
 
 \begin{frame}[fragile]{Generative AI Pipeline Architecture}
     \begin{columns}
@@ -208,41 +128,77 @@
     \end{block}
 \end{frame}
 
+\subsection{Reinforcement Learning}
 
-\begin{frame}{Reinforcement Learning for Bosses}
-    \begin{block}{Training Setup (Unity ML-Agents)}
-        \begin{itemize}
-            \item \textbf{Algorithm:} Proximal Policy Optimization (PPO).
-            \item \textbf{Environment:} A custom "Arena" for self-play, where the agent learns by fighting a copy of itself.
-            \item \textbf{Observation Space:} Agent/opponent position and health.
-            \item \textbf{Action Space:} Movement, dashing, and choice of three weapon attacks.
-            \item \textbf{Reward Function:} Rewards hitting the opponent and winning; penalizes taking damage, losing, and taking too long.
+\begin{frame}{Boss Agents (Reinforcement Learning)}
+    \begin{columns}[t]
+    \begin{column}{0.33\textwidth}
+        \textbf{Observations (18)}
+        \begin{itemize}\small
+            \item Position \& velocity
+            \item Health \& stamina
+            \item Weapon info
+            \item Cooldowns
+            \item Aim angles
         \end{itemize}
-    \end{block}
-    \begin{alertblock}{Goal}
-        To create bosses that can react to the player's actions and develop complex, human-like strategies without being explicitly scripted.
-    \end{alertblock}
+    \end{column}
+    
+    \begin{column}{0.33\textwidth}
+        \textbf{Actions (3+1)}
+        \begin{itemize}\small
+            \item Movement (5)
+            \item Attack (2)
+            \item Dash (2)
+            \item Aim (continuous)
+        \end{itemize}
+    \end{column}
+    
+    \begin{column}{0.33\textwidth}
+        \textbf{Rewards}
+        \begin{itemize}\small
+            \item Victory: +1.0
+            \item Defeat: -0.8
+            \item Hit: +0.5
+            \item Damage: -0.4
+            \item Proximity/time: $\pm$0.001
+        \end{itemize}
+    \end{column}
+    \end{columns}
+    
+    \vspace{0.2cm}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.5\linewidth]{figures/rl_training_arena.png}
+    \end{figure}
+\end{frame}
+
+
+\begin{frame}{RL Training Strategy}
+    \begin{figure}[h]
+        \centering
+        \includegraphics[width=0.65\linewidth]{figures/rl_pretraining_selfplay.png}
+        \caption{Cumulative reward during the two-phase training: pre-training against heuristic opponent followed by self-play refinement.}
+        \label{fig:rl_pretraining_selfplay}
+    \end{figure}
+    \begin{figure}[h]
+        \centering
+        \includegraphics[width=0.65\linewidth]{figures/rl_selfplay_comparison.png}
+        \caption{Comparison of self-play training performance: pure self-play (pink) versus self-play initialized from pre-trained policy (blue).}
+        \label{fig:rl_selfplay_comparison}
+    \end{figure}
 \end{frame}
 
 % --- CONCLUSION SECTION ---
-\section{Conclusion \& Next Steps}
+\section{Conclusion}
 
-\begin{frame}{Progress Summary \& Next Steps}
-    \begin{block}{Progress This Sprint}
+\begin{frame}{Conclusion}
+    \begin{block}{Contributions}
         \begin{itemize}
             \item Core game mechanics established based on the tutorial.
             \item FSM-based AI for basic enemies is functional.
             \item Procedural dungeon generator (BSP) is implemented.
             \item The three-stage GenAI pipeline (Vision, Narrative, Music) is designed and components have been tested individually.
-            \item The RL training environment for bosses is set up.
-        \end{itemize}
-    \end{block}
-    
-    \begin{block}{Goals for Sprint 3}
-        \begin{itemize}
-            \item Fully integrate the BSP generator with the Generative AI pipeline.
-            \item Train the boss agents and integrate them into the game.
-            \item Implement the chapter "freezing" and story-driven room population.
+            \item The RL training successfully achieves human-like behavior for dynamic boss encounters.
         \end{itemize}
     \end{block}
 \end{frame}
