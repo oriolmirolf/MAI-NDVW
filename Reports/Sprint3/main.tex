@@ -155,10 +155,10 @@
 
 The project involves developing a simple 2D top-down game in which a player navigates a procedurally generated dungeon filled with enemies, obstacles, and various NPCs. 
 Our goal is to generate almost every element of the game procedurally, from the layout of the dungeon, to the story -- within some bounds, of course --  and even the ambient music.
-The main challenge will be to make all this generated content consistent, which requires designing a generation pipeline.
-Moreover, we would like the story itself to explain \emph{why} so many things change across runs.
-There will be three parts to the story, each with a boss at the end. 
-Defeating each boss will also serve as a checkpoint, and the generated story and dungeon will be frozen on that point. 
+The main challenge is to make all this generated content consistent, which requires designing a generation pipeline.
+Moreover, we designed a story so that it is explained \emph{why} so many things change across runs.
+There is three parts to the story, each with a boss at the end. 
+Defeating each boss also serves as a checkpoint, and the generated story and dungeon are frozen up to that point. 
 See Figure~\ref{fig:game_flow} for a schematic representation of this.
 
 \begin{figure}[H]
@@ -223,12 +223,12 @@ Specifically, the tutorial includes:
   \item Some C\# fundamentals tied to game logic in Unity (moving from beginner to intermediate level)  
 \end{itemize}
 
-What the tutorial does \textbf{not} cover (and which our project will therefore extend) includes:
+What the tutorial does \textbf{not} cover (and which our project extends) includes:
 \begin{itemize}
-  \item Procedural content generation of dungeon layouts (we will implement a BSP‐based generator)  
+  \item Procedural content generation of dungeon layouts (BSP-based layout generator and CA-based room populator)  
   \item Narrative generation tied to player runs and persistent checkpointing of story chapters  
   \item Procedural ambient music generation and dynamic layering based on gameplay state  
-  \item Reinforcement learning-based boss behaviour trained through self-play  
+  \item Reinforcement learning-based boss behavior trained through self-play  
   \item The novel ``checkpoint/hall of fixed chapters'' mechanic, where defeating bosses 1 and 2 freezes that portion of the dungeon and story  
 \end{itemize}
 
@@ -270,7 +270,7 @@ Attacks are initiated with a left-click. The player has access to three distinct
 All successful attacks apply a knockback effect to enemies, providing a brief moment of crowd control and repositioning opportunity.
 
 \paragraph{Health and Resources}
-The player starts with 3 health points by default, represented by a health bar that decreases upon taking damage from enemy attacks. Health can be replenished by collecting hearts, which have a chance to drop from defeated enemies. Additionally, fallen enemies drop coins that can be collected. While not yet implemented, the plan is for these coins to be used as currency in a shop system, should time permit its development.
+The player starts with 3 health points by default, represented by a health bar that decreases upon taking damage from enemy attacks. Health can be replenished by collecting hearts, which have a chance to drop from defeated enemies. Additionally, fallen enemies drop coins that can be collected.
 
 \subsubsection{Basic Monsters Agents}
 
@@ -315,7 +315,7 @@ Unlike the player, boss agents only have access to the Sword weapon; however, to
     \label{fig:boss_agent}
 \end{figure}
 
-The technical specifics of the training process, reward functions, and agent architecture for these bosses are detailed further in Sections~\ref{sec:rl_proposal} and \ref{sec:rl_methodology_and_results}.
+The technical specifics of the training process, reward functions, and agent architecture for these bosses are detailed further in Section~\ref{sec:rl_proposal}.
 
 \section{Related Work}
 
@@ -334,15 +334,13 @@ In \emph{No Man's Sky}, audio director Paul Weir and the band 65daysofstatic cre
 A decade earlier, Brian Eno composed a fully procedural score for \emph{Spore}, making the game's music as generative as its evolving life forms~\cite{castellon2023generative}.
 
 \paragraph{Reinforcement learning agents}
-While many shipped games focus on hand-authored AI behaviours or simple difficulty scaling, there is a growing body of work exploring reinforcement learning (RL) agents trained for complex control tasks. AlphaStar, for example, used large-scale self-play to learn high-level strategies and unit micro-management in \emph{StarCraft II}, producing agents that could compete with professional players~\cite{vinyals2019alphastar}. Similarly, the Visual Doom AI Competitions challenged participants to train agents directly from raw pixels in \emph{Doom}, where the strongest entries relied on deep RL methods to achieve competitive performance~\cite{Wydmuch_2019}.
+While many shipped games focus on hand-authored AI behaviors or simple difficulty scaling, there is a growing body of work exploring reinforcement learning (RL) agents trained for complex control tasks. AlphaStar, for example, used large-scale self-play to learn high-level strategies and unit micro-management in \emph{StarCraft II}, producing agents that could compete with professional players~\cite{vinyals2019alphastar}. Similarly, the Visual Doom AI Competitions challenged participants to train agents directly from raw pixels in \emph{Doom}, where the strongest entries relied on deep RL methods to achieve competitive performance~\cite{Wydmuch_2019}.
 
 
 \section{Proposal}
 
 The design of our game relies on a combination of procedural content generation (PCG) and adaptive AI systems to ensure that every run feels unique yet narratively coherent. 
-The following subsections describe the main AI components that create the dungeon structure, generate narrative, generate adaptive music, and control enemy and boss behaviours.
-
-Time-permitting, we will also explore FSMs or other techniques for common enemies.
+The following subsections describe the main AI components that create the dungeon structure, generate narrative, generate adaptive music, and control enemy and boss behaviors.
 
 \subsection{Procedural Dungeon Generation}
 \label{subsec:procedural_dungeon}
