@@ -28,6 +28,29 @@ This architecture allows each chapter to have a distinct visual identity while r
 
 By changing the theme, the entire visual atmosphere of the dungeon transforms while maintaining consistent generation logic.
 
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[t]{0.32\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/ca_screenshots/forest_theme.png}
+        \caption*{Forest Theme}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.32\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/ca_screenshots/night_theme.png}
+        \caption*{Night Theme}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.32\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/ca_screenshots/hell_theme.png}
+        \caption*{Hell Theme}
+    \end{minipage}
+    \caption{The three chapter themes. Same CA algorithms, different visual assets and atmosphere.}
+    \label{fig:chapter_themes}
+\end{figure}
+
 \paragraph{Cellular Automata Algorithm}
 
 In the core CA algorithm we followed a standard approach: each cell in a 2D grid evolves over multiple iterations based on the state of its neighbors. The algorithm takes as input the room's dimensions, an initial density parameter, and CA rules (survival and birth thresholds).
@@ -85,6 +108,13 @@ The high \texttt{surviveMin=5} threshold helps create larger bodies of water ins
 
 Water cells are marked as occupied so that enemies and obstacles don't spawn in the water. Instead, enemies are placed on the shore around the lake.
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{figures/ca_screenshots/lake_example.png}
+    \caption{Example of CA-generated lake with automatic RuleTile borders. The high survival threshold creates cohesive water bodies.}
+    \label{fig:ca_lake}
+\end{figure}
+
 \paragraph{Application 2: Paths}
 
 To help guide players between rooms, we generate dirt paths using CA with a novel \textbf{portal-seeded initialization} where cells near portals (within radius $r=3$ tiles) have high initial density (\texttt{portalPathDensity=0.9}), while cells away from portals have low ambient density (\texttt{ambientPathDensity=0.2}).
@@ -92,6 +122,13 @@ To help guide players between rooms, we generate dirt paths using CA with a nove
 This creates natural-looking paths that emerge from room entrances and gradually fade into the environment. The CA smoothing (\texttt{iterations=4}, \texttt{surviveMin=3}, \texttt{birthMin=2}) connects high-density portal regions into continuous paths while allowing some branching and irregularity.
 
 Paths use the chapter's \texttt{pathRuleTile}, which renders dirt paths with grass borders. Paths are non-blocking (enemies and players can walk over them), serving purely as visual navigation cues.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{figures/ca_screenshots/paths_example.png}
+    \caption{Portal-seeded paths emerging from room entrances. High density near portals creates natural-looking navigation guides.}
+    \label{fig:ca_paths}
+\end{figure}
 
 \paragraph{Application 3: Decorations}
 
