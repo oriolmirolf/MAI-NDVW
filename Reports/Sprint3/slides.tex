@@ -73,9 +73,6 @@
 \subsection{Procedural Content Generation}
 
 \begin{frame}{PCG: DungeonRunManager (Chapter persistence)}
-    \begin{block}{Goal}
-        Keep runs \emph{non-scripted} while preserving forward progress and stable pacing.
-    \end{block}
 
     \begin{block}{Chapter-based run logic (boss-gated checkpoints)}
         \begin{itemize}
@@ -109,6 +106,54 @@
     \end{column}
     \end{columns}
 \end{frame}
+
+% --- INSERT THIS SLIDE BETWEEN "Connectivity Modes" AND "Run Transitions" ---
+\begin{frame}{PCG: Layout Generation (BSP + global connectivity)}
+    \begin{block}{Why BSP here?}
+        It gives fast, controllable variation: many room candidates, bounded sizes, and no overlaps---so layouts stay readable under regeneration.
+    \end{block}
+
+    \begin{block}{High-level pipeline}
+        \begin{itemize}
+            \item Recursively split the map rectangle into leaves (Binary Space Partitioning).
+            \item Sample one room per feasible leaf (with margins and size bounds).
+            \item Enforce full reachability with a Minimum Spanning Tree over room centres,
+                  optionally adding a few extra edges to avoid overly linear layouts.
+        \end{itemize}
+    \end{block}
+
+\end{frame}
+
+
+\begin{frame}{PCG: Run Transitions (Death / Victory / Exit Portal)}
+    \begin{block}{Boss-defeat gating}
+        Progression is enforced by spawning the chapter exit portal \emph{only after} the boss is defeated, preventing accidental skips and making success explicit.
+    \end{block}
+
+    \begin{figure}
+      \centering
+      \begin{minipage}[t]{0.32\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/death_screen.png}\\
+        \scriptsize \textbf{(a)} Death screen.
+      \end{minipage}
+      \hfill
+      \begin{minipage}[t]{0.32\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/final_victory.png}\\
+        \scriptsize \textbf{(b)} Final victory.
+      \end{minipage}
+      \hfill
+      \begin{minipage}[t]{0.32\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/boss_portal.png}\\
+        \scriptsize \textbf{(c)} Exit portal after boss defeat.
+      \end{minipage}
+
+      \caption{\scriptsize Transitions controlled by \texttt{DungeonRunManager}: death regenerates only the current unfinished chapter; boss defeat unlocks the exit; final victory ends the run.}
+    \end{figure}
+\end{frame}
+
 
 \begin{frame}{CA-Based Room Population}
     \begin{block}{Motivation}
@@ -193,34 +238,6 @@
         {\small High density near portals}
     \end{column}
     \end{columns}
-\end{frame}
-\begin{frame}{PCG: Run Transitions (Death / Victory / Exit Portal)}
-    \begin{block}{Boss-defeat gating}
-        Progression is enforced by spawning the chapter exit portal \emph{only after} the boss is defeated, preventing accidental skips and making success explicit.
-    \end{block}
-
-    \begin{figure}
-      \centering
-      \begin{minipage}[t]{0.32\linewidth}
-        \centering
-        \includegraphics[width=\linewidth]{figures/death_screen.png}\\
-        \scriptsize \textbf{(a)} Death screen.
-      \end{minipage}
-      \hfill
-      \begin{minipage}[t]{0.32\linewidth}
-        \centering
-        \includegraphics[width=\linewidth]{figures/final_victory.png}\\
-        \scriptsize \textbf{(b)} Final victory.
-      \end{minipage}
-      \hfill
-      \begin{minipage}[t]{0.32\linewidth}
-        \centering
-        \includegraphics[width=\linewidth]{figures/boss_portal.png}\\
-        \scriptsize \textbf{(c)} Exit portal after boss defeat.
-      \end{minipage}
-
-      \caption{\scriptsize Transitions controlled by \texttt{DungeonRunManager}: death regenerates only the current unfinished chapter; boss defeat unlocks the exit; final victory ends the run.}
-    \end{figure}
 \end{frame}
 
 
