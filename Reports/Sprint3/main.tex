@@ -37,6 +37,7 @@
 %% The amssymb package provides various useful mathematical symbols
 \usepackage{amssymb}
 \usepackage{float}
+\usepackage{amsmath}
 %% The amsthm package provides extended theorem environments
 %% \usepackage{amsthm}
 
@@ -218,7 +219,7 @@ Specifically, the tutorial includes:
 \begin{itemize}
   \item Basic 2D top-down player movement and animation (using tilemaps and rule tiles)  
   \item Implementation of a weapon-based combat system in Unity (including multiple weapons, attack animations, and hit detection)  
-  \item Setting up scene workflow and tiled environments using Unity’s tilemap features  
+  \item Setting up scene workflow and tiled environments using Unity's tilemap features  
   \item Some C\# fundamentals tied to game logic in Unity (moving from beginner to intermediate level)  
 \end{itemize}
 
@@ -320,17 +321,17 @@ The technical specifics of the training process, reward functions, and agent arc
 
 \paragraph{PCG}
 Game design increasingly takes advantage of procedural content and AI-driven systems. 
-Several roguelike-inspired action games -- notably \emph{The Binding of Isaac}, \emph{Spelunky}, \emph{Dead Cells} and \emph{Hades} -- use procedural algorithms such as binary space partitioning or cellular automata to assemble dungeons and item layouts at runtime, to have high replayability. Large open-world games like \emph{Minecraft} and \emph{No Man’s Sky} show how flexible PCG is~\cite{shaker2016procedural}.
+Several roguelike-inspired action games -- notably \emph{The Binding of Isaac}, \emph{Spelunky}, \emph{Dead Cells} and \emph{Hades} -- use procedural algorithms such as binary space partitioning or cellular automata to assemble dungeons and item layouts at runtime, to have high replayability. Large open-world games like \emph{Minecraft} and \emph{No Man's Sky} show how flexible PCG is~\cite{shaker2016procedural}.
 
 \paragraph{Narrative generation}
 \emph{Middle-earth: Shadow of Mordor/Shadow of War} introduced the ``Nemesis'' system, in which orc captains are procedurally generated and remember past encounters; they can return with scars or new ranks, creating unique personal stories.
-Earlier AI-driven titles such as \emph{Façade} and \emph{Versu} started dynamic dialogue and multiple endings, while Ubisoft’s \emph{Watch Dogs: Legion} showed how to write a dynamic script: the narrative team wrote twenty variations of every line and tied each version to a procedurally generated persona (e.g., a policeman says ``much obliged'', a young activist says ``appreciate it, fam''). 
+Earlier AI-driven titles such as \emph{Façade} and \emph{Versu} started dynamic dialogue and multiple endings, while Ubisoft's \emph{Watch Dogs: Legion} showed how to write a dynamic script: the narrative team wrote twenty variations of every line and tied each version to a procedurally generated persona (e.g., a policeman says ``much obliged'', a young activist says ``appreciate it, fam''). 
 Simulation-heavy games like \emph{Dwarf Fortress} and \emph{RimWorld} are described as story generators because their complex systems of characters, needs and events produce emergent stories rather than fixed plots~\cite{liapis2013sentient,buongiorno2024pangea}.
 
 \paragraph{Generative music}
 Dynamic soundtracks have been explored in both indie and AAA games.
-In \emph{No Man’s Sky}, audio director Paul Weir and the band 65daysofstatic created hundreds of musical fragments tagged by key, tempo and mood; the game’s ``Pulse'' tool combines these elements in real time to generate soundscapes that react to what the player is doing.
-A decade earlier, Brian Eno composed a fully procedural score for \emph{Spore}, making the game’s music as generative as its evolving life forms~\cite{castellon2023generative}.
+In \emph{No Man's Sky}, audio director Paul Weir and the band 65daysofstatic created hundreds of musical fragments tagged by key, tempo and mood; the game's ``Pulse'' tool combines these elements in real time to generate soundscapes that react to what the player is doing.
+A decade earlier, Brian Eno composed a fully procedural score for \emph{Spore}, making the game's music as generative as its evolving life forms~\cite{castellon2023generative}.
 
 \paragraph{Reinforcement learning agents}
 While many shipped games focus on hand-authored AI behaviours or simple difficulty scaling, there is a growing body of work exploring reinforcement learning (RL) agents trained for complex control tasks. AlphaStar, for example, used large-scale self-play to learn high-level strategies and unit micro-management in \emph{StarCraft II}, producing agents that could compete with professional players~\cite{vinyals2019alphastar}. Similarly, the Visual Doom AI Competitions challenged participants to train agents directly from raw pixels in \emph{Doom}, where the strongest entries relied on deep RL methods to achieve competitive performance~\cite{Wydmuch_2019}.
@@ -346,78 +347,57 @@ Time-permitting, we will also explore FSMs or other techniques for common enemie
 \subsection{Procedural Dungeon Generation}
 \label{subsec:procedural_dungeon}
 
-\subsubsection{BSP Map Layout Generation}
+\subsubsection{Dungeon Run Manager, Connectivity Modes, and BSP Generation}
 \label{subsubsec:bsp_layout}
 
-In this section we will explain how the current PCG has been implemented.
+We first describe the \texttt{DungeonRunManager}, which orchestrates chapter progression and regeneration. We then describe how each chapter dungeon is generated using BSP and (internally) connected via corridors or (optionally) portals. Full pseudocode is given in Appendix~\ref{app:pcg_pseudocode}.
 
-\begin{figure}[htbp]
+\paragraph{DungeonRunManager (chapter seeds, persistence, and transitions)}
+The run is split into three chapters. At the start of the run, \texttt{DungeonRunManager} samples and stores a \texttt{layoutSeed} for each chapter. When loading a chapter, it applies the corresponding theme (see \ref{subsubsec:ca_rooms} and calls \\ \texttt{GenerateWithSeedAndPlacePlayer(seed)}. The manager also enforces persistence: defeating a boss marks the chapter as completed and updates a checkpoint index. On player death, if the player is past the last completed chapter, only the current chapter seed is resampled and regenerated; completed chapters remain unchanged.
+
+\paragraph{Connectivity: corridors vs.\ portals}
+We treat connectivity as a first-class choice because it affects both gameplay readability and our GenAI pipeline (Section \ref{subsec:genai_pipeline}). In \emph{corridor mode}, the generator physically carves paths between rooms, producing classic dungeon traversal. In \emph{portal mode}, connected rooms are linked by a portal transition, optionally reducing long camera confiner corridors and making room boundaries cleaner. We considered portal connectivity because: (i) it matches our asset set (portals already exist and look better than very long corridors in a small tileset),(ii) it makes it easier to capture consistent screenshots for GenAI (clean room views with fewer transitional hallway artefacts).
+
+\begin{figure}[H]
   \centering
   \begin{minipage}[t]{0.48\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/ex_BSP_geometry.png}
-    \caption{Example BSP geometry}
-    \label{fig:ex_bsp_geometry}
+    \includegraphics[width=\linewidth]{figures/corridor_example.png}
+    \caption{Corridor connectivity between rooms.}
+    \label{fig:corridor_example}
   \end{minipage}
   \hfill
   \begin{minipage}[t]{0.48\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/ex_player_POV.png}
-    \caption{Example player's POV for a PCG dungeon}
-    \label{fig:ex_pov_PCG}
+    \includegraphics[width=\linewidth]{figures/portal_example.png}
+    \caption{Portal connectivity/exit portal example.}
+    \label{fig:portal_example}
   \end{minipage}
 \end{figure}
 
-The dungeon layout is generated procedurally using a Binary Space Partitioning (BSP) algorithm implemented in the \texttt{BSPMSTDungeonGenerator} component (a Unity \texttt{MonoBehaviour}).  
-Conceptually, the generator operates on a rectangular grid of size \texttt{mapWidth}~$\times$~\texttt{mapHeight} and recursively splits this region into smaller ``leaves''. 
-Each leaf may then host a single rectangular room, and (for now) rooms are connected via corridors to form a single, fully connected dungeon graph.
+\paragraph{Boss-defeat exit portal}
+Chapter progression is gated by an exit portal spawned only after the boss is defeated. Concretely, \texttt{OnBossDefeated()} marks the chapter as completed, shows a short victory UI, and calls \\ \texttt{SpawnChapterExitPortalAtBossRoom()}.This prevents skipping bosses, makes success visible to the player, and keeps transitions deterministic (use portal $\rightarrow$ \texttt{LoadChapter(current+1)}).
 
-\paragraph{Leaf splitting}
-We start from a single root rectangle (optionally centred at the origin) and repeatedly split leaves until either the desired number of rooms is reached or no further valid splits are possible. 
-Each leaf stores integer bounds (\texttt{RectInt}) and may be split horizontally or vertically:
-
-\begin{itemize}
-  \item The split orientation is chosen adaptively: if the leaf is much wider than tall, we force a vertical split; if it is much taller than wide, we force a horizontal split; otherwise we flip a biased coin.
-  \item A split is only allowed if both children would still be at least \texttt{minLeafSize} tiles in the split dimension, ensuring that later we can carve a room of at least \texttt{minRoomSize}.
-  \item The splitting process stops when no leaf is large enough to be split further or when we have enough candidate leaves for the target \texttt{roomCount}.
-\end{itemize}
-
-This step yields a BSP tree of rectangular leaves that partition the dungeon space without overlaps or gaps. 
+\paragraph{BSP map layout generation}
+Each chapter dungeon is generated by \\ \texttt{BSPMSTDungeonGenerator}. The generator operates on a grid of size \\ \texttt{mapWidth}$\times$\texttt{mapHeight}, recursively splits the space into rectangular leaves, and samples one room per terminal leaf when feasible. Splitting is adaptive to avoid degenerate leaves: letting $w=\texttt{bounds.width}$ and $h=\texttt{bounds.height}$, we bias the split orientation based on the aspect ratio ($w/h$ vs.\ $h/w$). Splits are only accepted if both children remain large enough (\texttt{minLeafSize}), so that we can later carve rooms of at least \texttt{minRoomSize} with margin.
 
 \paragraph{Room carving}
-For each terminal leaf, we optionally instantiate a room whose size and position are sampled inside the leaf:
+For each terminal leaf, we compute candidate maxima
+$\texttt{maxW}=\texttt{bounds.width}-2$ and $\texttt{maxH}=\texttt{bounds.height}-2$ and clamp them to $[\texttt{minRoomSize},\,\texttt{maxRoomSize}]$. If either is below \texttt{minRoomSize}, the leaf is skipped. Otherwise, room dimensions are sampled uniformly: \\
+$\texttt{w}\sim\{\texttt{minRoomSize},\dots,\texttt{maxW}\}$ and
+$\texttt{h}\sim\{\texttt{minRoomSize},\dots,\texttt{maxH}\}$,
+and the bottom-left corner is sampled uniformly among valid placements so the room fits inside the leaf with a one-tile margin. Accepted rooms are painted to the tilemap and their floor cells are stored for subsequent wall placement and camera bounds.
 
-\begin{itemize}
-  \item We first compute candidate maximum room sizes 
-  \texttt{maxW} and \texttt{maxH} as
-  \texttt{bounds.width - 2} and \texttt{bounds.height - 2}, and clamp them into the interval
-  $[\texttt{minRoomSize},\,\texttt{maxRoomSize}]$ using \texttt{Mathf.Clamp}. If after clamping either
-  \texttt{maxW} or \texttt{maxH} is still smaller than \texttt{minRoomSize}, the leaf cannot host a room and is skipped.
-  \item Otherwise, we sample the actual room width and height uniformly as
-  \texttt{w}~$\sim \{ \texttt{minRoomSize},\dots,\texttt{maxW} \}$ and
-  \texttt{h}~$\sim \{ \texttt{minRoomSize},\dots,\texttt{maxH} \}$, ensuring a one-tile margin between the room and the leaf boundary.
-  \item The room’s bottom-left corner is then chosen uniformly at random within the leaf so that the entire room fits inside its bounds while respecting this margin.
-\end{itemize}
-
-Each accepted room is stored as a \texttt{Room} with an axis-aligned rectangle and an integer-valued centre (\texttt{Center}). The generator then iterates over all room rectangles and fills them with floor tiles via \texttt{PaintRect}, sampling from \texttt{groundTile} and optional variations to avoid visual repetition. All carved floor cells are also recorded in a \texttt{HashSet<Vector3Int>} (\texttt{floorCells}), which is later reused for wall placement and camera bounds.
-
-
-\paragraph{Corridor graph and connectivity}
-Once we have a list of rooms, we connect them into a graph:
-
-\begin{enumerate}
-  \item We construct a complete graph over room indices, assigning each edge a weight equal to the Euclidean distance between the corresponding room centres.
-  \item We run Kruskal’s algorithm with a Union-Find data structure to compute a Minimum Spanning Tree (MST). This guarantees that all rooms are connected while minimising total corridor length and avoiding cycles.
-  \item To avoid overly linear layouts, we optionally add up to \texttt{extraConnections} edges from the remaining non-MST edges (chosen in order of increasing weight), creating a few loops and alternative paths.
-\end{enumerate}
+\paragraph{Corridor graph (MST) and connectivity}
+When using corridor mode, we connect rooms via a graph over room centres. For rooms $i,j$ with centres $\mathbf{c}_i,\mathbf{c}_j$, we assign edge weight
+\[
+w_{ij}=\lVert \mathbf{c}_i-\mathbf{c}_j\rVert_2.
+\]
+We compute a Minimum Spanning Tree using Kruskal's algorithm (Union-Find), guaranteeing that all rooms are reachable while minimizing total corridor length. Optionally, we add a small number of extra edges (short non-MST connections) to create loops and reduce linearity.
 
 \paragraph{Walls, outside tiles, and camera bounds}
-After rooms and corridors are carved:
+Finally, we place walls by inspecting neighbours around floor cells, fill a border of ``outside'' tiles to avoid empty camera regions, and derive camera confiner bounds from the generated floor region.
 
-\begin{itemize}
-  \item We iterate over every floor cell and inspect its eight neighbours to decide which wall sprite to place (top, bottom, side, corner, or inner corner). This produces a consistent, fully tiled wall border that adapts to arbitrary shapes while using a small tileset.
-  \item We fill a slightly larger rectangle around the dungeon with ``outside'' tiles (e.g., grass or void) to avoid having a ``blank'' outside of the camera
-\end{itemize}
 
 
 \input{sections/ca_room_population.tex}
@@ -449,6 +429,61 @@ The following is a breakdown of the main contributions made by each team member 
   \item \textbf{Jean Dié}: Initial project setup, open-world prototype with basic procedural generation, and generative AI pipeline (narrative, music, and voice synthesis)
   \item \textbf{Bruno Sánchez}: Boss agents (Reinforcement Learning design and training)
 \end{itemize}
+
+\appendix
+\section{PCG Pseudocode}
+\label{app:pcg_pseudocode}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small, frame=single]
+Algorithm InitRun(runSeed, totalChapters):
+  rng <- Random(runSeed)
+  for k in 0..totalChapters-1:
+    chapter[k].seed <- rng.NextInt()
+    chapter[k].completed <- false
+  checkpoint <- -1
+  LoadChapter(0)
+
+Algorithm LoadChapter(k):
+  current <- k
+  WorldGenerator.SetThemeForNextGeneration(chapterThemes[current])
+  WorldGenerator.GenerateWithSeedAndPlacePlayer(chapter[current].seed)
+  PlayerHealth.Reset()
+  if current > 0: IntroductionDialogue.OnChapterEntered(current)
+
+Algorithm OnBossDefeated():
+  chapter[current].completed <- true
+  checkpoint <- max(checkpoint, current)
+  if current == totalChapters-1:
+    TransitionUI.ShowFinalVictory(); return
+  TransitionUI.ShowBossDefeatedText()
+  WorldGenerator.SpawnChapterExitPortalAtBossRoom()
+
+Algorithm UseChapterExit():
+  if chapter[current].completed:
+    LoadChapter(current + 1)
+
+Algorithm OnPlayerDeath():
+  TransitionUI.ShowDeathScreen(current)
+  if current > checkpoint:
+    chapter[current].seed <- rng.NextInt()   // regenerate only current chapter
+  LoadChapter(current)
+
+Algorithm GenerateWithSeedAndPlacePlayer(seed):
+  rng <- Random(seed)
+  ClearDungeon(); ApplyTheme()
+
+  leaves <- BSP_Split(mapRect, rng, minLeafSize, roomCount)
+  rooms  <- CarveRooms(leaves, rng, minRoomSize, maxRoomSize)
+  edges  <- CompleteGraph(rooms, weight = centerDistance)
+  conn   <- MST(edges) + ExtraEdges(edges, extraConnections)
+  CarveCorridors(conn, rooms, rng)
+
+  PlaceWallsOutsideAndCameraBounds()
+  PopulateRooms(rooms, rng)
+
+  PlacePlayer(StartRoom(rooms))
+  PlaceBoss(BossRoom(rooms))                // boss room stored for portal spawn
+\end{lstlisting}
 
 
 %% Authors are advised to submit their bibtex database files. They are
