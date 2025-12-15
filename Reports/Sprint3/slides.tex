@@ -69,26 +69,42 @@
 % --- TECHNICAL PROPOSAL SECTION ---
 \section{AI Systems \& Proposal}
 
+% --- REPLACE ONLY YOUR PCG SUBSECTION WITH THIS (3 slides, spaced) ---
 \subsection{Procedural Content Generation}
 
-\begin{frame}{Procedural Dungeon Generation}
-    \begin{block}{Binary Space Partitioning (BSP) Algorithm}
-        The dungeon layout is generated in several steps:
-        \begin{enumerate}
-            \item \textbf{Leaf Splitting:} A large rectangle is recursively split into smaller sub-regions (leaves).
-            \item \textbf{Room Carving:} A randomly sized room is placed inside each leaf.
-            \item \textbf{Connectivity:} A Minimum Spanning Tree (MST) is used to connect all rooms with corridors + some extra connections to create loops.
-        \end{enumerate}
+\begin{frame}{PCG: DungeonRunManager (Chapter persistence)}
+    \begin{block}{Goal}
+        Keep runs \emph{non-scripted} while preserving forward progress and stable pacing.
     \end{block}
-    \begin{columns}
-    \begin{column}{0.5\textwidth}
+
+    \begin{block}{Chapter-based run logic (boss-gated checkpoints)}
+        \begin{itemize}
+            \item The run is split into 3 chapters; each chapter dungeon is generated from a stored seed.
+            \item After defeating a chapter boss, everything the player cleared so far in that chapter stays fixed for the rest of the run.
+            \item On player death, only the \emph{current unfinished} chapter is regenerated; previously cleared chapters keep their content.
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{PCG: Connectivity Modes (Corridors vs.\ Portals)}
+    \begin{block}{Why treat connectivity as a mode?}
+        It directly affects navigation readability \emph{and} the visual structure of rooms (important for consistent screenshots later).
+    \end{block}
+
+    \begin{columns}[t]
+    \begin{column}{0.44\textwidth}
         \begin{figure}
-        \includegraphics[width=\linewidth]{figures/ex_BSP_geometry.png}
+            \centering
+            \includegraphics[width=\linewidth]{figures/corridor_example.png}
+            \caption*{\scriptsize Corridor connectivity between rooms.}
         \end{figure}
     \end{column}
-    \begin{column}{0.5\textwidth}
+
+    \begin{column}{0.44\textwidth}
         \begin{figure}
-        \includegraphics[width=\linewidth]{figures/ex_player_POV.png}
+            \centering
+            \includegraphics[width=\linewidth]{figures/portal_example.png}
+            \caption*{\scriptsize Portal connectivity example.}
         \end{figure}
     \end{column}
     \end{columns}
@@ -178,6 +194,35 @@
     \end{column}
     \end{columns}
 \end{frame}
+\begin{frame}{PCG: Run Transitions (Death / Victory / Exit Portal)}
+    \begin{block}{Boss-defeat gating}
+        Progression is enforced by spawning the chapter exit portal \emph{only after} the boss is defeated, preventing accidental skips and making success explicit.
+    \end{block}
+
+    \begin{figure}
+      \centering
+      \begin{minipage}[t]{0.32\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/death_screen.png}\\
+        \scriptsize \textbf{(a)} Death screen.
+      \end{minipage}
+      \hfill
+      \begin{minipage}[t]{0.32\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/final_victory.png}\\
+        \scriptsize \textbf{(b)} Final victory.
+      \end{minipage}
+      \hfill
+      \begin{minipage}[t]{0.32\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/boss_portal.png}\\
+        \scriptsize \textbf{(c)} Exit portal after boss defeat.
+      \end{minipage}
+
+      \caption{\scriptsize Transitions controlled by \texttt{DungeonRunManager}: death regenerates only the current unfinished chapter; boss defeat unlocks the exit; final victory ends the run.}
+    \end{figure}
+\end{frame}
+
 
 \subsection{Generative AI}
 
