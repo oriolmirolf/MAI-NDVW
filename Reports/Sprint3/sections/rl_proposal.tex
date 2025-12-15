@@ -1,10 +1,8 @@
 \subsection{Reinforcement Learning for Boss Behavior}\label{sec:rl_proposal}
 
-Boss behavior is trained through Reinforcement Learning (RL) to produce adaptive and challenging encounters. As mentioned in Section~\ref{sec:boss_agents}, these bosses are modeled as replicas of the player character, possessing similar movement and attack capabilities.
+Boss behavior is trained through Reinforcement Learning (RL) to produce adaptive and challenging encounters. As mentioned in Section~\ref{sec:boss_agents}, these bosses are modeled as replicas of the player character, possessing similar movement and attack capabilities. The agents are designed to mimic the player's capabilities while exhibiting complex human-like strategies, trained in a custom Arena environment (Figure~\ref{fig:rl_training_arena}) where two agent instances fight each other.
 
-The agents controlling these bosses are designed to mimic the player's capabilities while exhibiting complex human-like strategies. The setup for their training takes place in a custom Arena environment where two instances of the agents can fight each other, illustrated in Figure~\ref{fig:rl_training_arena}.
-
-Rather than employing pure self-play from the start, the agents are first pre-trained against a heuristic opponent to establish a solid foundation of basic combat mechanics. The heuristic behavior moves directly towards or away from the agent (determined stochastically by an aggressiveness parameter $\alpha = 0.75$) and constantly attempts to attack in the direction of its target. After this pre-training phase, the agents are pitted against each other in self-play to develop more sophisticated strategies and counter-strategies.
+Rather than employing pure self-play from the start, agents are first pre-trained against a heuristic opponent that moves towards/away from the agent (determined stochastically by an aggressiveness parameter $\alpha = 0.75$) and constantly attacks. After this phase, agents undergo self-play to develop sophisticated counter-strategies. The RL agents are implemented using the Unity ML-Agents Toolkit.
 
 \begin{figure}[h]
     \centering
@@ -13,73 +11,71 @@ Rather than employing pure self-play from the start, the agents are first pre-tr
     \label{fig:rl_training_arena}
 \end{figure}
 
-The RL agents are implemented using the Unity ML-Agents Toolkit, which provides a framework for training intelligent agents in Unity environments. The specific software architecture and implementation details are discussed in Section~\ref{sec:rl_methodology_and_results}.
+\subsubsection{State, Action, and Reward Design}
 
-\subsubsection{Observation Space}
-
-The observation space consists of 18 continuous values that provide the agent with comprehensive information about the combat state All values are normalized to $[-1, 1]$ range:
-
-\begin{enumerate}
-    \item \textbf{Own position} (2 values): The agent's $(x, y)$ coordinates, normalized based on arena bounds.
-    \item \textbf{Distance to enemy} (2 values): The relative position vector to the opponent.
-    \item \textbf{Own velocity} (2 values): The agent's current velocity vector, normalized by maximum possible speed (during dash).
-    \item \textbf{Enemy velocity} (2 values): The opponent's velocity vector, enabling prediction of enemy movement.
-    \item \textbf{Own health} (1 value): Current health as a fraction of maximum health.
-    \item \textbf{Enemy health} (1 value): Opponent's health fraction.
-    \item \textbf{Own stamina} (1 value): Current stamina level (used for dashing).
-    \item \textbf{Own weapon index} (1 value): Index of currently equipped weapon.
-    \item \textbf{Enemy weapon index} (1 value): Opponent's equipped weapon index.
-    \item \textbf{Own attack cooldown} (1 value): Remaining cooldown time..
-    \item \textbf{Enemy attack cooldown} (1 value): Opponent's cooldown state, enabling strategic timing of attacks and dodges.
-    \item \textbf{Own aim angle} (1 value): Current weapon aim direction.
-    \item \textbf{Enemy aim angle} (1 value): Opponent's aim direction, useful for anticipating attacks.
-    \item \textbf{Angle to enemy} (1 value): The angle from the agent to the opponent.
-\end{enumerate}
-
-\subsubsection{Action Space}
-
-The action space combines discrete and continuous components:
-
+\paragraph{Observation Space}
+The observation space consists of 18 continuous values normalized to $[-1, 1]$:
 \begin{itemize}
-    \item \textbf{Discrete actions} (3 branches):
-    \begin{itemize}
-        \item \textit{Movement} (5 actions): Stand still, move up, down, left, or right.
-        \item \textit{Attack} (2 actions): No action, or attack with sword.
-        \item \textit{Dash} (2 actions): No dash, or perform dash.
-    \end{itemize}
-    \item \textbf{Continuous actions} (1 value):
-    \begin{itemize}
-        \item \textit{Aim angle}: A continuous value in $[-1, 1]$ that controls weapon aiming direction. The mapping is defined such that $0$ corresponds to aiming upward ($90^{\circ}$), with positive values rotating counterclockwise and negative values rotating clockwise. This symmetric representation around the vertical axis facilitates learning of balanced left-right behaviors.
-    \end{itemize}
+    \item \textbf{Position and movement}: Own position $(x, y)$ normalized by arena bounds; relative position vector to enemy; own and enemy velocity vectors (normalized by max dash speed).
+    \item \textbf{Health and stamina}: Own and enemy health (fraction of maximum); own stamina level for dashing.
+    \item \textbf{Weapon state}: Own and enemy weapon index; own and enemy attack cooldown times.
+    \item \textbf{Orientation}: Own and enemy aim angles; angle from agent to opponent.
 \end{itemize}
 
-\subsubsection{Reward Function}
+\paragraph{Action Space}
+The action space combines discrete and continuous components. \textit{Discrete actions} span three branches: movement (5 actions: stand still or move in cardinal directions), attack (2 actions: none or sword attack), and dash (2 actions: none or dash). The single \textit{continuous action} controls aim angle via a value in $[-1, 1]$, where $0$ corresponds to aiming upward ($90^{\circ}$), with positive values rotating counterclockwise and negative clockwise---this symmetric representation facilitates balanced left-right behaviors.
 
-The reward function $R$ is designed to encourage aggressive yet strategic behavior. The final reward values used are:
+\paragraph{Reward Function}
+The reward function encourages aggressive yet strategic behavior: victory ($r_{\mathrm{win}} = +1.0$), defeat ($r_{\mathrm{lose}} = -0.8$), landing hits ($r_{\mathrm{hit}} = +0.5$), receiving damage ($r_{\mathrm{damage}} = -0.4$). Per-timestep rewards include a proximity reward $r_{\mathrm{prox}} = +0.001 \cdot \cos(\theta_v)$ (where $\theta_v$ is the angle between velocity and direction to enemy, rewarding movement \emph{towards} opponents rather than orbiting), and a time penalty $r_{\mathrm{time}} = -0.001$ to encourage efficient combat resolution.
 
-\begin{itemize}
-    \item \textbf{Victory reward}: $r_{\mathrm{win}} = +1.0$ for defeating the opponent.
-    \item \textbf{Defeat penalty}: $r_{\mathrm{lose}} = -0.8$ for being defeated.
-    \item \textbf{Hit reward}: $r_{\mathrm{hit}} = +0.5$ for successfully landing an attack.
-    \item \textbf{Damage penalty}: $r_{\mathrm{damage}} = -0.4$ for receiving damage.
-    \item \textbf{Proximity reward}: $r_{\mathrm{prox}} = +0.001 \cdot \cos(\theta_v)$ per timestep, where $\theta_v$ is the angle between the agent's velocity vector and the direction to the enemy. This formulation rewards movement \emph{towards} the opponent rather than simply being close, which prevents orbiting behaviors where agents circle each other without engaging.
-    \item \textbf{Time penalty}: $r_{\mathrm{time}} = -0.001$ per timestep to encourage efficient combat resolution.
-\end{itemize}
+\subsubsection{Training Algorithm, Infrastructure, and Strategy}
 
+\paragraph{Algorithm}
+We use Proximal Policy Optimization (PPO)~\cite{schulman2017proximal} with modified hyperparameters: batch size 2048 (increased from 1024 for stable gradients), buffer size 20480, and self-play configured with a window of 5 past policies, opponent swaps every 10,000 steps, and 50\% probability of playing against the latest versus historical snapshots.
 
-The cumulative reward for an episode is thus:
-\begin{equation}
-    R_{\mathrm{episode}} = r_{\mathrm{outcome}} + \sum_{t=1}^{T} \left( r_{\mathrm{hit}}^{(t)} + r_{\mathrm{damage}}^{(t)} + r_{\mathrm{prox}}^{(t)} + r_{\mathrm{time}} \right)
-\end{equation}
-where $r_{\mathrm{outcome}} \in \{r_{\mathrm{win}}, r_{\mathrm{lose}}\}$ and $T$ is the episode length.
+\paragraph{Infrastructure}
+Rather than duplicating Arena environments within Unity, we leverage ML-Agents' capability to use built executables as training environments. With \texttt{num\_envs: 5} and \texttt{no\_graphics: true}, five headless environment instances run in parallel, dramatically increasing throughput while reducing computational overhead. Training executes via \texttt{mlagents-learn}, interfacing with Unity executables to collect experience and update the policy using PyTorch on GPU.
 
-\subsubsection{Training Algorithm}
+\paragraph{Two-Phase Training Strategy}
+Initial experiments with pure self-play revealed agents learning exploitative behaviors (e.g., retreating to corners) that appeared confused when facing humans. We adopted a two-phase approach: \textit{Phase 1} (820K steps) pre-trains against the heuristic opponent, establishing fundamental combat skills---engaging enemies, timing attacks, and basic defense. \textit{Phase 2} (4.8M steps) uses the pre-trained policy to initialize self-play, refining strategies while maintaining the aggressive foundation.
 
-For the training process, we use the Proximal Policy Optimization (PPO) algorithm~\cite{schulman2017proximal}, known for its stability and effectiveness in continuous control tasks. We use the default ML-Agents hyperparameters with the following modifications:
-\begin{itemize}
-    \item \textbf{Batch size}: 2048 (increased from default 1024 for more stable gradient estimates).
-    \item \textbf{Buffer size}: 20480 (increased proportionally with batch size).
-    \item \textbf{Self-play parameters}: We configure the self-play mechanism with a window of 5 past policies, swapping opponents every 10,000 steps, and maintaining a 50\% probability of playing against the latest model versus a historical snapshot.
-\end{itemize}
+\subsubsection{Software Architecture}\label{sec:rl_methodology}
 
-The training methodology, including the pre-training strategy against heuristic opponents and the experimental results, are detailed in Section~\ref{sec:rl_methodology_and_results}.
+The RL system is built around several interconnected components handling agent behavior, combat mechanics, and training orchestration.
+
+\paragraph{Agent Controller}
+The \texttt{AgentController} class extends ML-Agents' \texttt{Agent} base class, responsible for collecting observations, executing actions (movement, attacks, dashing, aiming), and implementing heuristic behavior for pre-training via the \texttt{Heuristic()} method.
+
+\paragraph{Combat Target Interface}
+The player's combat system uses singletons (e.g., \texttt{PlayerHealth.Instance}), incompatible with self-play where two agents must coexist. We designed the \texttt{ICombatTarget} interface abstracting combat-relevant properties: transform/rigidbody references, health/weapon/cooldown state accessors (normalized to $[0,1]$), and aim angle/facing direction. Both \texttt{PlayerController} and \texttt{AgentController} implement this interface, allowing agents to seamlessly target either other agents (training) or the player (inference).
+
+\paragraph{Agent-Specific Components}
+To support self-play without singleton dependencies: \texttt{AgentHealth} manages health and damage; \texttt{AgentStamina} tracks stamina for dashing; \texttt{AgentWeapons} handles weapon equipping, attacks, and cooldowns; \texttt{AgentDamageSource} routes damage to appropriate targets and reports hits to the training manager.
+
+\paragraph{Training Manager}
+The \texttt{TrainingManager} orchestrates training in the Arena scene: initializes agents as each other's targets, applies per-timestep rewards, detects combat events and assigns rewards, handles episode termination and resets, and logs statistics to TensorBoard.
+
+\paragraph{Inference Setup}
+During gameplay, \texttt{AgentInferenceSetup} replaces the training manager: it sets the player as enemy target, configures arena bounds for observation normalization, handles agent death (VFX, loot, destruction), and optionally delays activation until the player enters the boss room. This separation allows the same trained prefab in both contexts.
+
+\subsubsection{Experimental Results}\label{sec:rl_results}
+
+Figure~\ref{fig:rl_pretraining_selfplay} shows the cumulative reward progression across both training phases. The pre-training phase (820K steps) establishes a baseline performance, followed by self-play refinement that continues improving the policy (4.8M steps).
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/rl_pretraining_selfplay.png}
+    \caption{Cumulative reward during the two-phase training: pre-training against heuristic opponent followed by self-play refinement.}
+    \label{fig:rl_pretraining_selfplay}
+\end{figure}
+
+Figure~\ref{fig:rl_selfplay_comparison} compares the self-play phase of our two-phase approach against pure self-play training (starting from a randomly initialized policy). The pre-trained agent achieves significantly higher rewards and more stable learning, reaching an average cumulative reward of approximately $+0.5$, while pure self-play struggles to surpass $0$ even after equivalent training time.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/rl_selfplay_comparison.png}
+    \caption{Comparison of self-play training performance: pure self-play (pink) versus self-play initialized from pre-trained policy (blue). The pre-trained initialization leads to substantially higher rewards and more effective combat behavior.}
+    \label{fig:rl_selfplay_comparison}
+\end{figure}
+
+The qualitative difference is equally significant: agents trained with our two-phase approach actively pursue the player, engage in combat, and exhibit varied attack patterns. In contrast, pure self-play agents often display passive or exploitative behaviors that, while effective in self-play, fail to create engaging boss encounters in the actual game.
