@@ -423,23 +423,8 @@ After rooms and corridors are carved:
   \item We fill a slightly larger rectangle around the dungeon with ``outside'' tiles (e.g., grass or void) to avoid having a ``blank'' outside of the camera
 \end{itemize}
 
-\paragraph{Room population}
-Once the dungeon's geometry is fixed, we populate each room:
 
-\begin{itemize}
-  \item Populators receive a lightweight \texttt{RoomData} struct containing the room index, its rectangle, and its centre, and can spawn arbitrary content (props, enemies, interactables) inside the room.
-  \item To avoid collisions with walls, we sample spawn positions inside the room with a configurable margin, and place all objects under dedicated parent transforms (\texttt{Objects}, \texttt{Enemies}) for easier scene management.
-  \item Because the RNG is seeded (\texttt{seed} field), entire layouts and population patterns are reproducible, which is useful for debugging and testing.
-\end{itemize}
-
-Please note that we must still work on room population and make it story-driven by perhaps designing a set of high-level story points, assigning them to rooms, and conditioning the generation accordingly.
-We also aim to test substituting corridors for "portals" between connected rooms (like a loading screen between rooms), which, combined with bigger room sizes, should ameliorate the issue we have of camera confines, and would make the game look better.
-
-% \subsubsection{Cellular Automata Room Generation}
-% \label{subsubsec:ca_rooms}
-
-% [Placeholder for Dani's work]
-
+\input{sections/ca_room_population.tex}
 
 % Include the GenAI pipeline section from external file
 \input{sections/genai_pipeline.tex}
@@ -463,7 +448,7 @@ Conclusion here.
 
 \begin{itemize}
   \item \textbf{Oriol Miró}: Procedural dungeon generation (BSP implementation)
-  \item \textbf{Dániel Mácsai}: Procedural room population (CA implementation)
+  \item \textbf{Dániel Mácsai}: Procedural room population, chapter theming (CA implementation)
   \item \textbf{Jean Dié}: Initial project setup, open-world prototype with basic procedural generation, and generative AI pipeline (narrative, music, and voice synthesis)
   \item \textbf{Bruno Sánchez}: Boss agents (Reinforcement Learning design and training)
 \end{itemize}

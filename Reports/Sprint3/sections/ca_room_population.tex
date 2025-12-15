@@ -1,0 +1,128 @@
+% Cellular Automata Room Population Section
+
+\subsubsection{Cellular Automata Room Population}
+\label{subsubsec:ca_rooms}
+
+While the BSP algorithm described in Section~\ref{subsubsec:bsp_layout} generates the spatial structure of the dungeon, the rooms themselves need to be populated with different environmental features, obstacles, enemies, and decorations to create fun gameplay spaces. This section describes the cellular automata-based system we used to procedurally populate rooms with features that look natural and that vary across the game's three chapters.
+
+\paragraph{Design Motivation}
+
+Procedural content generation risks creating environments that feel repetitive or artificial if objects are placed uniformly or on regular grids. To address this, we employ \textbf{Cellular Automata} (CA). This is a model where cells evolve based on local neighborhood rules. CA is widely used to generate organic clustering patterns for many different room features. It naturally produces irregular distributions that avoid the monotonic random or grid-based placement.
+
+We apply CA to generate three distinct room features: lakes, portal-seeded paths to guide player navigation, and clusters of small bushes for visual variety.
+
+For larger obstacles such as trees and buildings, we chose to use randomized placement with collision detection rather than CA, as we didn't want to put so many of them that they would dominate the room or block navigation.
+
+\paragraph{Chapter Theme System}
+
+In sync with the game's three-chapter structure described in Section~\ref{sec:scenario}, we designed a \textbf{Chapter Theme} system that encapsulates all visual and gameplay assets for each chapter. Each theme is implemented as a Unity ScriptableObject containing:
+
+\begin{itemize}
+    \item \textbf{Visual Assets}: Floor tiles, water tiles and path tiles
+    \item \textbf{Prefabs}: Blocking obstacles (trees, bushes, buildings), non-blocking decorations (grass, flowers, small bushes), and enemy types
+    \item \textbf{CA Parameters}: Configurable density, iteration count, and the survival/birth thresholds for each CA application
+    \item \textbf{Atmosphere Settings}: Ambient lighting color and intensity
+\end{itemize}
+
+This architecture allows each chapter to have a distinct visual identity while reusing the same generation algorithms. We implemented the following three themes: Chapter 1 (Forest), Chapter 2 (Night), and Chapter 3 (Hell).
+
+By changing the theme, the entire visual atmosphere of the dungeon transforms while maintaining consistent generation logic.
+
+\paragraph{Cellular Automata Algorithm}
+
+In the core CA algorithm we followed a standard approach: each cell in a 2D grid evolves over multiple iterations based on the state of its neighbors. The algorithm takes as input the room's dimensions, an initial density parameter, and CA rules (survival and birth thresholds).
+
+\begin{lstlisting}[basicstyle=\ttfamily\small, frame=single, caption={Pseudocode for Cellular Automata generation}, captionpos=b]
+function GenerateCA(width, height, density, iterations,
+                    surviveMin, birthMin):
+    // Step 1: Initialize grid with random seeds
+    grid = CreateGrid(width, height)
+    for x in 0 to width-1:
+        for y in 0 to height-1:
+            grid[x, y] = (RandomFloat() < density)
+
+    // Step 2: Apply CA rules for specified iterations
+    for i in 0 to iterations-1:
+        newGrid = CreateGrid(width, height)
+        for x in 0 to width-1:
+            for y in 0 to height-1:
+                neighbors = CountNeighbors(grid, x, y)
+                if grid[x, y] == true:
+                    // Cell is alive: survive if enough neighbors
+                    newGrid[x, y] = (neighbors >= surviveMin)
+                else:
+                    // Cell is dead: be born if enough neighbors
+                    newGrid[x, y] = (neighbors >= birthMin)
+        grid = newGrid
+
+    // Step 3: Clean up orphan tiles (tiles with too few neighbors)
+    grid = RemoveOrphans(grid, minNeighbors=3, maxCleanupIterations=2)
+
+    return grid
+
+function CountNeighbors(grid, x, y):
+    // Moore neighborhood: count alive cells in 8 surrounding cells
+    count = 0
+    for dx in -1 to 1:
+        for dy in -1 to 1:
+            if (dx == 0 and dy == 0): continue
+            nx = x + dx
+            ny = y + dy
+            if IsInBounds(nx, ny) and grid[nx, ny] == true:
+                count = count + 1
+    return count
+\end{lstlisting}
+
+The algorithm uses a \textbf{Moore neighborhood} (the 8 cells surrounding each cell) to count neighbors. Cells with at least \texttt{surviveMin} neighbors remain alive, and dead cells with at least \texttt{birthMin} neighbors become alive. This produces natural clustering: isolated cells die off, while groups of cells stabilize into blob-like shapes.
+
+In the final cleanup step we remove ``orphan'' tiles, these are single tiles or very small clusters that would cause strange borders with the RuleTile rendering system. This is done by iteratively removing any tile with fewer than 3 neighbors, repeating for up to 2 passes.
+
+\paragraph{Application 1: Lakes}
+
+Some rooms are designated as environmental hazard rooms and contain lakes generated with CA. We first place floor tiles everywhere, then generate the lake shape using CA with \texttt{density=0.4}, \texttt{iterations=6}, \texttt{surviveMin=5}, and \texttt{birthMin=4}.
+
+The high \texttt{surviveMin=5} threshold helps create larger bodies of water instead of many small puddles. We then use Unity's RuleTile system to place the water tiles, which automatically renders the appropriate border tiles based on neighboring tiles.
+
+Water cells are marked as occupied so that enemies and obstacles don't spawn in the water. Instead, enemies are placed on the shore around the lake.
+
+\paragraph{Application 2: Paths}
+
+To help guide players between rooms, we generate dirt paths using CA with a novel \textbf{portal-seeded initialization} where cells near portals (within radius $r=3$ tiles) have high initial density (\texttt{portalPathDensity=0.9}), while cells away from portals have low ambient density (\texttt{ambientPathDensity=0.2}).
+
+This creates natural-looking paths that emerge from room entrances and gradually fade into the environment. The CA smoothing (\texttt{iterations=4}, \texttt{surviveMin=3}, \texttt{birthMin=2}) connects high-density portal regions into continuous paths while allowing some branching and irregularity.
+
+Paths use the chapter's \texttt{pathRuleTile}, which renders dirt paths with grass borders. Paths are non-blocking (enemies and players can walk over them), serving purely as visual navigation cues.
+
+\paragraph{Application 3: Decorations}
+
+Small bushes are placed using CA to create natural clustering. The decoration CA uses moderate density (\texttt{decorationDensity=0.3}) and runs for 5 iterations with \texttt{surviveMin=4} and \texttt{birthMin=3}.
+
+To prevent decorations from spawning too close to walls (where they would look cause overlaps with the border of the rooms), the initial grid excludes a 2-tile border around the room perimeter. Additionally, decorations avoid positions already occupied by obstacles, enemies, or water.
+
+\paragraph{Random Placement for Large Obstacles}
+
+Larger obstacles such as trees, rocks, and buildings are placed using randomized position sampling rather than CA. These objects have complex collision shapes (some buildings span multiple tiles) and require explicit spacing to prevent overlaps.
+
+The placement algorithm:
+\begin{enumerate}
+    \item Sample a random position within the room (with a margin from walls)
+    \item Calculate the obstacle's footprint: all grid cells it will occupy based on its collider bounds, plus a 0.5-tile padding for visual spacing
+    \item Check if any footprint cells are already occupied
+    \item If placement is valid, instantiate the obstacle and mark all footprint cells as occupied
+    \item Repeat until the target number of obstacles is placed or maximum attempts reached
+\end{enumerate}
+
+\paragraph{Room Population Pipeline}
+
+The complete room population process follows a carefully ordered pipeline to ensure features do not conflict:
+
+\begin{enumerate}
+    \item \textbf{Floor tiles}: Base layer placed everywhere
+    \item \textbf{Lakes} (hazard rooms only): CA-generated water with borders
+    \item \textbf{Paths}: Portal-seeded CA paths placed on a separate tilemap layer
+    \item \textbf{Blocking obstacles}: Trees, rocks, buildings placed with collision detection
+    \item \textbf{Enemies}: Placed avoiding obstacles and water
+    \item \textbf{Decorations}: CA-generated small bushes and grass filling remaining space
+\end{enumerate}
+
+Each step marks occupied positions in a shared \texttt{HashSet} to ensure subsequent steps avoid placing objects on top of each other.
