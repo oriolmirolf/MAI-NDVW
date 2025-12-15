@@ -1,0 +1,30 @@
+flowchart LR
+    subgraph Config["Configuration"]
+        C[config.json<br/>Chapter definitions]
+    end
+
+    subgraph PreGen["Pre-Generation Phase - Python"]
+        C --> Parser[Config Parser]
+        Parser --> Loop{{"Chapter Loop"}}
+
+        Loop --> NarGen[Narrative Generator<br/>mistral-nemo 12B]
+        Loop --> MusGen[Music Generator<br/>MusicGen Small]
+
+        NarGen --> VoiceGen[Voice Generator<br/>XTTS v2]
+
+        NarGen --> NarJSON[narrative.json]
+        MusGen --> MusicWAV[music.wav]
+        VoiceGen --> VoiceWAV[voice_*.wav]
+    end
+
+    style Config fill:#4fc3f7,stroke:#0288d1,color:#000
+    style PreGen fill:#ffb74d,stroke:#f57c00,color:#000
+    style C fill:#b3e5fc,stroke:#0288d1
+    style Parser fill:#ffe0b2,stroke:#f57c00
+    style Loop fill:#ffcc80,stroke:#ef6c00
+    style NarGen fill:#fff59d,stroke:#fbc02d
+    style MusGen fill:#ce93d8,stroke:#7b1fa2
+    style VoiceGen fill:#ef9a9a,stroke:#c62828
+    style NarJSON fill:#c8e6c9,stroke:#388e3c
+    style MusicWAV fill:#c8e6c9,stroke:#388e3c
+    style VoiceWAV fill:#c8e6c9,stroke:#388e3c
