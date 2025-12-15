@@ -1,0 +1,54 @@
+flowchart TB
+    subgraph Config["Configuration"]
+        C[config.json<br/>Chapter definitions]
+    end
+
+    subgraph PreGen["Pre-Generation Phase - Python"]
+        direction TB
+
+        C --> Parser[Config Parser]
+        Parser --> |"For each chapter"| Loop{{"Chapter Loop<br/>(0, 1, 2)"}}
+
+        Loop --> NarGen[Narrative Generator<br/>mistral-nemo via Ollama]
+        Loop --> MusGen[Music Generator<br/>MusicGen Medium 1.5B]
+
+        NarGen --> |"3 dialogue lines"| NarJSON[narrative.json]
+        NarGen --> |"dialogue text"| VoiceGen[Voice Generator<br/>XTTS v2]
+
+        MusGen --> |"30s audio"| MusicWAV[music.wav]
+        VoiceGen --> |"per line"| VoiceWAV[voice_0.wav<br/>voice_1.wav<br/>voice_2.wav]
+    end
+
+    subgraph Assets["StreamingAssets"]
+        NarJSON --> SA[(chapters/chapter_N/)]
+        MusicWAV --> SA
+        VoiceWAV --> SA
+        SA --> Manifest[manifest.json]
+    end
+
+    subgraph Runtime["Runtime Phase - Unity"]
+        direction LR
+        Manifest --> Loader[GeneratedContentLoader]
+        Loader --> MusicMgr[ChapterMusicManager<br/>Crossfading]
+        Loader --> DialogueUI[DialogueUI<br/>Text + Voice sync]
+    end
+
+    style Config fill:#4fc3f7,stroke:#0288d1,color:#000
+    style PreGen fill:#ffb74d,stroke:#f57c00,color:#000
+    style Assets fill:#81c784,stroke:#388e3c,color:#000
+    style Runtime fill:#f06292,stroke:#c2185b,color:#000
+
+    style C fill:#b3e5fc,stroke:#0288d1
+    style Parser fill:#ffe0b2,stroke:#f57c00
+    style Loop fill:#ffcc80,stroke:#ef6c00
+    style NarGen fill:#fff59d,stroke:#fbc02d
+    style MusGen fill:#ce93d8,stroke:#7b1fa2
+    style VoiceGen fill:#ef9a9a,stroke:#c62828
+    style NarJSON fill:#c8e6c9,stroke:#388e3c
+    style MusicWAV fill:#c8e6c9,stroke:#388e3c
+    style VoiceWAV fill:#c8e6c9,stroke:#388e3c
+    style SA fill:#a5d6a7,stroke:#2e7d32
+    style Manifest fill:#c8e6c9,stroke:#388e3c
+    style Loader fill:#f8bbd9,stroke:#c2185b
+    style MusicMgr fill:#f8bbd9,stroke:#c2185b
+    style DialogueUI fill:#f8bbd9,stroke:#c2185b

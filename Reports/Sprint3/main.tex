@@ -92,7 +92,7 @@
      {9}{{{\color{blue}9}}}{1}
 }
 
-%% natbib.sty is loaded by default. However, natbib options can be
+%% natbib.sty is loaded by default. However, natbib options Fcan be
 %% provided with \biboptions{...} command. Following options are
 %% valid:
 
@@ -430,7 +430,6 @@ The following is a breakdown of the main contributions made by each team member 
   \item \textbf{Bruno Sánchez}: Boss agents (Reinforcement Learning design and training)
 \end{itemize}
 
-\appendix
 \section{PCG Pseudocode}
 \label{app:pcg_pseudocode}
 
@@ -485,6 +484,84 @@ Algorithm GenerateWithSeedAndPlacePlayer(seed):
   PlaceBoss(BossRoom(rooms))                // boss room stored for portal spawn
 \end{lstlisting}
 
+\section{Generative AI Pipeline Details}
+\label{app:genai_details}
+
+This appendix provides additional technical details for the generative AI pipeline described in Section~\ref{subsec:genai_pipeline}.
+
+\paragraph{Chapter Configuration}
+Each chapter's generation parameters are defined in \texttt{config.json}:
+
+\begin{lstlisting}[language=json, basicstyle=\ttfamily\scriptsize, frame=single]
+{
+  "seed": 54321,
+  "models": {"narrative": "mistral-nemo", "music": "facebook/musicgen-small"},
+  "chapters": [
+    {
+      "name": "The Verdant Prison",
+      "boss": "Thornback",
+      "environment": "sunlit forest with ancient trees and overgrown ruins",
+      "progress_context": "This is the beginning. The player just arrived.",
+      "music_prompt": "calm fantasy ambient music, gentle flute and strings,
+                       forest atmosphere, mysterious, 90 bpm"
+    },
+    {"name": "The Eternal Night", "boss": "The Shade", ...},
+    {"name": "The Burning End", "boss": "The Scorcher", ...}
+  ]
+}
+\end{lstlisting}
+
+\paragraph{Narrative Prompt Template}
+The LLM receives the following prompt structure:
+
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize, frame=single]
+You are a fantasy game narrator with a deep, dramatic voice.
+Setting: {chapter_name}. The boss is {boss}.
+Context: {progress_context}
+
+Write exactly 3 dramatic narrator lines (full sentences, 15-25 words each)
+that set the mood and hint at the danger ahead. Be atmospheric and mysterious.
+Output ONLY the 3 numbered lines:
+1.
+2.
+3.
+\end{lstlisting}
+
+\paragraph{Example Output (Chapter 0 - The Verdant Prison)}
+
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize, frame=single]
+{
+  "roomIndex": 0,
+  "environment": "sunlit forest with ancient trees and overgrown ruins",
+  "npc": {
+    "name": "The Narrator",
+    "dialogue": [
+      "In the heart of the Verdant Prison, where whispers of ancient
+       sorcery linger in the moss-kissed air...",
+      "...the echoes of desperate pleas bounce off the living walls,
+       swallowed by the relentless hum of unseen horrors.",
+      "Beware, brave soul, for Thornback's shadows grow long..."
+    ]
+  },
+  "quest": {"objective": "Defeat Thornback to proceed", "type": "Boss"},
+  "lore": {"title": "The Verdant Prison", "content": "..."}
+}
+\end{lstlisting}
+
+\paragraph{Output File Structure}
+The generation script produces per chapter:
+
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize, frame=single]
+StreamingAssets/GeneratedContent/
+  manifest.json           # Content manifest with seed
+  chapters/
+    chapter_0/
+      narrative.json      # NPC name and dialogue lines
+      music.wav           # 30-second loopable ambient track
+      voice_0.wav         # Narrated dialogue lines
+      voice_1.wav
+      voice_2.wav
+\end{lstlisting}
 
 %% Authors are advised to submit their bibtex database files. They are
 %% requested to list a bibtex style file in the manuscript if they do
